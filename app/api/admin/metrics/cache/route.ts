@@ -43,7 +43,7 @@ async function handler(request: NextRequest): Promise<NextResponse> {
 const rateLimitConfig = {
   windowMs: 60000, // 1 minute
   maxRequests: 60,
-  keyGenerator: (req: NextRequest) => `metrics:cache:${req.ip ?? 'unknown'}`,
+  keyGenerator: (req: NextRequest) => `metrics:cache:${req.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown'}`,
 };
 
 export const GET = RateLimitMiddleware.withRateLimit(handler, rateLimitConfig);

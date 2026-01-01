@@ -279,7 +279,7 @@ export default function OrderDetail({
                             ? 'Estudiante'
                             : order.subject.type === 'couple'
                               ? 'Pareja'
-                              : 'Familia'}
+                              : 'Cliente'}
                         </p>
                       </div>
                     )}

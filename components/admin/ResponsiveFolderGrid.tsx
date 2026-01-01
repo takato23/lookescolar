@@ -104,8 +104,7 @@ export function ResponsiveFolderGrid({
   const handleCopyUrl = useCallback(async (code: CodeRow) => {
     if (!code.token) return;
 
-    // Use public shared gallery route for consistent previewing
-    const url = `${window.location.origin}/public/gallery/${code.token}`;
+    const url = `${window.location.origin}/store-unified/${code.token}`;
     try {
       await navigator.clipboard.writeText(url);
       setCopied((prev) => ({ ...prev, [code.id]: true }));
@@ -172,7 +171,7 @@ export function ResponsiveFolderGrid({
       const hasImageError = imageErrors.has(code.id);
       const isImageLoaded = imagesLoaded.has(code.id);
       const familyUrl = code.token
-        ? `${window.location.origin}/public/gallery/${code.token}`
+        ? `${window.location.origin}/store-unified/${code.token}`
         : '';
       const qrUrl = code.token
         ? `/access?token=${encodeURIComponent(code.token)}`

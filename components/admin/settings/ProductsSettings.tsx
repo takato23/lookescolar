@@ -163,7 +163,7 @@ export function ProductsSettings({ className }: ProductsSettingsProps) {
             <div className="space-y-0.5">
               <Label htmlFor="physical_enabled">Habilitar venta fisica</Label>
               <p className="text-sm text-muted-foreground">
-                Permite a las familias comprar impresiones de fotos
+                Permite a los clientes comprar impresiones de fotos
               </p>
             </div>
             <Switch
@@ -195,7 +195,7 @@ export function ProductsSettings({ className }: ProductsSettingsProps) {
             <div className="space-y-0.5">
               <Label htmlFor="digital_enabled">Habilitar venta digital</Label>
               <p className="text-sm text-muted-foreground">
-                Permite a las familias comprar y descargar fotos HD
+                Permite a los clientes comprar y descargar fotos HD
               </p>
             </div>
             <Switch
@@ -318,7 +318,7 @@ export function ProductsSettings({ className }: ProductsSettingsProps) {
           <div className="text-sm text-blue-800 dark:text-blue-200">
             <p className="font-medium mb-1">Como funcionan las descargas digitales</p>
             <ul className="list-disc list-inside space-y-1 text-blue-700 dark:text-blue-300">
-              <li>Las familias pueden comprar fotos digitales junto con impresiones</li>
+              <li>Los clientes pueden comprar fotos digitales junto con impresiones</li>
               <li>Despues del pago, reciben un email con enlaces de descarga unicos</li>
               <li>Cada enlace tiene un limite de descargas y fecha de expiracion</li>
               <li>Las fotos descargadas son la version original sin marca de agua</li>

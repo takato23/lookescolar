@@ -88,11 +88,11 @@ export function SessionMode({
         setSubjects(data.subjects);
         setCurrentIndex(0);
       } else {
-        throw new Error(data.error || 'Error cargando alumnos');
+        throw new Error(data.error || 'Error cargando invitados');
       }
     } catch (error: any) {
       console.error('Error loading subjects:', error);
-      toast.error('Error cargando lista de alumnos');
+      toast.error('Error cargando lista de invitados');
     } finally {
       setLoading(false);
     }
@@ -130,7 +130,7 @@ export function SessionMode({
 
   const handleAssign = async () => {
     if (!currentStudent || selectedPhotos.length === 0) {
-      toast.error('Selecciona fotos y asegúrate de tener un alumno activo');
+      toast.error('Selecciona fotos y asegúrate de tener un invitado activo');
       return;
     }
 
@@ -165,7 +165,7 @@ export function SessionMode({
   // Manual student management
   const handleAddStudent = async () => {
     if (!newStudentName.trim()) {
-      toast.error('El nombre del alumno es requerido');
+      toast.error('El nombre del invitado es requerido');
       return;
     }
 
@@ -186,7 +186,7 @@ export function SessionMode({
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Error creando alumno');
+        throw new Error(data.error || 'Error creando invitado');
       }
 
       // Add to local state
@@ -204,10 +204,10 @@ export function SessionMode({
       setNewStudentGrade('');
       setShowAddStudentModal(false);
 
-      toast.success(`Alumno "${newStudentName}" agregado exitosamente`);
+      toast.success(`Invitado "${newStudentName}" agregado exitosamente`);
     } catch (error: any) {
       console.error('Error adding student:', error);
-      toast.error(error.message || 'Error agregando alumno');
+      toast.error(error.message || 'Error agregando invitado');
     } finally {
       setAddingStudent(false);
     }
@@ -271,7 +271,7 @@ export function SessionMode({
       setSubjects((prev) => [...prev, ...created]);
       setShowBulkModal(false);
       setBulkText('');
-      toast.success(`Se agregaron ${created.length} alumnos`);
+      toast.success(`Se agregaron ${created.length} invitados`);
     } catch (e: any) {
       console.error('Error bulk adding students:', e);
       toast.error(e?.message || 'Error en carga masiva');
@@ -318,7 +318,7 @@ export function SessionMode({
               </h3>
               <p className="text-sm text-green-700">
                 {assignedCount} fotos asignadas • {filteredSubjects.length}{' '}
-                alumnos
+                invitados
               </p>
             </div>
           </div>
@@ -351,7 +351,7 @@ export function SessionMode({
               onClick={() => setShowAddStudentModal(true)}
               size="sm"
             >
-              <UserPlusIcon className="mr-1 h-4 w-4" />+ Alumno
+              <UserPlusIcon className="mr-1 h-4 w-4" />+ Invitado
             </Button>
             <Button variant="outline" onClick={handleReset} size="sm">
               <RotateCcwIcon className="mr-1 h-4 w-4" />
@@ -366,7 +366,7 @@ export function SessionMode({
         {/* Search */}
         <div className="relative">
           <Input
-            placeholder="Buscar alumno..."
+            placeholder="Buscar invitado..."
             value={searchQuery}
             onChange={(e) => {
               setSearchQuery(e.target.value);
@@ -380,17 +380,17 @@ export function SessionMode({
         {loading ? (
           <div className="py-8 text-center">
             <div className="mx-auto h-6 w-6 animate-spin rounded-full border-2 border-green-600 border-t-transparent"></div>
-            <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Cargando alumnos...</p>
+              <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">Cargando invitados...</p>
           </div>
         ) : filteredSubjects.length === 0 ? (
           <div className="py-8 text-center">
             <div className="mb-4">
               <UsersIcon className="mx-auto mb-2 h-12 w-12 text-gray-400" />
-              <p className="mb-2 text-gray-500 dark:text-gray-400">No hay alumnos disponibles</p>
+              <p className="mb-2 text-gray-500 dark:text-gray-400">No hay invitados disponibles</p>
               <p className="mb-4 text-sm text-gray-500">
                 {subjects.length === 0
-                  ? 'Agrega alumnos para comenzar la sesión'
-                  : 'No se encontraron alumnos que coincidan con la búsqueda'}
+                  ? 'Agregá invitados para comenzar la sesión'
+                  : 'No se encontraron invitados que coincidan con la búsqueda'}
               </p>
             </div>
             {subjects.length === 0 && (
@@ -400,12 +400,12 @@ export function SessionMode({
                   className="bg-blue-600 hover:bg-blue-700"
                 >
                   <UserPlusIcon className="mr-2 h-4 w-4" />
-                  Agregar Alumno
+                  Agregar Invitado
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleBulkAddStudents}
-                  aria-label="Abrir carga masiva de alumnos"
+          aria-label="Abrir carga masiva de invitados"
                 >
                   <UsersIcon className="mr-2 h-4 w-4" />
                   Carga Masiva
@@ -514,19 +514,19 @@ export function SessionMode({
       <Dialog open={showAddStudentModal} onOpenChange={setShowAddStudentModal}>
         <DialogContent
           className="sm:max-w-md"
-          aria-label="Agregar nuevo alumno"
+          aria-label="Agregar nuevo invitado"
           aria-describedby="add-student-desc"
         >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <UserPlusIcon className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-              Agregar Nuevo Alumno
+              Agregar Nuevo Invitado
             </DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4 py-4" id="add-student-desc">
             <div className="space-y-2">
-              <Label htmlFor="student-name">Nombre del Alumno *</Label>
+              <Label htmlFor="student-name">Nombre del Invitado *</Label>
               <Input
                 id="student-name"
                 placeholder="Ej: Juan Pérez"
@@ -538,7 +538,7 @@ export function SessionMode({
                     handleAddStudent();
                   }
                 }}
-                aria-label="Nombre del alumno"
+                aria-label="Nombre del invitado"
               />
             </div>
 
@@ -555,7 +555,7 @@ export function SessionMode({
                     handleAddStudent();
                   }
                 }}
-                aria-label="Grado o sección del alumno"
+                aria-label="Grado o sección del invitado"
               />
             </div>
           </div>
@@ -564,7 +564,7 @@ export function SessionMode({
             <Button
               variant="outline"
               onClick={() => setShowAddStudentModal(false)}
-              aria-label="Cancelar agregado de alumno"
+              aria-label="Cancelar agregado de invitado"
             >
               Cancelar
             </Button>
@@ -572,7 +572,7 @@ export function SessionMode({
               onClick={handleAddStudent}
               disabled={!newStudentName.trim() || addingStudent}
               className="bg-blue-600 hover:bg-blue-700"
-              aria-label="Confirmar agregado de alumno"
+              aria-label="Confirmar agregado de invitado"
             >
               {addingStudent ? (
                 <>
@@ -581,11 +581,11 @@ export function SessionMode({
                 </>
               ) : (
                 <>
-                  <UserPlusIcon className="mr-2 h-4 w-4" />
-                  Agregar Alumno
-                </>
-              )}
-            </Button>
+              <UserPlusIcon className="mr-2 h-4 w-4" />
+              Agregar Invitado
+            </>
+          )}
+        </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -594,10 +594,10 @@ export function SessionMode({
       <Dialog open={showBulkModal} onOpenChange={setShowBulkModal}>
         <DialogContent
           className="sm:max-w-lg"
-          aria-label="Carga masiva de alumnos"
+          aria-label="Carga masiva de invitados"
         >
           <DialogHeader>
-            <DialogTitle>Cargar lista de alumnos</DialogTitle>
+            <DialogTitle>Cargar lista de invitados</DialogTitle>
           </DialogHeader>
           <div className="space-y-3">
             <p className="text-sm text-gray-500 dark:text-gray-400">
@@ -605,7 +605,7 @@ export function SessionMode({
               Grado", "Nombre, Grado".
             </p>
             <textarea
-              aria-label="Lista de alumnos"
+              aria-label="Lista de invitados"
               className="min-h-[200px] w-full rounded-md border p-2"
               placeholder={'Juan Pérez - 5A\nMaría García, 5A\nCarlos López'}
               value={bulkText}

@@ -25,6 +25,7 @@ type AdminEvent = {
   price_per_photo: number | null;
   stats: AdminEventStats;
   cover_url?: string | null;
+  cover_urls?: string[];
 };
 
 type EventsPagination = {
@@ -150,6 +151,12 @@ const normalizeEvent = (raw: unknown): AdminEvent | null => {
     toTrimmedString((raw as any).cover) ??
     null;
 
+  // Handle cover_urls array
+  const rawCoverUrls = (raw as any).cover_urls;
+  const coverUrls = Array.isArray(rawCoverUrls)
+    ? rawCoverUrls.filter((url: unknown): url is string => typeof url === 'string' && url.trim() !== '')
+    : [];
+
   return {
     id,
     name: toTrimmedString(raw.name),
@@ -164,6 +171,7 @@ const normalizeEvent = (raw: unknown): AdminEvent | null => {
     updated_at: toTrimmedString(raw.updated_at),
     price_per_photo: pricePerPhoto,
     cover_url: coverUrl,
+    cover_urls: coverUrls,
     stats: {
       totalPhotos: readStat(statsSources, ['totalPhotos', 'total_photos']),
       totalSubjects: readStat(statsSources, [
@@ -335,10 +343,12 @@ async function fetchEventsDirect(options: {
   const rangeEnd = paginated ? offset + limit - 1 : limit - 1;
 
   try {
+    // Include first photos from each event for cover image grid
+    // Also include metadata for custom cover_photo_id
     let query = supabase
       .from('events')
       .select(
-        'id, name, location, date, status, price_per_photo, created_at, updated_at',
+        'id, name, location, date, status, price_per_photo, created_at, updated_at, metadata, photos(id, storage_path)',
         { count: 'exact' }
       )
       .order('created_at', { ascending: false });
@@ -356,9 +366,45 @@ async function fetchEventsDirect(options: {
     const { data, error, count } = await query;
     if (error) throw error;
 
+    // Build cover URLs from photos' storage_path (up to 4 photos)
+    // If metadata.cover_photo_id is set, put that photo first
+    type PhotoData = { id: string; storage_path: string | null };
+    const buildCoverUrls = (
+      photos: PhotoData[] | null,
+      metadata: Record<string, unknown> | null
+    ): string[] => {
+      if (!photos || photos.length === 0) return [];
+
+      const coverPhotoId = metadata?.cover_photo_id as string | undefined;
+      let orderedPhotos = [...photos];
+
+      // If cover_photo_id is set, move that photo to the front
+      if (coverPhotoId) {
+        const coverIndex = orderedPhotos.findIndex(p => p.id === coverPhotoId);
+        if (coverIndex > 0) {
+          const [coverPhoto] = orderedPhotos.splice(coverIndex, 1);
+          orderedPhotos.unshift(coverPhoto);
+        }
+      }
+
+      // storage_path is like "originals/filename.jpg"
+      // preview is at "previews/filename_preview.webp"
+      return orderedPhotos.slice(0, 4).map(photo => {
+        if (!photo.storage_path) return null;
+        const filename = photo.storage_path.split('/').pop();
+        if (!filename) return null;
+        const baseName = filename.replace(/\.[^.]+$/, ''); // remove extension
+        return `previews/${baseName}_preview.webp`;
+      }).filter((url): url is string => url !== null);
+    };
+
     const events = (data || []).map((event: Record<string, unknown>) => ({
       ...event,
       school: (event.location ?? event.name ?? null) as string | null,
+      cover_urls: buildCoverUrls(
+        event.photos as PhotoData[] | null,
+        event.metadata as Record<string, unknown> | null
+      ),
     }));
 
     const total =
@@ -407,8 +453,8 @@ async function fetchEventsDirect(options: {
     const events = (legacyData || []).map((event: Record<string, unknown>) => ({
       id: event.id as string,
       name: event.name as string | null,
-      school: ((event.school ?? event.name ?? null) as string | null),
-      location: (event.school as string | null) ?? null,
+      school: ((event.location ?? event.name ?? null) as string | null),
+      location: (event.location as string | null) ?? null,
       date: event.date as string | null,
       status:
         typeof event.active === 'boolean'

@@ -82,7 +82,7 @@ const BULK_OPERATIONS: Record<string, BulkOperation[]> = {
       id: 'generate-tokens',
       type: 'tokens',
       title: 'Generar Tokens',
-      description: 'Crear tokens de acceso para familias',
+      description: 'Crear tokens de acceso para clientes',
       icon: <FileText className="h-4 w-4" />,
       requiresConfirmation: false,
       dangerous: false,

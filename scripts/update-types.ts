@@ -398,6 +398,5 @@ async function main() {
   );
 }
 
-if (require.main === module) {
-  main().catch(console.error);
-}
+// Invoke main directly as we are in ESM
+main().catch(console.error);

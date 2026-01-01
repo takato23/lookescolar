@@ -101,6 +101,13 @@ export interface HighlightMetricProps {
     index?: number;
 }
 
+export interface AlertAction {
+    label: string;
+    href?: string;
+    onClick?: () => void;
+    variant?: 'primary' | 'secondary';
+}
+
 export interface AlertItemProps {
     id: string;
     title: string;
@@ -109,4 +116,5 @@ export interface AlertItemProps {
     tone: 'info' | 'warning' | 'danger' | 'success';
     icon: ElementType;
     index?: number;
+    actions?: AlertAction[];
 }

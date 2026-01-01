@@ -171,7 +171,7 @@ export const ActionHubPanel = memo(function ActionHubPanel({
       icon: QrCode,
       color: 'amber',
       href: `/admin/events/${eventId}/qr`,
-      description: 'Generar accesos familiares',
+      description: 'Generar accesos para clientes',
     },
     {
       id: 'orders',
@@ -335,7 +335,7 @@ export const ActionHubPanel = memo(function ActionHubPanel({
         onRequestCreateShare={handleCreateEventShare}
         createButtonLabel="Nuevo enlace del evento"
         createButtonLoading={isCreatingShare}
-        emptyStateMessage="Generá el primer enlace para compartir la galería con las familias."
+        emptyStateMessage="Generá el primer enlace para compartir la galería con los clientes."
         contextDescription="Gestioná enlaces públicos y tokens del evento sin salir del hub."
         refreshKey={shareRefreshKey}
       />

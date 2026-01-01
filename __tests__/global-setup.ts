@@ -4,13 +4,13 @@
  */
 
 import { chromium, type FullConfig } from '@playwright/test';
+import * as fs from 'fs';
+import path from 'path';
 
 async function globalSetup(config: FullConfig) {
   console.log('🔧 Setting up global test environment...');
 
   // Create test directories
-  const fs = require('fs');
-  const path = require('path');
 
   const testDirs = [
     'test-reports/usability',

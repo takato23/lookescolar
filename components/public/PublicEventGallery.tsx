@@ -12,7 +12,8 @@ import {
   Calendar,
   MapPin,
   CheckCircle,
-  Plus
+  Plus,
+  RefreshCw
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ThemedGalleryWrapper } from '@/components/gallery/ThemedGalleryWrapper';
@@ -114,7 +115,7 @@ export default function PublicEventGallery({ eventId }: PublicEventGalleryProps)
         const coverJson = await coverRes.json();
         const first = coverJson?.data?.photos?.[0] || coverJson?.photos?.[0];
         if (first?.signed_url) setCoverUrl(first.signed_url);
-      } catch {}
+      } catch { }
     } catch (err) {
       console.error('Error loading event:', err);
       setError(err instanceof Error ? err.message : 'Error desconocido');
@@ -150,7 +151,7 @@ export default function PublicEventGallery({ eventId }: PublicEventGalleryProps)
         if (item.type === 'album_subcarpeta' && selectedSubcarpeta && existing.id === selectedSubcarpeta.id) return false;
         return true;
       });
-      
+
       return [...filtered, item];
     });
     setShowCart(true);
@@ -177,7 +178,7 @@ export default function PublicEventGallery({ eventId }: PublicEventGalleryProps)
 
     const selectedPhotosList = Array.from(selectedPhotos);
     let price = selectedPhotosList.length * event.pricing.individual_photo_price;
-    
+
     // Apply bulk discount
     if (selectedPhotosList.length >= event.pricing.bulk_discount_threshold) {
       price = price * (1 - event.pricing.bulk_discount_percent / 100);
@@ -222,7 +223,7 @@ export default function PublicEventGallery({ eventId }: PublicEventGalleryProps)
           <h1 className="text-2xl font-bold text-gray-900 mb-4">Error</h1>
           <p className="text-gray-600 mb-4">{error || 'Evento no encontrado'}</p>
           <Button onClick={loadEventData} variant="outline">
-            <RefreshCwIcon className="h-4 w-4 mr-2" />
+            <RefreshCw className="h-4 w-4 mr-2" />
             Reintentar
           </Button>
         </div>
@@ -241,182 +242,182 @@ export default function PublicEventGallery({ eventId }: PublicEventGalleryProps)
 
   return (
     <ThemedGalleryWrapper eventTheme={eventTheme}>
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
-      {/* Cover - estilo Pixieset */}
-      <div className="container mx-auto px-4 py-6">
-        <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
-          <div className={`grid grid-cols-1 gap-6 md:grid-cols-3 ${design?.cover?.style === 'classic' ? 'md:grid-cols-2' : ''}`}>
-            <div className={`col-span-1 rounded-xl border p-6 ${design?.cover?.style === 'vintage' ? 'bg-amber-50' : ''} ${design?.cover?.style === 'journal' ? 'bg-slate-50' : ''}`}>
-              <div className="text-xs uppercase tracking-wide text-gray-500">{event?.name || 'Colegio'}</div>
-              <h1 className="mt-2 text-2xl font-bold text-gray-900">{event?.name}</h1>
-              {event?.date && (
-                <div className="mt-1 text-sm text-gray-500">
-                  {new Date(event.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
-                </div>
-              )}
-              <Button className="mt-4 theme-button">Ver galería</Button>
-            </div>
-            {design?.cover?.style !== 'none' && (
-              <div className={`col-span-2 overflow-hidden ${design?.cover?.style === 'frame' ? 'rounded-2xl border-4 border-gray-200' : 'rounded-xl border'} ${design?.cover?.style === 'stripe' ? 'bg-gradient-to-br from-gray-50 to-white p-4' : ''}`}>
-                {coverUrl ? (
-                  <img src={coverUrl} alt="Cover" className={`h-full w-full ${design?.cover?.style === 'stripe' ? 'rounded-lg' : ''} max-h-[420px] object-cover`} />
-                ) : (
-                  <div className="flex h-[280px] w-full items-center justify-center bg-gray-100 text-gray-400">Sin portada</div>
-                )}
-                {design?.cover?.style === 'divider' && (
-                  <div className="mt-3 h-1 w-24 rounded bg-gray-200" />
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
-      {/* Header */}
-      <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/60 sticky top-0 z-40">
-        <div className="container mx-auto px-4 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              {currentView !== 'event' && (
-                <Button 
-                  variant="ghost" 
-                  size="sm"
-                  onClick={() => {
-                    if (currentView === 'subcarpeta') {
-                      setCurrentView('collection');
-                      setSelectedSubcarpeta(null);
-                      setPhotos([]);
-                      setSelectedPhotos(new Set());
-                    } else {
-                      setCurrentView('event');
-                      setSelectedCollection(null);
-                    }
-                  }}
-                >
-                  <ArrowLeft className="h-4 w-4 mr-2" />
-                  Volver
-                </Button>
-              )}
-              
-              <div>
-                <h1 className="text-xl font-bold text-gray-900">{event.name}</h1>
-                <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
-                  <div className="flex items-center gap-1">
-                    <Calendar className="h-4 w-4" />
-                    {new Date(event.date).toLocaleDateString('es-AR')}
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-indigo-50 to-purple-50">
+        {/* Cover - estilo Pixieset */}
+        <div className="container mx-auto px-4 py-6">
+          <div className="rounded-3xl border border-gray-200 bg-white p-6 shadow-sm">
+            <div className={`grid grid-cols-1 gap-6 md:grid-cols-3 ${design?.cover?.style === 'classic' ? 'md:grid-cols-2' : ''}`}>
+              <div className={`col-span-1 rounded-xl border p-6 ${design?.cover?.style === 'vintage' ? 'bg-amber-50' : ''} ${design?.cover?.style === 'journal' ? 'bg-slate-50' : ''}`}>
+                <div className="text-xs uppercase tracking-wide text-gray-500">{event?.name || 'Colegio'}</div>
+                <h1 className="mt-2 text-2xl font-bold text-gray-900">{event?.name}</h1>
+                {event?.date && (
+                  <div className="mt-1 text-sm text-gray-500">
+                    {new Date(event.date).toLocaleDateString('es-AR', { day: '2-digit', month: 'long', year: 'numeric' })}
                   </div>
-                  {event.location && (
-                    <div className="flex items-center gap-1">
-                      <MapPin className="h-4 w-4" />
-                      {event.location}
-                    </div>
+                )}
+                <Button className="mt-4 theme-button">Ver galería</Button>
+              </div>
+              {design?.cover?.style !== 'none' && (
+                <div className={`col-span-2 overflow-hidden ${design?.cover?.style === 'frame' ? 'rounded-2xl border-4 border-gray-200' : 'rounded-xl border'} ${design?.cover?.style === 'stripe' ? 'bg-gradient-to-br from-gray-50 to-white p-4' : ''}`}>
+                  {coverUrl ? (
+                    <img src={coverUrl} alt="Cover" className={`h-full w-full ${design?.cover?.style === 'stripe' ? 'rounded-lg' : ''} max-h-[420px] object-cover`} />
+                  ) : (
+                    <img src="/placeholders/school-1.png" alt="Cover" className={`h-full w-full ${design?.cover?.style === 'stripe' ? 'rounded-lg' : ''} max-h-[420px] object-cover`} />
                   )}
-                  <div className="flex items-center gap-1">
-                    <Camera className="h-4 w-4" />
-                    {event.photo_count} foto{event.photo_count !== 1 ? 's' : ''}
+                  {design?.cover?.style === 'divider' && (
+                    <div className="mt-3 h-1 w-24 rounded bg-gray-200" />
+                  )}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+        {/* Header */}
+        <div className="bg-white/80 backdrop-blur-sm border-b border-gray-200/60 sticky top-0 z-40">
+          <div className="container mx-auto px-4 py-4">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4">
+                {currentView !== 'event' && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => {
+                      if (currentView === 'subcarpeta') {
+                        setCurrentView('collection');
+                        setSelectedSubcarpeta(null);
+                        setPhotos([]);
+                        setSelectedPhotos(new Set());
+                      } else {
+                        setCurrentView('event');
+                        setSelectedCollection(null);
+                      }
+                    }}
+                  >
+                    <ArrowLeft className="h-4 w-4 mr-2" />
+                    Volver
+                  </Button>
+                )}
+
+                <div>
+                  <h1 className="text-xl font-bold text-gray-900">{event.name}</h1>
+                  <div className="flex items-center gap-4 text-sm text-gray-600 mt-1">
+                    <div className="flex items-center gap-1">
+                      <Calendar className="h-4 w-4" />
+                      {new Date(event.date).toLocaleDateString('es-AR')}
+                    </div>
+                    {event.location && (
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-4 w-4" />
+                        {event.location}
+                      </div>
+                    )}
+                    <div className="flex items-center gap-1">
+                      <Camera className="h-4 w-4" />
+                      {event.photo_count} foto{event.photo_count !== 1 ? 's' : ''}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            {/* Cart Button */}
-            <Button
-              onClick={() => setShowCart(true)}
-              className="relative bg-blue-600 hover:bg-blue-700"
-            >
-              <ShoppingCart className="h-4 w-4 mr-2" />
-              Carrito
-              {cart.length > 0 && (
-                <Badge 
-                  variant="secondary" 
-                  className="absolute -top-2 -right-2 bg-red-500 text-white min-w-[20px] h-5 text-xs"
-                >
-                  {getTotalCartItems()}
-                </Badge>
-              )}
-            </Button>
+              {/* Cart Button */}
+              <Button
+                onClick={() => setShowCart(true)}
+                className="relative bg-blue-600 hover:bg-blue-700"
+              >
+                <ShoppingCart className="h-4 w-4 mr-2" />
+                Carrito
+                {cart.length > 0 && (
+                  <Badge
+                    variant="secondary"
+                    className="absolute -top-2 -right-2 bg-red-500 text-white min-w-[20px] h-5 text-xs"
+                  >
+                    {getTotalCartItems()}
+                  </Badge>
+                )}
+              </Button>
+            </div>
           </div>
         </div>
+
+        {/* Main Content */}
+        <div className="container mx-auto px-4 py-8">
+          {currentView === 'event' && (
+            <EventView
+              event={event}
+              onSelectCollection={(collection) => {
+                setSelectedCollection(collection);
+                setCurrentView('collection');
+              }}
+              onAddToCart={addToCart}
+            />
+          )}
+
+          {currentView === 'collection' && selectedCollection && (
+            <CollectionView
+              collection={selectedCollection}
+              event={event}
+              onSelectSubcarpeta={(subcarpeta) => {
+                setSelectedSubcarpeta(subcarpeta);
+                setCurrentView('subcarpeta');
+                loadSubcarpetaPhotos(subcarpeta.id);
+              }}
+              onAddToCart={addToCart}
+            />
+          )}
+
+          {currentView === 'subcarpeta' && selectedSubcarpeta && (
+            <SubcarpetaView
+              subcarpeta={selectedSubcarpeta}
+              photos={photos}
+              selectedPhotos={selectedPhotos}
+              onTogglePhoto={togglePhotoSelection}
+              onAddToCart={addToCart}
+              onAddSelectedToCart={addSelectedPhotosToCart}
+              event={event}
+              onOpenPhoto={(id) => setLightboxPhotoId(id)}
+              gridGapClass={gridGapClass}
+              gridColsClass={gridColsClass}
+            />
+          )}
+        </div>
+
+        {/* Cart Drawer */}
+        {showCart && (
+          <CartDrawer
+            cart={cart}
+            totalPrice={getTotalCartPrice()}
+            onClose={() => setShowCart(false)}
+            onRemoveItem={removeFromCart}
+            eventId={eventId}
+          />
+        )}
+
+        {/* Lightbox + Buy Photo */}
+        {lightboxPhotoId && (
+          <PublicPhotoModal
+            isOpen={true}
+            onClose={() => setLightboxPhotoId(null)}
+            photo={(function () {
+              const p = photos.find((ph) => ph.id === lightboxPhotoId);
+              return p ? { id: p.id, signed_url: (p as any).signed_url || p.preview_url || p.thumbnail_url } : null;
+            })()}
+            photos={photos.map((p) => ({ id: p.id, signed_url: (p as any).signed_url || p.preview_url || p.thumbnail_url }))}
+            price={event?.pricing.individual_photo_price || 1000}
+            eventId={eventId}
+          />
+        )}
       </div>
-
-      {/* Main Content */}
-      <div className="container mx-auto px-4 py-8">
-        {currentView === 'event' && (
-          <EventView 
-            event={event} 
-            onSelectCollection={(collection) => {
-              setSelectedCollection(collection);
-              setCurrentView('collection');
-            }}
-            onAddToCart={addToCart}
-          />
-        )}
-
-        {currentView === 'collection' && selectedCollection && (
-          <CollectionView 
-            collection={selectedCollection}
-            event={event}
-            onSelectSubcarpeta={(subcarpeta) => {
-              setSelectedSubcarpeta(subcarpeta);
-              setCurrentView('subcarpeta');
-              loadSubcarpetaPhotos(subcarpeta.id);
-            }}
-            onAddToCart={addToCart}
-          />
-        )}
-
-        {currentView === 'subcarpeta' && selectedSubcarpeta && (
-          <SubcarpetaView
-            subcarpeta={selectedSubcarpeta}
-            photos={photos}
-            selectedPhotos={selectedPhotos}
-            onTogglePhoto={togglePhotoSelection}
-            onAddToCart={addToCart}
-            onAddSelectedToCart={addSelectedPhotosToCart}
-            event={event}
-            onOpenPhoto={(id) => setLightboxPhotoId(id)}
-            gridGapClass={gridGapClass}
-            gridColsClass={gridColsClass}
-          />
-        )}
-      </div>
-
-      {/* Cart Drawer */}
-      {showCart && (
-        <CartDrawer
-          cart={cart}
-          totalPrice={getTotalCartPrice()}
-          onClose={() => setShowCart(false)}
-          onRemoveItem={removeFromCart}
-          eventId={eventId}
-        />
-      )}
-
-      {/* Lightbox + Buy Photo */}
-      {lightboxPhotoId && (
-        <PublicPhotoModal
-          isOpen={true}
-          onClose={() => setLightboxPhotoId(null)}
-          photo={(function () {
-            const p = photos.find((ph) => ph.id === lightboxPhotoId);
-            return p ? { id: p.id, signed_url: (p as any).signed_url || p.preview_url || p.thumbnail_url } : null;
-          })()}
-          photos={photos.map((p) => ({ id: p.id, signed_url: (p as any).signed_url || p.preview_url || p.thumbnail_url }))}
-          price={event?.pricing.individual_photo_price || 1000}
-          eventId={eventId}
-        />
-      )}
-    </div>
     </ThemedGalleryWrapper>
   );
 }
 
 // Event View Component
-function EventView({ 
-  event, 
-  onSelectCollection, 
-  onAddToCart 
-}: { 
-  event: Event; 
+function EventView({
+  event,
+  onSelectCollection,
+  onAddToCart
+}: {
+  event: Event;
   onSelectCollection: (collection: Collection) => void;
   onAddToCart: (item: CartItem) => void;
 }) {
@@ -439,7 +440,7 @@ function EventView({
               </p>
               <p className="text-sm text-green-600">¡Mejor precio!</p>
             </div>
-            <Button 
+            <Button
               onClick={() => onAddToCart({
                 id: 'evento-completo',
                 type: 'evento_completo',
@@ -461,8 +462,8 @@ function EventView({
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Colecciones Disponibles</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {event.colecciones.map((collection) => (
-            <Card 
-              key={collection.id} 
+            <Card
+              key={collection.id}
               className="bg-white/80 backdrop-blur-sm border-gray-200/60 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
               onClick={() => onSelectCollection(collection)}
             >
@@ -489,8 +490,8 @@ function EventView({
                       </p>
                       <p className="text-xs text-gray-500">Álbum completo</p>
                     </div>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -518,12 +519,12 @@ function EventView({
 }
 
 // Collection View Component  
-function CollectionView({ 
-  collection, 
+function CollectionView({
+  collection,
   event,
-  onSelectSubcarpeta, 
-  onAddToCart 
-}: { 
+  onSelectSubcarpeta,
+  onAddToCart
+}: {
   collection: Collection;
   event: Event;
   onSelectSubcarpeta: (subcarpeta: Subcarpeta) => void;
@@ -550,7 +551,7 @@ function CollectionView({
                 Ahorrás ${(((collection.photo_count * event.pricing.individual_photo_price) - collection.album_price) / 100).toFixed(2)}
               </p>
             </div>
-            <Button 
+            <Button
               onClick={() => onAddToCart({
                 id: collection.id,
                 type: 'album_coleccion',
@@ -572,8 +573,8 @@ function CollectionView({
         <h2 className="text-2xl font-bold text-gray-900 mb-6">Cursos Disponibles</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {collection.subcarpetas.map((subcarpeta) => (
-            <Card 
-              key={subcarpeta.id} 
+            <Card
+              key={subcarpeta.id}
               className="bg-white/80 backdrop-blur-sm border-gray-200/60 shadow-lg hover:shadow-xl transition-all cursor-pointer group"
               onClick={() => onSelectSubcarpeta(subcarpeta)}
             >
@@ -597,8 +598,8 @@ function CollectionView({
                       </p>
                       <p className="text-xs text-gray-500">Álbum completo</p>
                     </div>
-                    <Button 
-                      size="sm" 
+                    <Button
+                      size="sm"
                       variant="outline"
                       onClick={(e) => {
                         e.stopPropagation();
@@ -626,18 +627,18 @@ function CollectionView({
 }
 
 // Subcarpeta View Component
-function SubcarpetaView({ 
-  subcarpeta, 
-  photos, 
-  selectedPhotos, 
-  onTogglePhoto, 
-  onAddToCart, 
+function SubcarpetaView({
+  subcarpeta,
+  photos,
+  selectedPhotos,
+  onTogglePhoto,
+  onAddToCart,
   onAddSelectedToCart,
   event,
   onOpenPhoto,
   gridGapClass,
   gridColsClass,
-}: { 
+}: {
   subcarpeta: Subcarpeta;
   photos: Photo[];
   selectedPhotos: Set<string>;
@@ -651,7 +652,7 @@ function SubcarpetaView({
 }) {
   const selectedCount = selectedPhotos.size;
   const selectedPrice = selectedCount * event.pricing.individual_photo_price;
-  const discountedPrice = selectedCount >= event.pricing.bulk_discount_threshold 
+  const discountedPrice = selectedCount >= event.pricing.bulk_discount_threshold
     ? selectedPrice * (1 - event.pricing.bulk_discount_percent / 100)
     : selectedPrice;
 
@@ -676,7 +677,7 @@ function SubcarpetaView({
                 Ahorrás ${(((subcarpeta.photo_count * event.pricing.individual_photo_price) - subcarpeta.album_price) / 100).toFixed(2)}
               </p>
             </div>
-            <Button 
+            <Button
               onClick={() => onAddToCart({
                 id: subcarpeta.id,
                 type: 'album_subcarpeta',
@@ -712,14 +713,14 @@ function SubcarpetaView({
                 </p>
               </div>
               <div className="flex gap-2">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   size="sm"
                   onClick={() => selectedPhotos.forEach(id => onTogglePhoto(id))}
                 >
                   Limpiar
                 </Button>
-                <Button 
+                <Button
                   onClick={onAddSelectedToCart}
                   className="bg-blue-600 hover:bg-blue-700"
                 >
@@ -735,12 +736,12 @@ function SubcarpetaView({
       {/* Photo Grid */}
       <div>
         <h2 className="text-2xl font-bold text-gray-900 mb-6">
-          Fotos Individuales 
+          Fotos Individuales
           <span className="text-sm font-normal text-gray-600 ml-2">
             (${(event.pricing.individual_photo_price / 100).toFixed(2)} c/u)
           </span>
         </h2>
-        
+
         {photos.length === 0 ? (
           <div className="text-center py-12">
             <Camera className="h-12 w-12 text-gray-400 mx-auto mb-4" />
@@ -753,11 +754,10 @@ function SubcarpetaView({
               return (
                 <div
                   key={photo.id}
-                  className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer transition-all ${
-                    isSelected 
-                      ? 'ring-4 ring-blue-500 ring-offset-2' 
-                      : 'hover:ring-2 hover:ring-gray-300 hover:ring-offset-1'
-                  }`}
+                  className={`relative aspect-square rounded-lg overflow-hidden cursor-pointer transition-all ${isSelected
+                    ? 'ring-4 ring-blue-500 ring-offset-2'
+                    : 'hover:ring-2 hover:ring-gray-300 hover:ring-offset-1'
+                    }`}
                   onClick={() => onTogglePhoto(photo.id)}
                   onDoubleClick={() => onOpenPhoto(photo.id)}
                 >
@@ -767,13 +767,12 @@ function SubcarpetaView({
                     className="w-full h-full object-cover"
                     loading="lazy"
                   />
-                  
+
                   {/* Selection Overlay */}
-                  <div className={`absolute inset-0 transition-all ${
-                    isSelected 
-                      ? 'bg-blue-600/20' 
-                      : 'bg-black/0 hover:bg-black/10'
-                  }`}>
+                  <div className={`absolute inset-0 transition-all ${isSelected
+                    ? 'bg-blue-600/20'
+                    : 'bg-black/0 hover:bg-black/10'
+                    }`}>
                     <div className="absolute top-2 right-2">
                       {isSelected ? (
                         <CheckCircle className="h-6 w-6 text-blue-600 dark:text-blue-400 bg-white rounded-full" />
@@ -782,7 +781,7 @@ function SubcarpetaView({
                       )}
                     </div>
                   </div>
-                  
+
                   {/* Photo Info */}
                   <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/60 to-transparent p-2">
                     <p className="text-white text-xs font-medium truncate">
@@ -800,13 +799,13 @@ function SubcarpetaView({
 }
 
 // Cart Drawer Component
-function CartDrawer({ 
-  cart, 
-  totalPrice, 
-  onClose, 
-  onRemoveItem, 
-  eventId 
-}: { 
+function CartDrawer({
+  cart,
+  totalPrice,
+  onClose,
+  onRemoveItem,
+  eventId
+}: {
   cart: CartItem[];
   totalPrice: number;
   onClose: () => void;
@@ -852,7 +851,7 @@ function CartDrawer({
             </Button>
           </div>
         </div>
-        
+
         <div className="p-6">
           {cart.length === 0 ? (
             <div className="text-center py-12">
@@ -873,8 +872,8 @@ function CartDrawer({
                         ${(item.price / 100).toFixed(2)}
                       </p>
                     </div>
-                    <Button 
-                      variant="ghost" 
+                    <Button
+                      variant="ghost"
                       size="sm"
                       onClick={() => onRemoveItem(item.id)}
                       className="text-red-600 hover:text-red-700"
@@ -884,13 +883,13 @@ function CartDrawer({
                   </div>
                 </Card>
               ))}
-              
+
               <div className="border-t border-gray-200 pt-4 mt-6">
                 <div className="flex items-center justify-between text-xl font-bold">
                   <span>Total:</span>
                   <span>${(totalPrice / 100).toFixed(2)}</span>
                 </div>
-                <Button 
+                <Button
                   onClick={handleCheckout}
                   className="w-full mt-4 bg-green-600 hover:bg-green-700"
                   disabled={cart.length === 0}

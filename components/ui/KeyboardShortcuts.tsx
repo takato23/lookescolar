@@ -229,7 +229,7 @@ export function KeyboardProvider({ children }: KeyboardProviderProps) {
     <KeyboardContext.Provider value={value}>
       {children}
       <KeyboardHelpModal />
-      <AccessibilityPanel />
+      {/* AccessibilityPanel removed - floating button was distracting */}
     </KeyboardContext.Provider>
   );
 }

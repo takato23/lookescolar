@@ -29,6 +29,25 @@ const MIN_ITEM_WIDTH = 180;
 const OVERSCAN_COUNT = 3; // Items to render outside viewport
 const CONCURRENCY_LIMIT = 6; // Max concurrent image loads
 
+const resolvePreviewSrc = (path?: string | null, cacheBust = 0) => {
+  if (!path || typeof path !== 'string') return '';
+  if (path.startsWith('http')) return path;
+  const normalized = path.replace(/^\/+/, '').trim();
+  if (!normalized) return '';
+  if (!/\.(png|jpg|jpeg|webp|gif|avif)$/i.test(normalized)) return '';
+  const suffix = cacheBust ? `?v=${cacheBust}` : '';
+  return `/admin/previews/${normalized}${suffix}`;
+};
+
+const resolvePhotoSrc = (photo: Photo, cacheBust = 0) => {
+  return (
+    photo.signed_url ||
+    resolvePreviewSrc(photo.preview_path, cacheBust) ||
+    resolvePreviewSrc(photo.storage_path, cacheBust) ||
+    resolvePreviewSrc(photo.original_filename, cacheBust)
+  );
+};
+
 interface Folder {
   id: string;
   name: string;
@@ -367,6 +386,7 @@ const PhotoItemContent = memo<{ photo: Photo; cacheBust?: number }>(({ photo, ca
   const [imageError, setImageError] = useState(false);
   const [loadAttempts, setLoadAttempts] = useState(0);
   const imgRef = useRef<HTMLImageElement>(null);
+  const resolvedSrc = resolvePhotoSrc(photo, cacheBust);
 
   const handleLoad = useCallback(() => {
     setImageLoaded(true);
@@ -379,13 +399,13 @@ const PhotoItemContent = memo<{ photo: Photo; cacheBust?: number }>(({ photo, ca
       // Retry loading once
       setTimeout(() => {
         if (imgRef.current) {
-          imgRef.current.src = photo.signed_url || '';
+          imgRef.current.src = resolvePhotoSrc(photo, cacheBust) || '';
         }
       }, 1000);
     } else {
       setImageError(true);
     }
-  }, [loadAttempts, photo.signed_url]);
+  }, [cacheBust, loadAttempts, photo]);
 
   // Format file size for display
   const formatFileSize = useCallback((bytes: number) => {
@@ -401,23 +421,11 @@ const PhotoItemContent = memo<{ photo: Photo; cacheBust?: number }>(({ photo, ca
         className="relative flex-1 overflow-hidden rounded-t-lg bg-muted"
         style={{ aspectRatio: '4/3' }}
       >
-        {(photo.signed_url || photo.preview_path || photo.storage_path) && !imageError ? (
+        {resolvedSrc && !imageError ? (
           <>
             <Image
               ref={imgRef}
-              src={
-                photo.signed_url || 
-                (photo.preview_path ? (() => {
-                  // Prefer path-based resolver when we know exact preview_path
-                  const rel = (photo.preview_path.includes('previews/')
-                    ? photo.preview_path.split('previews/')[1]
-                    : photo.preview_path
-                  ).replace(/^\/+/, '');
-          return rel ? `/admin/previews/${rel}${cacheBust ? `?v=${cacheBust}` : ''}` : '';
-        })() : 
-          photo.storage_path ? `/admin/previews/${photo.storage_path.split('/').pop()}${cacheBust ? `?v=${cacheBust}` : ''}` : 
-          photo.original_filename ? `/admin/previews/${photo.original_filename}${cacheBust ? `?v=${cacheBust}` : ''}` : '')
-              }
+              src={resolvedSrc}
               alt={photo.original_filename}
               fill
               unoptimized

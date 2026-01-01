@@ -9,7 +9,6 @@ import {
   Calendar,
   Camera,
   Upload,
-  Users,
   Package,
   Settings,
   Bell,
@@ -17,7 +16,6 @@ import {
   LogOut,
   Plus,
   User,
-  BarChart3,
   QrCode,
   ChevronDown,
   ChevronRight,
@@ -113,26 +111,26 @@ export function DesktopNav({
   };
 
   const navItems: NavItem[] = [
-    { 
-      href: '/mockup/admin', 
-      icon: Home, 
+    {
+      href: '/mockup/admin',
+      icon: Home,
       label: 'Dashboard',
-      color: 'blue'
+      color: 'blue',
     },
-    { 
-      href: '/mockup/admin/events', 
-      icon: Calendar, 
+    {
+      href: '/mockup/admin/events',
+      icon: Calendar,
       label: 'Eventos',
       color: 'green',
       submenu: [
         { href: '/mockup/admin/events', icon: Calendar, label: 'Ver Eventos' },
         { href: '/mockup/admin/events/new', icon: Plus, label: 'Nuevo Evento' },
         { href: '/mockup/admin/events/archive', icon: Package, label: 'Archivados' },
-      ]
+      ],
     },
-    { 
-      href: '/mockup/admin/photos', 
-      icon: Camera, 
+    {
+      href: '/mockup/admin/photos',
+      icon: Camera,
       label: 'Fotos',
       color: 'purple',
       badge: 12,
@@ -140,22 +138,22 @@ export function DesktopNav({
         { href: '/mockup/admin/photos', icon: Camera, label: 'Galería' },
         { href: '/mockup/admin/upload', icon: Upload, label: 'Subir Fotos' },
         { href: '/mockup/admin/photos/process', icon: Zap, label: 'Procesar' },
-      ]
+      ],
     },
-    { 
-      href: '/mockup/admin/students', 
-      icon: Users, 
-      label: 'Estudiantes',
-      color: 'cyan',
+    {
+      href: '/mockup/admin/publish',
+      icon: Send,
+      label: 'Publicar',
+      color: 'pink',
       submenu: [
-        { href: '/mockup/admin/students', icon: Users, label: 'Lista' },
-        { href: '/mockup/admin/students/import', icon: Upload, label: 'Importar' },
-        { href: '/mockup/admin/qr', icon: QrCode, label: 'Códigos QR' },
-      ]
+        { href: '/mockup/admin/publish', icon: Send, label: 'Publicar Fotos' },
+        { href: '/mockup/admin/publish/preview', icon: Eye, label: 'Vista Previa' },
+        { href: '/mockup/admin/publish/schedule', icon: Calendar, label: 'Programar' },
+      ],
     },
-    { 
-      href: '/mockup/admin/orders', 
-      icon: Package, 
+    {
+      href: '/mockup/admin/orders',
+      icon: Package,
       label: 'Pedidos',
       color: 'orange',
       badge: 3,
@@ -163,30 +161,13 @@ export function DesktopNav({
         { href: '/mockup/admin/orders', icon: Package, label: 'Ver Pedidos' },
         { href: '/mockup/admin/orders/pending', icon: Clock, label: 'Pendientes' },
         { href: '/mockup/admin/orders/completed', icon: CheckCircle2, label: 'Completados' },
-      ]
+      ],
     },
-    { 
-      href: '/mockup/admin/publish', 
-      icon: Send, 
-      label: 'Publicar',
-      color: 'pink',
-      submenu: [
-        { href: '/mockup/admin/publish', icon: Send, label: 'Publicar Fotos' },
-        { href: '/mockup/admin/publish/preview', icon: Eye, label: 'Vista Previa' },
-        { href: '/mockup/admin/publish/schedule', icon: Calendar, label: 'Programar' },
-      ]
-    },
-    { 
-      href: '/mockup/admin/analytics', 
-      icon: BarChart3, 
-      label: 'Análisis',
-      color: 'indigo'
-    },
-    { 
-      href: '/mockup/admin/settings', 
-      icon: Settings, 
+    {
+      href: '/mockup/admin/settings',
+      icon: Settings,
       label: 'Configuración',
-      color: 'gray'
+      color: 'gray',
     },
   ];
 
@@ -194,7 +175,6 @@ export function DesktopNav({
     { icon: Upload, label: 'Subir Fotos', href: '/mockup/admin/upload', color: 'blue', shortcut: 'Cmd+U' },
     { icon: QrCode, label: 'Generar QR', href: '/mockup/admin/qr', color: 'purple', shortcut: 'Cmd+Q' },
     { icon: Plus, label: 'Nuevo Evento', href: '/mockup/admin/events/new', color: 'green', shortcut: 'Cmd+N' },
-    { icon: BarChart3, label: 'Ver Reportes', href: '/mockup/admin/analytics', color: 'orange', shortcut: 'Cmd+R' },
   ];
 
   const notifications: Notification[] = [

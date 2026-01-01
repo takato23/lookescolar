@@ -8,14 +8,7 @@ import {
   Camera,
   Package,
   Settings,
-  Users,
-  BarChart3,
-  ShoppingBag,
-  Image,
-  FileText,
-  HelpCircle,
-  LogOut,
-  User,
+  Share2,
 } from 'lucide-react';
 
 interface NavigationItem {
@@ -64,8 +57,6 @@ const ADMIN_NAVIGATION_ITEMS: NavigationItem[] = [
     href: '/admin/photos',
     children: [
       { id: 'photos-all', label: 'Todas las Fotos', icon: Camera, href: '/admin/photos' },
-      { id: 'photos-simple', label: 'Vista Simple', icon: Camera, href: '/admin/photos-simple' },
-      { id: 'photos-optimized', label: 'Optimizadas', icon: Camera, href: '/admin/photos-optimized' },
     ],
   },
   {
@@ -75,20 +66,13 @@ const ADMIN_NAVIGATION_ITEMS: NavigationItem[] = [
     href: '/admin/orders',
     children: [
       { id: 'orders-list', label: 'Lista de Pedidos', icon: Package, href: '/admin/orders' },
-      { id: 'orders-stats', label: 'Estadísticas', icon: BarChart3, href: '/admin/orders/stats' },
     ],
   },
   {
-    id: 'store',
-    label: 'Tienda',
-    icon: ShoppingBag,
-    href: '/admin/store-settings',
-  },
-  {
-    id: 'analytics',
-    label: 'Analytics',
-    icon: BarChart3,
-    href: '/admin/analytics',
+    id: 'publish',
+    label: 'Publicar',
+    icon: Share2,
+    href: '/admin/publish',
   },
   {
     id: 'settings',
@@ -97,7 +81,6 @@ const ADMIN_NAVIGATION_ITEMS: NavigationItem[] = [
     href: '/admin/settings',
     children: [
       { id: 'settings-general', label: 'General', icon: Settings, href: '/admin/settings' },
-      { id: 'settings-pricing', label: 'Precios', icon: FileText, href: '/admin/pricing' },
     ],
   },
 ];

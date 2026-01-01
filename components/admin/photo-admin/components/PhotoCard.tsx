@@ -67,13 +67,13 @@ export function PhotoCard({
   return (
     <div
       className={cn(
-        'group relative cursor-pointer touch-manipulation overflow-hidden rounded-xl border transition-all',
+        'group relative cursor-pointer touch-manipulation overflow-hidden rounded-xl border-2 transition-all duration-200',
         density === 'compact'
           ? 'min-h-[100px] sm:min-h-[120px]'
           : 'min-h-[120px] sm:min-h-[150px]',
         isSelected
-          ? 'border-blue-500/80 bg-blue-50 shadow-lg ring-2 ring-blue-500/40'
-          : 'border-transparent bg-white hover:border-border hover:shadow-sm'
+          ? 'border-violet-500 bg-violet-50 shadow-lg shadow-violet-500/20 ring-2 ring-violet-500/30 dark:bg-violet-950/30'
+          : 'border-transparent bg-white hover:border-slate-200 hover:shadow-md hover:-translate-y-0.5 dark:bg-slate-900 dark:hover:border-slate-700'
       )}
       ref={draggable.setNodeRef}
       style={style}
@@ -85,10 +85,10 @@ export function PhotoCard({
     >
       <div
         className={cn(
-          'absolute left-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-full border text-xs transition sm:h-8 sm:w-8',
+          'absolute left-2 top-2 z-20 flex h-7 w-7 items-center justify-center rounded-lg border-2 text-xs transition-all duration-200 sm:h-8 sm:w-8',
           isSelected
-            ? 'border-blue-500 bg-blue-500 text-white shadow-lg'
-            : 'border-white/70 bg-black/30 text-white backdrop-blur-sm group-hover:border-white group-hover:bg-black/40'
+            ? 'border-violet-500 bg-gradient-to-br from-violet-500 to-purple-600 text-white shadow-lg shadow-violet-500/30'
+            : 'border-white/80 bg-black/40 text-white backdrop-blur-sm group-hover:border-white group-hover:bg-black/50 group-hover:scale-105'
         )}
       >
         {isSelected ? (

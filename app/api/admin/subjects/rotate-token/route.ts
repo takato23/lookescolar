@@ -193,7 +193,7 @@ export async function POST(request: NextRequest) {
         new: maskToken(result.token),
         expiresAt: result.expiresAt.toISOString(),
       },
-      portalUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/f/${maskToken(result.token)}`,
+      portalUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/store-unified/${maskToken(result.token)}`,
       rotatedAt: new Date().toISOString(),
       reason,
     });

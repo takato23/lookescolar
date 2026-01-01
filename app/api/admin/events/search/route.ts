@@ -30,14 +30,14 @@ export const GET = withAuth(async (request: NextRequest) => {
     // Build base query
     let query = supabase
       .from('events')
-      .select('id, name, created_at, school, location')
+      .select('id, name, created_at, location')
       .order('created_at', { ascending: false });
 
     // Apply search if provided (name, school, location)
     if (params.q) {
       // Use OR filter across supported columns; tolerate missing columns with ilike on existing ones
       query = query.or(
-        `name.ilike.%${params.q}%,school.ilike.%${params.q}%,location.ilike.%${params.q}%`
+        `name.ilike.%${params.q}%,location.ilike.%${params.q}%`
       );
     }
 

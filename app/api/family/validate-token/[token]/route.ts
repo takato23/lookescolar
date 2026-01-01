@@ -39,7 +39,9 @@ export const GET = RateLimitMiddleware.withRateLimit(async (
       token: token.slice(0, 8) + '...',
     });
 
-    if (!token || token.length < 20) {
+    // Folder share tokens in production are often short (e.g. 16 chars),
+    // while subject access tokens can be longer. Validate only a minimal length.
+    if (!token || token.length < 8) {
       debugMigration('Invalid token format', { tokenLength: token?.length });
       return NextResponse.json(
         {
@@ -102,38 +104,38 @@ export const GET = RateLimitMiddleware.withRateLimit(async (
       debugMigration('Folder token validation failed', { error: e });
     }
 
-    // If not a folder token, try subject_tokens table (legacy system)
+    // If not a folder token, try subjects.access_token (current legacy token system)
     if (!tokenData) {
       try {
-        const { data: subjectTokenData, error: subjectError } = await supabase
-          .from('subject_tokens')
+        const { data: subjectData, error: subjectError } = await supabase
+          .from('subjects')
           .select(
             `
             id,
-            token,
-            expires_at,
-            subjects (
+            name,
+            access_token,
+            token_expires_at,
+            event_id,
+            events (
               id,
               name,
-              events (
-                id,
-                name,
-                active
-              )
+              status
             )
           `
           )
-          .eq('token', token)
+          .eq('access_token', token)
           .single();
 
-        if (subjectTokenData && !subjectError) {
+        if (subjectData && !subjectError) {
           tokenData = {
-            ...subjectTokenData,
-            students: subjectTokenData.subjects, // Map subjects to students for compatibility
+            id: subjectData.id,
+            token,
+            expires_at: subjectData.token_expires_at,
+            students: subjectData,
             type: 'subject',
           };
           debugMigration('Subject token found', {
-            subjectId: subjectTokenData.subjects?.id,
+            subjectId: subjectData.id,
           });
         } else {
           error = subjectError;
@@ -211,13 +213,14 @@ export const GET = RateLimitMiddleware.withRateLimit(async (
       const student = tokenData.students;
       const hasValidEvent =
         student && student.events && typeof student.events === 'object';
-      const isActive = hasValidEvent ? student.events.active !== false : false; // Default to false if no valid event
+      const isActive =
+        hasValidEvent ? (student.events.status ?? 'active') === 'active' : false;
 
       if (!student || !hasValidEvent || !isActive) {
         debugMigration('Associated event not active or found', {
           hasStudent: !!student,
           hasEvent: hasValidEvent,
-          eventActive: hasValidEvent ? student.events.active : undefined,
+          eventStatus: hasValidEvent ? student.events.status : undefined,
         });
         return NextResponse.json(
           {

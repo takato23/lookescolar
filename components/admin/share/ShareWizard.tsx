@@ -129,18 +129,18 @@ export function ShareWizard({ eventId, isOpen, onClose, onCompleted }: ShareWiza
       setLoadingFamilies(true);
       try {
         const res = await fetch(`/api/admin/events/${eventId}/aliases`);
-        if (!res.ok) throw new Error('No se pudieron cargar las familias');
+        if (!res.ok) throw new Error('No se pudieron cargar los contactos');
         const data = await res.json();
         if (mounted) {
           const options = (data.tokens || []).map((token: any) => ({
             id: token.id || token.alias,
-            alias: token.alias || 'Familia',
+            alias: token.alias || 'Cliente',
             email: token.family_email,
           }));
           setFamilyOptions(options);
         }
       } catch (error) {
-        toast.error(error instanceof Error ? error.message : 'Error al cargar familias');
+        toast.error(error instanceof Error ? error.message : 'Error al cargar contactos');
       } finally {
         if (mounted) setLoadingFamilies(false);
       }
@@ -566,15 +566,15 @@ export function ShareWizard({ eventId, isOpen, onClose, onCompleted }: ShareWiza
           {step === 1 && (
             <section className="grid grid-cols-1 gap-6 md:grid-cols-2">
               <div className="space-y-3">
-                <h3 className="text-lg font-semibold">Familias</h3>
+                <h3 className="text-lg font-semibold">Clientes</h3>
                 <p className="text-sm text-muted-foreground">
-                  Selecciona las familias que recibirán el enlace. Puedes filtrar por alias o correo.
+                  Selecciona los clientes o invitados que recibirán el enlace. Puedes filtrar por alias o correo.
                 </p>
                 <div className="max-h-72 overflow-y-auto rounded-lg border">
                   {loadingFamilies ? (
-                    <div className="p-4 text-sm text-muted-foreground">Cargando familias...</div>
+                    <div className="p-4 text-sm text-muted-foreground">Cargando contactos...</div>
                   ) : familyOptions.length === 0 ? (
-                    <div className="p-4 text-sm text-muted-foreground">No hay familias registradas.</div>
+                    <div className="p-4 text-sm text-muted-foreground">No hay contactos registrados.</div>
                   ) : (
                     <ul className="divide-y">
                       {familyOptions.map((family) => {
@@ -656,7 +656,7 @@ export function ShareWizard({ eventId, isOpen, onClose, onCompleted }: ShareWiza
                 <div className="rounded-lg border p-4 text-sm">
                   <div className="font-medium">Resumen parcial</div>
                   <ul className="mt-2 space-y-1 text-muted-foreground">
-                    <li>{selectedFamilies.size} familia(s) seleccionada(s)</li>
+                    <li>Clientes seleccionados: {selectedFamilies.size}</li>
                     <li>{groupIds.length} grupo(s)</li>
                     <li>{manualEmails.length} correo(s) manual(es)</li>
                   </ul>
@@ -708,7 +708,7 @@ export function ShareWizard({ eventId, isOpen, onClose, onCompleted }: ShareWiza
               <div className="space-y-3 rounded-lg border p-4">
                 <h3 className="font-semibold">Audiencias</h3>
                 <p className="text-sm text-muted-foreground">
-                  {audienceSummary.families} familias · {audienceSummary.groups} grupos · {audienceSummary.emails} correos manuales
+                  {audienceSummary.families} clientes · {audienceSummary.groups} grupos · {audienceSummary.emails} correos manuales
                 </p>
               </div>
 

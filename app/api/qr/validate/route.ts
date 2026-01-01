@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { qrService } from '@/lib/services/qr.service';
 import { logger } from '@/lib/utils/logger';
 import { z } from 'zod';
+import { getQrTaggingStatus } from '@/lib/qr/feature';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
 
 const validateQRSchema = z.object({
   qrCode: z.string().min(1, 'QR code value is required'),
@@ -31,6 +33,22 @@ export async function POST(request: NextRequest) {
     }
 
     const { qrCode, eventId } = validation.data;
+
+    if (eventId) {
+      const { tenantId } = resolveTenantFromHeaders(request.headers);
+      const featureStatus = await getQrTaggingStatus({
+        tenantId,
+        eventId,
+      });
+
+      if (!featureStatus.enabled) {
+        return NextResponse.json({
+          success: false,
+          valid: false,
+          message: 'QR tagging disabled for this event',
+        });
+      }
+    }
 
     // Validate the QR code
     const studentData = await qrService.validateStudentQRCode(qrCode, eventId);

@@ -84,7 +84,7 @@ export const POST = withAuth(async (request: NextRequest) => {
     const supabase = await createServerSupabaseServiceClient();
     const body = await request.json();
 
-    const { name, schoolName, date } = body;
+    const { name, schoolName, date, enable_qr_tagging } = body;
 
     if (!name || !date) {
       return NextResponse.json(
@@ -94,7 +94,19 @@ export const POST = withAuth(async (request: NextRequest) => {
     }
 
     // Insert with compatibility: prefer setting 'location' to satisfy NOT NULL
-    const insertData: any = { name, date, location: schoolName || name };
+    const insertData: any = {
+      name,
+      date,
+      location: schoolName || name,
+    };
+
+    if (typeof enable_qr_tagging === 'boolean') {
+      insertData.metadata = {
+        settings: {
+          qrTaggingEnabled: enable_qr_tagging,
+        },
+      };
+    }
 
     const { data: event, error } = await supabase
       .from('events')

@@ -1,4 +1,17 @@
 import { z } from 'zod';
+import {
+  APP_DENSITY_OPTIONS,
+  APP_HEADER_OPTIONS,
+  COLOR_PALETTES,
+  COVER_STYLE_OPTIONS,
+  COVER_VARIANT_OPTIONS,
+  DEFAULT_STORE_DESIGN,
+  GRID_NAV_OPTIONS,
+  GRID_SPACING_OPTIONS,
+  GRID_STYLE_OPTIONS,
+  GRID_THUMB_OPTIONS,
+  TYPOGRAPHY_PRESETS,
+} from '@/lib/store/store-design';
 
 // Función de sanitización simple que funciona tanto en cliente como servidor
 function sanitizeString(value: string): string {
@@ -57,6 +70,21 @@ export const StoreProductSchema = z.object({
 
 export const StoreConfigSchema = z.object({
   enabled: z.boolean().default(false),
+
+  template: z.enum([
+    'pixieset',
+    'editorial',
+    'minimal',
+    'modern-minimal',
+    'bold-vibrant',
+    'premium-photography',
+    'studio-dark',
+    'classic-gallery',
+    'fashion-editorial',
+    'modern',
+    'classic',
+    'premium-store',
+  ]).default('pixieset'),
 
   currency: z.enum(['ARS', 'USD', 'EUR', 'BRL', 'CLP', 'PEN', 'COP', 'MXN'], {
     errorMap: () => ({ message: 'Moneda no válida' })
@@ -119,6 +147,39 @@ export const StoreConfigSchema = z.object({
       .regex(/^#[0-9A-F]{6}$/i, 'Color de texto secundario debe ser un hex válido')
       .default('#6b7280')
   }).optional(),
+
+  design: z.object({
+    cover: z.object({
+      style: z.enum(COVER_STYLE_OPTIONS.map((option) => option.id) as [string, ...string[]])
+        .default(DEFAULT_STORE_DESIGN.cover.style),
+      variant: z.enum(COVER_VARIANT_OPTIONS.map((option) => option.id) as [string, ...string[]])
+        .default(DEFAULT_STORE_DESIGN.cover.variant),
+    }).default(DEFAULT_STORE_DESIGN.cover),
+    typography: z.object({
+      preset: z.enum(TYPOGRAPHY_PRESETS.map((option) => option.id) as [string, ...string[]])
+        .default(DEFAULT_STORE_DESIGN.typography.preset),
+    }).default(DEFAULT_STORE_DESIGN.typography),
+    color: z.object({
+      palette: z.enum(COLOR_PALETTES.map((option) => option.id) as [string, ...string[]])
+        .default(DEFAULT_STORE_DESIGN.color.palette),
+    }).default(DEFAULT_STORE_DESIGN.color),
+    grid: z.object({
+      style: z.enum(GRID_STYLE_OPTIONS.map((option) => option.id) as [string, ...string[]])
+        .default(DEFAULT_STORE_DESIGN.grid.style),
+      thumb: z.enum(GRID_THUMB_OPTIONS.map((option) => option.id) as [string, ...string[]])
+        .default(DEFAULT_STORE_DESIGN.grid.thumb),
+      spacing: z.enum(GRID_SPACING_OPTIONS.map((option) => option.id) as [string, ...string[]])
+        .default(DEFAULT_STORE_DESIGN.grid.spacing),
+      nav: z.enum(GRID_NAV_OPTIONS.map((option) => option.id) as [string, ...string[]])
+        .default(DEFAULT_STORE_DESIGN.grid.nav),
+    }).default(DEFAULT_STORE_DESIGN.grid),
+    app: z.object({
+      density: z.enum(APP_DENSITY_OPTIONS.map((option) => option.id) as [string, ...string[]])
+        .default(DEFAULT_STORE_DESIGN.app.density),
+      header: z.enum(APP_HEADER_OPTIONS.map((option) => option.id) as [string, ...string[]])
+        .default(DEFAULT_STORE_DESIGN.app.header),
+    }).default(DEFAULT_STORE_DESIGN.app),
+  }).default(DEFAULT_STORE_DESIGN),
 
   texts: z.object({
     hero_title: z.string()

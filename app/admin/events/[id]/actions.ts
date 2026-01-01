@@ -181,13 +181,14 @@ export async function updateEventSettings(
     .from('events')
     .select('settings')
     .eq('id', id)
-    .single<Pick<Database['public']['Tables']['events']['Row'], 'settings'>>();
+    .single();
 
   if (readError) {
     throw new Error(`Failed to fetch current settings: ${readError.message}`);
   }
 
-  const currentSettings = toRecord(current?.settings);
+  // Use settings column directly
+  const currentSettings = toRecord((current?.settings as Record<string, unknown>) || {});
   const incomingSettings = toRecord(payload);
   const validatedSettings = mergeSettings(currentSettings, incomingSettings);
 
@@ -220,13 +221,13 @@ export async function linkRootFolder(
     .from('events')
     .select('settings')
     .eq('id', id)
-    .single<Pick<Database['public']['Tables']['events']['Row'], 'settings'>>();
+    .single();
 
   if (error) {
     throw new Error(`Failed to fetch event: ${error.message}`);
   }
 
-  const currentSettings = toRecord(data?.settings);
+  const currentSettings = toRecord((data?.settings as Record<string, unknown>) || {});
   const updatedSettings = mergeSettings(currentSettings, {
     general: {
       ...toRecord(currentSettings.general),

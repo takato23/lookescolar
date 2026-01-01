@@ -63,20 +63,6 @@ export function useKeyboardShortcuts({
       category: 'Navigation',
     },
     {
-      key: 'a',
-      metaKey: true,
-      action: () => router.push('/admin/subjects'),
-      description: 'Ir a Alumnos',
-      category: 'Navigation',
-    },
-    {
-      key: 't',
-      metaKey: true,
-      action: () => router.push('/admin/tagging'),
-      description: 'Ir a Etiquetar',
-      category: 'Navigation',
-    },
-    {
       key: 'o',
       metaKey: true,
       action: () => router.push('/admin/orders'),
@@ -84,10 +70,11 @@ export function useKeyboardShortcuts({
       category: 'Navigation',
     },
     {
-      key: 'r',
+      key: 'p',
       metaKey: true,
-      action: () => router.push('/admin/analytics'),
-      description: 'Ir a Analytics',
+      shiftKey: true,
+      action: () => router.push('/admin/publish'),
+      description: 'Ir a Publicar',
       category: 'Navigation',
     },
     {
@@ -111,14 +98,6 @@ export function useKeyboardShortcuts({
       metaKey: true,
       action: () => router.push('/admin/photos?action=upload'),
       description: 'Subir fotos',
-      category: 'Actions',
-    },
-    {
-      key: 'n',
-      metaKey: true,
-      shiftKey: true,
-      action: () => router.push('/admin/subjects?action=create'),
-      description: 'Crear nuevo alumno',
       category: 'Actions',
     },
   ];

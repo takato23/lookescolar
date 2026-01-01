@@ -1,0 +1,114 @@
+<svg width="1200" height="1200" viewBox="0 0 1200 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Fondo madera clara -->
+    <linearGradient id="woodGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f5ebe0"/>
+      <stop offset="25%" style="stop-color:#f0e6d8"/>
+      <stop offset="50%" style="stop-color:#ebe0d0"/>
+      <stop offset="75%" style="stop-color:#e6dbc8"/>
+      <stop offset="100%" style="stop-color:#e0d5c0"/>
+    </linearGradient>
+
+    <!-- Vetas de madera -->
+    <pattern id="woodPattern" x="0" y="0" width="200" height="20" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="10" x2="200" y2="10" stroke="rgba(139,90,43,0.08)" stroke-width="1"/>
+    </pattern>
+
+    <!-- Sombra de fotos -->
+    <filter id="photoShadow" x="-10%" y="-10%" width="120%" height="130%">
+      <feDropShadow dx="2" dy="4" stdDeviation="8" flood-color="rgba(0,0,0,0.15)"/>
+    </filter>
+
+    <!-- Gradient para las fotos -->
+    <linearGradient id="photoGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#faf8f5"/>
+      <stop offset="100%" style="stop-color:#f0ebe5"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo de madera -->
+  <rect width="1200" height="1200" fill="url(#woodGradient)"/>
+  <rect width="1200" height="1200" fill="url(#woodPattern)"/>
+
+  <!-- Foto grande 8x10 -->
+  <g transform="translate(80, 80)" filter="url(#photoShadow)">
+    <rect x="0" y="0" width="450" height="560" fill="white" rx="2"/>
+    <rect x="25" y="25" width="400" height="480" fill="url(#photoGrad)" rx="1"/>
+    <!-- Silueta del estudiante -->
+    <g transform="translate(225, 200)">
+      <circle cx="0" cy="0" r="100" fill="#c9b8a0"/>
+      <ellipse cx="0" cy="-40" rx="90" ry="70" fill="#6b5b4b"/>
+      <ellipse cx="0" cy="150" rx="140" ry="80" fill="#4a6670"/>
+    </g>
+    <!-- Texto placeholder -->
+    <rect x="125" y="520" width="200" height="15" rx="7" fill="#e8e0d8"/>
+  </g>
+
+  <!-- Fotos 5x7 (2 unidades) -->
+  <g transform="translate(580, 80)" filter="url(#photoShadow)">
+    <rect x="0" y="0" width="280" height="350" fill="white" rx="2"/>
+    <rect x="15" y="15" width="250" height="295" fill="url(#photoGrad)" rx="1"/>
+    <g transform="translate(140, 130)">
+      <circle cx="0" cy="0" r="60" fill="#c9b8a0"/>
+      <ellipse cx="0" cy="-25" rx="55" ry="40" fill="#7a6a5a"/>
+      <ellipse cx="0" cy="90" rx="85" ry="50" fill="#5a7a6a"/>
+    </g>
+    <rect x="65" y="320" width="150" height="10" rx="5" fill="#e8e0d8"/>
+  </g>
+
+  <g transform="translate(880, 150) rotate(5)" filter="url(#photoShadow)">
+    <rect x="0" y="0" width="280" height="350" fill="white" rx="2"/>
+    <rect x="15" y="15" width="250" height="295" fill="url(#photoGrad)" rx="1"/>
+    <g transform="translate(140, 130)">
+      <circle cx="0" cy="0" r="60" fill="#d4c0a8"/>
+      <ellipse cx="0" cy="-25" rx="55" ry="40" fill="#5a4a3a"/>
+      <ellipse cx="0" cy="90" rx="85" ry="50" fill="#8a6a7a"/>
+    </g>
+    <rect x="65" y="320" width="150" height="10" rx="5" fill="#e8e0d8"/>
+  </g>
+
+  <!-- Fotos tamaño cartera (4 unidades) -->
+  <g transform="translate(80, 700)" filter="url(#photoShadow)">
+    <rect x="0" y="0" width="140" height="175" fill="white" rx="1"/>
+    <rect x="8" y="8" width="124" height="145" fill="url(#photoGrad)"/>
+    <circle cx="70" cy="60" r="35" fill="#c9b8a0"/>
+    <ellipse cx="70" cy="120" rx="50" ry="30" fill="#6a7a8a"/>
+    <rect x="30" y="158" width="80" height="8" rx="4" fill="#e8e0d8"/>
+  </g>
+
+  <g transform="translate(240, 720) rotate(-3)" filter="url(#photoShadow)">
+    <rect x="0" y="0" width="140" height="175" fill="white" rx="1"/>
+    <rect x="8" y="8" width="124" height="145" fill="url(#photoGrad)"/>
+    <circle cx="70" cy="60" r="35" fill="#d4c0a8"/>
+    <ellipse cx="70" cy="120" rx="50" ry="30" fill="#7a8a6a"/>
+    <rect x="30" y="158" width="80" height="8" rx="4" fill="#e8e0d8"/>
+  </g>
+
+  <g transform="translate(400, 710) rotate(2)" filter="url(#photoShadow)">
+    <rect x="0" y="0" width="140" height="175" fill="white" rx="1"/>
+    <rect x="8" y="8" width="124" height="145" fill="url(#photoGrad)"/>
+    <circle cx="70" cy="60" r="35" fill="#baa890"/>
+    <ellipse cx="70" cy="120" rx="50" ry="30" fill="#8a6a6a"/>
+    <rect x="30" y="158" width="80" height="8" rx="4" fill="#e8e0d8"/>
+  </g>
+
+  <g transform="translate(560, 730) rotate(-2)" filter="url(#photoShadow)">
+    <rect x="0" y="0" width="140" height="175" fill="white" rx="1"/>
+    <rect x="8" y="8" width="124" height="145" fill="url(#photoGrad)"/>
+    <circle cx="70" cy="60" r="35" fill="#c4b098"/>
+    <ellipse cx="70" cy="120" rx="50" ry="30" fill="#6a8a7a"/>
+    <rect x="30" y="158" width="80" height="8" rx="4" fill="#e8e0d8"/>
+  </g>
+
+  <!-- Etiqueta del paquete -->
+  <g transform="translate(750, 900)">
+    <rect x="0" y="0" width="380" height="220" rx="8" fill="white" filter="url(#photoShadow)"/>
+    <text x="190" y="50" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="700" letter-spacing="3" fill="#4a4a4a">PAQUETE CLASICO</text>
+    <line x1="60" y1="70" x2="320" y2="70" stroke="#e8e0d8" stroke-width="1"/>
+    <text x="190" y="100" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#6b7280">1 Foto 8x10"</text>
+    <text x="190" y="125" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#6b7280">2 Fotos 5x7"</text>
+    <text x="190" y="150" text-anchor="middle" font-family="system-ui, sans-serif" font-size="13" fill="#6b7280">4 Fotos Cartera</text>
+    <line x1="60" y1="170" x2="320" y2="170" stroke="#e8e0d8" stroke-width="1"/>
+    <text x="190" y="200" text-anchor="middle" font-family="system-ui, sans-serif" font-size="22" font-weight="600" fill="#2d3748">$4.500</text>
+  </g>
+</svg>

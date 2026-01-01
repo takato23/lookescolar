@@ -98,10 +98,16 @@ export async function GET(
   const params = await context.params;
   try {
     const { token } = params;
+    const canonicalUrl = new URL(`/api/store/${token}`, request.url);
+    const existingParams = new URL(request.url).searchParams;
+    canonicalUrl.search = existingParams.toString();
+    if (!canonicalUrl.searchParams.has('include_assets')) {
+      canonicalUrl.searchParams.set('include_assets', 'true');
+    }
+    return NextResponse.redirect(canonicalUrl, 307);
 
     // rate limit por token + IP (compatibilidad legacy)
-    const ip =
-      request.headers.get('x-forwarded-for') || request.ip || 'unknown';
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
     const key = `gal-simple:${token}:${ip}`;
     const { allowed } = await Soft60per10m.check(key);
     if (!allowed) {

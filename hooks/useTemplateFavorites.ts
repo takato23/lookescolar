@@ -15,6 +15,7 @@ export function useTemplateFavorites(
 ) {
   const favoritesRef = useRef<Set<string>>(new Set());
   const [favoriteIds, setFavoriteIds] = useState<string[]>([]);
+  const canPersistFavorites = /^[a-f0-9]{64}$/i.test(token);
 
   useEffect(() => {
     const next = new Set(
@@ -42,6 +43,9 @@ export function useTemplateFavorites(
       setFavoriteIds(Array.from(optimistic));
 
       try {
+        if (!canPersistFavorites) {
+          return;
+        }
         const response = isFavorite
           ? await fetch(
               `/api/public/share/${token}/favorites?assetId=${photoId}`,
@@ -62,7 +66,7 @@ export function useTemplateFavorites(
         throw error;
       }
     },
-    [token]
+    [token, canPersistFavorites]
   );
 
   return {

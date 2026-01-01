@@ -98,11 +98,10 @@
         "playwright_iframe_click"
       ]
     },
-    "gemini-flash-mcp": {
+    "gemini": {
       "command": "npx",
-      "args": ["-y", "gemini-flash-mcp@latest"],
-      "env": { "GEMINI_API_KEY": "<REPLACE_WITH_GEMINI_API_KEY>" },
-      "alwaysAllow": [],
+      "args": ["-y", "gemini-mcp-tool@latest"],
+      "alwaysAllow": ["gemini_ask"],
       "disabled": false
     },
     "supabase": {

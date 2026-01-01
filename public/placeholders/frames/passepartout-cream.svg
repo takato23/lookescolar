@@ -1,0 +1,25 @@
+<svg width="400" height="500" viewBox="0 0 400 500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <pattern id="creamTexture" patternUnits="userSpaceOnUse" width="4" height="4">
+      <rect width="4" height="4" fill="#f5f0e6"/>
+      <rect width="1" height="1" fill="#efe8dc" x="0" y="0"/>
+      <rect width="1" height="1" fill="#efe8dc" x="2" y="2"/>
+    </pattern>
+  </defs>
+
+  <!-- Marco exterior madera oscura -->
+  <rect x="0" y="0" width="400" height="500" fill="#3d2b1f"/>
+  <rect x="3" y="3" width="394" height="494" fill="none" stroke="#5a4030" stroke-width="2"/>
+
+  <!-- Passepartout cream -->
+  <rect x="15" y="15" width="370" height="470" fill="url(#creamTexture)"/>
+
+  <!-- Bisel interior -->
+  <rect x="60" y="70" width="280" height="360" fill="none" stroke="#d4cfc0" stroke-width="1"/>
+
+  <!-- Área de la foto -->
+  <rect x="62" y="72" width="276" height="356" fill="#e8e0d4"/>
+
+  <!-- Detalle dorado -->
+  <rect x="58" y="68" width="284" height="364" fill="none" stroke="#c9a227" stroke-width="0.5" opacity="0.4"/>
+</svg>

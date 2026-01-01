@@ -4,7 +4,7 @@ import { defineConfig, devices } from '@playwright/test';
  * Playwright configuration for comprehensive usability testing
  */
 export default defineConfig({
-  testDir: './__tests__/usability',
+  testDir: './__tests__',
   timeout: 30 * 1000,
   expect: {
     timeout: 5000,
@@ -150,11 +150,18 @@ export default defineConfig({
         hasTouch: true,
       },
     },
+
+    // E2E General Testing
+    {
+      name: 'e2e',
+      testMatch: '**/e2e/**/*.test.ts',
+      use: { ...devices['Desktop Chrome'] },
+    },
   ],
 
   // Test fixtures and setup
-  globalSetup: require.resolve('./__tests__/global-setup.ts'),
-  globalTeardown: require.resolve('./__tests__/global-teardown.ts'),
+  globalSetup: './__tests__/global-setup.ts',
+  globalTeardown: './__tests__/global-teardown.ts',
 
   // Web Server (for local development)
   webServer: {

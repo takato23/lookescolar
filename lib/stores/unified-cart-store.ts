@@ -4,18 +4,37 @@ import { persist } from 'zustand/middleware';
 import type { GalleryContextData } from '@/lib/gallery-context';
 import { debugMigration } from '@/lib/feature-flags';
 
+// Opciones de producto seleccionadas por el cliente
+export interface ProductOptions {
+  productId?: string;      // ID del producto seleccionado
+  productName?: string;    // Nombre del producto (ej: "Foto 10x15")
+  size?: string;           // Tamano seleccionado (ej: "10x15", "13x18", "20x30")
+  format?: string;         // Formato (ej: "Brillante", "Mate")
+  quality?: 'standard' | 'premium';  // Calidad
+}
+
 export interface CartItem {
   photoId: string;
   filename: string;
   price: number;
   quantity: number;
   watermarkUrl?: string; // Para preview (contexto familiar)
-  priceType?: 'base' | 'premium'; // Para tipos de precio (contexto público)
+  priceType?: 'base' | 'premium'; // Para tipos de precio (contexto publico)
+  // Opciones de producto
+  options?: ProductOptions;
   metadata?: {
     eventId?: string;
     context?: 'public' | 'family';
     token?: string; // Solo para contexto familiar
   };
+}
+
+// Helper para generar key unica de item (photoId + opciones)
+export function getCartItemKey(item: { photoId: string; options?: ProductOptions }): string {
+  if (!item.options?.productId && !item.options?.size) {
+    return item.photoId;
+  }
+  return `${item.photoId}__${item.options?.productId || 'default'}__${item.options?.size || 'default'}`;
 }
 
 export interface ContactInfo {
@@ -93,19 +112,22 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
         set((state) => {
           debugMigration('Adding item to unified cart', {
             photoId: item.photoId,
+            options: item.options,
             context: state.context?.context,
             currentItemCount: state.items.length,
           });
 
+          // Usar key compuesta para items con opciones diferentes
+          const itemKey = getCartItemKey(item);
           const existingItem = state.items.find(
-            (i) => i.photoId === item.photoId
+            (i) => getCartItemKey(i) === itemKey
           );
 
           if (existingItem) {
-            // Incrementar cantidad si el item ya existe
+            // Incrementar cantidad si el item ya existe con las mismas opciones
             return {
               items: state.items.map((i) =>
-                i.photoId === item.photoId
+                getCartItemKey(i) === itemKey
                   ? { ...i, quantity: i.quantity + 1 }
                   : i
               ),
@@ -117,6 +139,7 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
             ...item,
             price: item.price || 1000, // Precio por defecto: $10.00 ARS
             quantity: 1,
+            options: item.options,
             metadata: {
               ...item.metadata,
               eventId: state.context?.eventId,
@@ -132,28 +155,41 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
           };
         }),
 
-      removeItem: (photoId) =>
+      // removeItem ahora acepta photoId o itemKey (con opciones)
+      removeItem: (photoIdOrKey) =>
         set((state) => {
-          debugMigration('Removing item from unified cart', { photoId });
+          debugMigration('Removing item from unified cart', { photoIdOrKey });
 
           return {
-            items: state.items.filter((item) => item.photoId !== photoId),
+            items: state.items.filter((item) => {
+              const itemKey = getCartItemKey(item);
+              // Remover si coincide photoId directo O si coincide la key completa
+              return item.photoId !== photoIdOrKey && itemKey !== photoIdOrKey;
+            }),
           };
         }),
 
-      updateQuantity: (photoId, quantity) =>
+      // updateQuantity ahora acepta photoId o itemKey (con opciones)
+      updateQuantity: (photoIdOrKey, quantity) =>
         set((state) => {
           if (quantity <= 0) {
             // Remover item si la cantidad es 0 o menos
             return {
-              items: state.items.filter((item) => item.photoId !== photoId),
+              items: state.items.filter((item) => {
+                const itemKey = getCartItemKey(item);
+                return item.photoId !== photoIdOrKey && itemKey !== photoIdOrKey;
+              }),
             };
           }
 
           return {
-            items: state.items.map((item) =>
-              item.photoId === photoId ? { ...item, quantity } : item
-            ),
+            items: state.items.map((item) => {
+              const itemKey = getCartItemKey(item);
+              if (item.photoId === photoIdOrKey || itemKey === photoIdOrKey) {
+                return { ...item, quantity };
+              }
+              return item;
+            }),
           };
         }),
 
@@ -352,26 +388,6 @@ export const useUnifiedCartStore = create<UnifiedCartStore>()(
 // Compatibility hooks para mantener API existente
 export const useCartStore = useUnifiedCartStore; // Alias principal
 
-// Hook específico para contexto familiar (compatibilidad con componentes existentes)
-export const useFamilyCartStore = () => {
-  const store = useUnifiedCartStore();
-
-  // Verificar que estamos en contexto familiar
-  if (store.context?.context !== 'family') {
-    debugMigration('Warning: useFamilyCartStore used outside family context');
-  }
-
-  return store;
-};
-
-// Hook específico para contexto público (compatibilidad con componentes existentes)
-export const usePublicCartStore = () => {
-  const store = useUnifiedCartStore();
-
-  // Verificar que estamos en contexto público
-  if (store.context?.context !== 'public') {
-    debugMigration('Warning: usePublicCartStore used outside public context');
-  }
-
-  return store;
-};
+// Hooks específicos de contexto: delegan al hook original para preservar la API de selectores
+export const useFamilyCartStore = useUnifiedCartStore;
+export const usePublicCartStore = useUnifiedCartStore;

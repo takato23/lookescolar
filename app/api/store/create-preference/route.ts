@@ -38,6 +38,14 @@ const CreatePreferenceSchema = z.object({
         quantity: z.number(),
         unitPrice: z.number(),
         totalPrice: z.number(),
+        photoId: z.string().optional(), // ID de la foto asociada
+        options: z.object({
+          size: z.string().optional(),
+          format: z.string().optional(),
+          quality: z.enum(['standard', 'premium']).optional(),
+          productName: z.string().optional(),
+        }).optional(),
+        // Legacy metadata field (deprecated, use options instead)
         metadata: z
           .object({
             size: z.string().optional(),
@@ -201,27 +209,51 @@ export async function POST(request: NextRequest) {
     // Build MercadoPago items
     const items: MercadoPagoItem[] = [];
 
-    // Base package item
-    items.push({
-      id: order.basePackage.id,
-      title: order.basePackage.name,
-      description: `Carpeta personalizada ${order.basePackage.name} - ${order.selectedPhotos.individual.length + order.selectedPhotos.group.length} fotos seleccionadas`,
-      category_id: 'photo_package',
-      quantity: 1,
-      currency_id: 'ARS',
-      unit_price: order.basePackage.basePrice,
-    });
+    // Base package item (optional if cart is only additional copies)
+    if (order.basePackage.basePrice > 0 || order.additionalCopies.length === 0) {
+      items.push({
+        id: order.basePackage.id,
+        title: order.basePackage.name,
+        description: `Carpeta personalizada ${order.basePackage.name} - ${order.selectedPhotos.individual.length + order.selectedPhotos.group.length} fotos seleccionadas`,
+        category_id: 'photo_package',
+        quantity: 1,
+        currency_id: 'ARS',
+        unit_price: order.basePackage.basePrice,
+      });
+    }
 
     // Additional copies items
     order.additionalCopies.forEach((copy) => {
       const copyProduct = PRODUCT_CATALOG.additionalCopies.find(
         (c) => c.id === copy.productId
       );
+
+      // Build description from options or fallback to catalog/legacy data
+      const size = copy.options?.size || copy.metadata?.size || copyProduct?.size || '';
+      const format = copy.options?.format || '';
+      const quality = copy.options?.quality || '';
+      const productName = copy.options?.productName || copyProduct?.name || copy.productId;
+
+      let description = `Foto ${productName}`;
+      if (size) description += ` ${size}`;
+      if (format) description += ` - ${format}`;
+      if (quality === 'premium') description += ' (Premium)';
+
       if (copyProduct) {
         items.push({
           id: copy.productId,
-          title: `Copia Adicional ${copyProduct.name}`,
-          description: `Copia adicional en tamaño ${copyProduct.size}${copyProduct.isSet ? ` (set de ${copyProduct.setQuantity})` : ''}`,
+          title: `${productName}${size ? ` ${size}` : ''}`,
+          description,
+          category_id: 'photo_copy',
+          quantity: copy.quantity,
+          currency_id: 'ARS',
+          unit_price: copy.unitPrice,
+        });
+      } else {
+        items.push({
+          id: copy.productId,
+          title: productName,
+          description,
           category_id: 'photo_copy',
           quantity: copy.quantity,
           currency_id: 'ARS',

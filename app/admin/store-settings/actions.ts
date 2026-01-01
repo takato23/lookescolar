@@ -6,6 +6,8 @@
 'use server';
 
 import { createServiceClient } from '@/lib/supabase/server';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
+import { headers } from 'next/headers';
 import { validateStoreConfig, StoreConfig } from '@/lib/validations/store-config';
 import { convertDbToUiConfig, convertUiToDbConfig } from '@/lib/services/store-config.service';
 import type { Database } from '@/types/database';
@@ -88,6 +90,11 @@ export async function saveStoreConfigAction(
       return { success: false, error: 'Evento no encontrado' };
     }
 
+    // Resolver tenant_id
+    const requestHeaders = await headers();
+    const tenantResolution = resolveTenantFromHeaders(Object.fromEntries(requestHeaders.entries()));
+    const tenantId = tenantResolution.tenantId;
+
     // Convertir a formato DB y guardar
     const dbConfig = convertUiToDbConfig(validatedConfig, eventId);
 
@@ -120,6 +127,7 @@ export async function saveStoreConfigAction(
       // Crear nueva
       const insertPayload: Database['public']['Tables']['store_settings']['Insert'] = {
         ...dbConfig,
+        tenant_id: tenantId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };
@@ -209,6 +217,11 @@ export async function saveGlobalStoreConfigAction(
     const supabase = await createServiceClient();
     const storeSettingsTable = supabase.from('store_settings') as any;
 
+    // Resolver tenant_id
+    const requestHeaders = await headers();
+    const tenantResolution = resolveTenantFromHeaders(Object.fromEntries(requestHeaders.entries()));
+    const tenantId = tenantResolution.tenantId;
+
     // Convertir a formato DB y guardar
     const dbConfig = convertUiToDbConfig(validatedConfig);
 
@@ -243,6 +256,7 @@ export async function saveGlobalStoreConfigAction(
       // Crear nueva
       const insertPayload: Database['public']['Tables']['store_settings']['Insert'] = {
         ...dbConfig,
+        tenant_id: tenantId,
         created_at: new Date().toISOString(),
         updated_at: new Date().toISOString()
       };

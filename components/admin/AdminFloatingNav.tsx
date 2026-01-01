@@ -11,7 +11,6 @@ import {
   ShoppingBag,
   Share2,
   Settings,
-  GalleryHorizontalEnd,
 } from 'lucide-react';
 
 interface NavItem {
@@ -82,28 +81,20 @@ const navItems: NavItem[] = [
     icon: Images,
   },
   {
+    id: 'publish',
+    href: '/admin/publish',
+    label: 'Publicar',
+    description: 'Compartir con clientes',
+    tone: 'emerald',
+    icon: Share2,
+  },
+  {
     id: 'orders',
     href: '/admin/orders',
     label: 'Pedidos',
     description: 'Pedidos y ventas',
     tone: 'amber',
     icon: ShoppingBag,
-  },
-  {
-    id: 'publish',
-    href: '/admin/publish',
-    label: 'Publicar',
-    description: 'Compartir con familias',
-    tone: 'emerald',
-    icon: Share2,
-  },
-  {
-    id: 'store',
-    href: '/admin/store-settings',
-    label: 'Tienda',
-    description: 'Configuración de tienda',
-    tone: 'cyan',
-    icon: GalleryHorizontalEnd,
   },
   {
     id: 'settings',

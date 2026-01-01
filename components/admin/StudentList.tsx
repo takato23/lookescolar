@@ -80,11 +80,11 @@ export function StudentList({
   const getTypeLabel = (type: Subject['type']) => {
     switch (type) {
       case 'student':
-        return 'Estudiante';
+        return 'Invitado';
       case 'couple':
         return 'Pareja';
       case 'family':
-        return 'Familia';
+        return 'Cliente';
       default:
         return 'Desconocido';
     }
@@ -101,7 +101,7 @@ export function StudentList({
             No hay sujetos en este evento
           </h3>
           <p className="text-white/70">
-            Agrega alumnos o familias para comenzar el tagging.
+            Agregá invitados o clientes para comenzar el etiquetado.
           </p>
         </div>
       </div>
@@ -140,11 +140,10 @@ export function StudentList({
             <button
               key={type}
               onClick={() => setSelectedType(type)}
-              className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${
-                selectedType === type
+              className={`rounded-full px-3 py-1 text-sm font-medium transition-colors ${selectedType === type
                   ? 'bg-blue-400 text-white'
                   : 'bg-white/10 text-white/70 hover:bg-white/20'
-              } `}
+                } `}
             >
               {type === 'all'
                 ? '👥 Todos'
@@ -160,7 +159,7 @@ export function StudentList({
         <div className="text-center text-sm">
           {selectedPhotosCount > 0 ? (
             <span className="text-blue-400">
-              Click en un alumno para asignar {selectedPhotosCount} foto
+              Click en un invitado para asignar {selectedPhotosCount} foto
               {selectedPhotosCount !== 1 ? 's' : ''}
             </span>
           ) : (
@@ -183,16 +182,25 @@ export function StudentList({
             <div
               key={subject.id}
               onClick={() => handleSubjectClick(subject.id)}
-              className={`flex cursor-pointer items-center justify-between rounded-lg p-3 transition-all duration-200 ${
-                disabled || selectedPhotosCount === 0
+              className={`flex cursor-pointer items-center justify-between rounded-lg p-3 transition-all duration-200 ${disabled || selectedPhotosCount === 0
                   ? 'cursor-not-allowed bg-white/5 opacity-50'
                   : 'hover:scale-102 bg-white/10 hover:bg-white/20'
-              } `}
+                } `}
             >
               <div className="flex items-center space-x-3">
                 {/* Avatar/Icono */}
-                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-blue-400 to-purple-500 font-bold text-white">
-                  {getTypeIcon(subject.type)}
+                <div className="flex h-10 w-10 items-center justify-center rounded-full overflow-hidden bg-white/10">
+                  {subject.type === 'student' ? (
+                    <img
+                      src="/placeholders/avatars/default-student.png"
+                      alt="Student"
+                      className="w-full h-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex w-full h-full items-center justify-center bg-gradient-to-br from-blue-400 to-purple-500 font-bold text-white">
+                      {getTypeIcon(subject.type)}
+                    </div>
+                  )}
                 </div>
 
                 {/* Información del sujeto */}
@@ -218,9 +226,8 @@ export function StudentList({
 
                 {/* Indicador de estado */}
                 <div
-                  className={`h-3 w-3 rounded-full ${
-                    subject.photoCount > 0 ? 'bg-green-400' : 'bg-primary-400'
-                  }`}
+                  className={`h-3 w-3 rounded-full ${subject.photoCount > 0 ? 'bg-green-400' : 'bg-primary-400'
+                    }`}
                 />
 
                 {/* Flecha indicadora */}
@@ -236,7 +243,7 @@ export function StudentList({
       {/* Footer con estadísticas */}
       <div className="mt-4 border-t border-white/10 pt-4">
         <div className="text-center text-sm text-white/70">
-          {filteredSubjects.length} de {subjects.length} alumnos
+          {filteredSubjects.length} de {subjects.length} invitados
           {searchQuery && ` • Filtro: "${searchQuery}"`}
         </div>
       </div>

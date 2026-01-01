@@ -1,175 +1,70 @@
+import crypto from 'crypto';
 import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
-// Public: GET /api/gallery/[id]
-// Returns event info and paginated public-ready photos (watermarked/preview URLs)
-export async function GET(
-  request: NextRequest, context: RouteContext<{ id: string }>) {
-  const params = await context.params;
-  try {
-    const { id: eventId } = params;
-    const url = new URL(request.url);
-    const page = Math.max(parseInt(url.searchParams.get('page') || '1', 10), 1);
-    const limit = Math.min(
-      Math.max(parseInt(url.searchParams.get('limit') || '24', 10), 1),
-      100
-    );
-    const offset = (page - 1) * limit;
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-    const supabase = await createServerSupabaseServiceClient();
+async function resolveEventToken(eventId: string) {
+  if (!eventId) return 'invalid-event';
+  if (!UUID_REGEX.test(eventId)) return eventId;
 
-    // Validate event
-    const { data: event, error: eventError } = await supabase
-      .from('events')
-      .select('id, name, location, date, status, created_at, theme, metadata')
-      .eq('id', eventId)
-      .single();
+  const supabase = await createServerSupabaseServiceClient();
+  const nowIso = new Date().toISOString();
 
-    if (eventError || !event) {
-      return NextResponse.json({ error: 'Event not found' }, { status: 404 });
-    }
+  const { data: shareToken } = await supabase
+    .from('share_tokens')
+    .select('token, expires_at, is_active')
+    .eq('event_id', eventId)
+    .eq('share_type', 'event')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-    // First, get all folders for this event
-    const { data: folders, error: foldersError } = await supabase
-      .from('folders')
-      .select('id')
-      .eq('event_id', eventId);
-
-    if (foldersError) {
-      return NextResponse.json(
-        { error: 'Failed to fetch event folders' },
-        { status: 500 }
-      );
-    }
-
-    const folderIds = folders?.map((f) => f.id) || [];
-
-    if (folderIds.length === 0) {
-      // No folders found, return empty result
-      return NextResponse.json({
-        success: true,
-        data: {
-          event: {
-            id: event.id,
-            name: event.name,
-            school: event.name,
-            date: event.date,
-            created_at: event.created_at,
-          },
-          photos: [],
-          // Include theme and design settings for Pixieset-like runtime
-          theme: (event as any).theme || 'default',
-          metadata: (event as any).metadata || {},
-        },
-        event: {
-          id: event.id,
-          name: event.name,
-          school: event.name,
-          date: event.date,
-          created_at: event.created_at,
-        },
-        photos: [],
-        pagination: { page, limit, total: 0, has_more: false, total_pages: 0 },
-      });
-    }
-
-    // Count total assets from all folders for this event
-    const countQuery = supabase
-      .from('assets')
-      .select('*', { count: 'exact', head: true })
-      .in('folder_id', folderIds);
-
-    const { count: total, error: countError } = await countQuery;
-    if (countError) {
-      return NextResponse.json(
-        { error: 'Failed to count photos' },
-        { status: 500 }
-      );
-    }
-
-    // Fetch paginated assets (prioritize watermark/preview for public view)
-    const photosQuery = supabase
-      .from('assets')
-      .select(
-        `id, original_path, preview_path, checksum, dimensions, created_at, status`
-      )
-      .in('folder_id', folderIds)
-      .eq('status', 'ready')
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
-
-    const { data: assets, error: assetsError } = await photosQuery;
-    if (assetsError) {
-      return NextResponse.json(
-        { error: 'Failed to fetch photos' },
-        { status: 500 }
-      );
-    }
-
-    // Build public URLs (preview > original) using public bucket path
-    const baseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-    const toPublicUrl = (path?: string | null) =>
-      path && baseUrl
-        ? `${baseUrl}/storage/v1/object/public/photos/${path}`
-        : null;
-
-    const processed = (assets || []).map((asset) => {
-      const key = asset.preview_path || asset.original_path;
-      const signed_url = toPublicUrl(key) || '';
-      const dimensions = asset.dimensions ? JSON.parse(asset.dimensions) : null;
-
-      return {
-        id: asset.id,
-        storage_path: asset.original_path,
-        width: dimensions?.width ?? null,
-        height: dimensions?.height ?? null,
-        created_at: asset.created_at,
-        signed_url,
-      };
-    });
-
-    const totalPhotos = total || 0;
-    const totalPages = Math.max(Math.ceil(totalPhotos / limit), 1);
-    const pagination = {
-      page,
-      limit,
-      total: totalPhotos,
-      has_more: page < totalPages,
-      total_pages: totalPages,
-    };
-
-    // Return response supporting both shapes used across the app/tests
-    return NextResponse.json({
-      success: true,
-      // Preferred shape used by components
-      data: {
-        event: {
-          id: event.id,
-          name: event.name,
-          school: event.name,
-          date: event.date,
-          created_at: event.created_at,
-        },
-        photos: processed,
-      },
-      // Back-compat direct fields used by some tests
-      event: {
-        id: event.id,
-        name: event.name,
-        school: event.name,
-        date: event.date,
-        created_at: event.created_at,
-        theme: (event as any).theme || 'default',
-        metadata: (event as any).metadata || {},
-      },
-      photos: processed,
-      pagination,
-    });
-  } catch (error) {
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+  if (
+    shareToken?.token &&
+    (!shareToken.expires_at || shareToken.expires_at > nowIso)
+  ) {
+    return shareToken.token;
   }
+
+  const { data: eventRow } = await supabase
+    .from('events')
+    .select('id, public_gallery_enabled')
+    .eq('id', eventId)
+    .maybeSingle();
+
+  if (eventRow?.public_gallery_enabled) {
+    const newToken = crypto.randomBytes(32).toString('hex');
+    await supabase.from('share_tokens').insert({
+      event_id: eventId,
+      token: newToken,
+      share_type: 'event',
+      is_active: true,
+      allow_download: true,
+      allow_comments: false,
+      metadata: { source: 'public_gallery_legacy_redirect' },
+    });
+    return newToken;
+  }
+
+  return eventId;
+}
+
+export async function GET(
+  request: NextRequest,
+  context: RouteContext<{ id: string }>
+) {
+  const { id: eventId } = await context.params;
+  const token = await resolveEventToken(eventId);
+  const redirectUrl = new URL(`/api/store/${token}`, request.url);
+  const existingParams = new URL(request.url).searchParams;
+  redirectUrl.search = existingParams.toString();
+  if (!redirectUrl.searchParams.has('include_assets')) {
+    redirectUrl.searchParams.set('include_assets', 'true');
+  }
+
+  return NextResponse.redirect(redirectUrl, 307);
 }

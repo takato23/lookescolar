@@ -80,7 +80,7 @@ export const HealthMetricsIsland = memo(function HealthMetricsIsland({
     },
     {
       id: 'families',
-      title: 'Familias',
+      title: 'Clientes',
       value: metrics.totalSubjects.toLocaleString(),
       subtitle: `${metrics.activeTokens} tokens activos`,
       icon: Users,
@@ -306,7 +306,7 @@ export const HealthMetricsIsland = memo(function HealthMetricsIsland({
             <div className="flex items-center gap-2">
               <div className="h-2 w-2 rounded-full bg-purple-500"></div>
               <span className="text-gray-500 dark:text-gray-400">
-                Fotos por familia:{' '}
+                Fotos por cliente:{' '}
                 <span className="text-foreground font-medium">
                   {Math.round(metrics.totalPhotos / metrics.totalSubjects)}
                 </span>

@@ -43,7 +43,7 @@ const ERROR_MESSAGES: Partial<Record<ResolverErrorCode, string>> = {
   INVALID_TOKEN:
     'No pudimos validar el código. Revisá que esté completo y vuelve a intentarlo.',
   EVENT_INACTIVE:
-    'El evento todavía no está disponible para familias. Por favor contactá a la fotógrafa.',
+    'El evento todavía no está disponible para clientes. Por favor contactá a la fotógrafa.',
   RATE_LIMITED:
     'Realizaste demasiados intentos seguidos. Esperá unos minutos e inténtalo nuevamente.',
   NETWORK_ERROR:
@@ -203,7 +203,7 @@ export function FamilyAccessCard({
     if (contactInfo.email) {
       const subject = encodeURIComponent('Necesito ayuda con mi galería');
       const body = encodeURIComponent(
-        'Hola LookEscolar,\n\nNecesito ayuda para acceder a mi galería familiar.\n\n¡Gracias!'
+        'Hola LookEscolar,\n\nNecesito ayuda para acceder a mi galería de clientes.\n\n¡Gracias!'
       );
       window.location.href = `mailto:${contactInfo.email}?subject=${subject}&body=${body}`;
     }
@@ -281,7 +281,7 @@ export function FamilyAccessCard({
         {variant === 'default' && (
           <header className="space-y-2 text-center">
             <h3 className="text-2xl font-bold tracking-tight">
-              Acceso familiar a tu galería
+              Acceso de clientes a tu galería
             </h3>
             <p className="text-sm text-muted-foreground">
               Ingresá el alias corto o el código que recibiste. Validamos el
@@ -297,7 +297,7 @@ export function FamilyAccessCard({
                 value={inputValue}
                 onChange={(event) => setInputValue(event.target.value)}
                 placeholder="Ej: luna1234 o LES-2024-ABC123XYZ"
-                aria-label="Alias o código de acceso familiar"
+                aria-label="Alias o código de acceso para clientes"
                 disabled={isLoading}
                 className={cn(
                   "h-12 text-base transition-all",

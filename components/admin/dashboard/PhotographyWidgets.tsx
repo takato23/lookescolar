@@ -158,7 +158,7 @@ export function EventProgressWidget({ events }: { events: EventSummary[] }) {
                     {getStatusText(event.status)}
                   </Badge>
                 </div>
-                <div className="mb-3 flex flex-wrap items-center gap-4 text-sm text-gray-500 dark:text-gray-400">
+                <div className="mb-3 flex flex-wrap items-center gap-4 text-sm text-gray-600 dark:text-gray-400">
                   <div className="flex items-center gap-1">
                     <MapPin className="h-3 w-3" />
                     {event.location || 'Sin ubicación'}
@@ -186,7 +186,7 @@ export function EventProgressWidget({ events }: { events: EventSummary[] }) {
             );
           })}
           {activeEvents.length === 0 && (
-            <div className="py-8 text-center text-gray-500 dark:text-gray-400">
+            <div className="py-8 text-center text-gray-600 dark:text-gray-400">
               <Camera className="mx-auto mb-2 h-8 w-8" />
               <p>No hay eventos activos</p>
             </div>
@@ -252,7 +252,7 @@ export function QuickAccessWidget({ data }: { data: QuickAccessSummary }) {
             </div>
           </div>
 
-          <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-center text-xs text-gray-600 dark:text-gray-400">
             {data.recentActivity}
           </div>
         </div>
@@ -349,7 +349,7 @@ export function PhotoManagementWidget({
             <div className="text-2xl font-bold text-primary">
               {summary.totalPhotos.toLocaleString('es-AR')}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="text-xs text-gray-600 dark:text-gray-400">
               Total de fotos
             </div>
           </div>
@@ -386,7 +386,7 @@ export function PhotoManagementWidget({
             </div>
           </div>
 
-          <div className="text-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-center text-xs text-gray-600 dark:text-gray-400">
             Última carga: {formatRelativeTime(summary.lastUploadAt)}
           </div>
 
@@ -421,7 +421,7 @@ export function BusinessMetricsWidget({
             <div className="text-3xl font-bold text-green-600">
               {formatCurrency(metrics.monthlyRevenueCents / 100)}
             </div>
-            <div className="text-xs text-gray-500 dark:text-gray-400">
+            <div className="text-xs text-gray-600 dark:text-gray-400">
               Ingresos del mes
             </div>
             <Badge
@@ -483,7 +483,7 @@ export function BusinessMetricsWidget({
             </div>
           </div>
 
-          <div className="pt-2 text-center text-xs text-gray-500 dark:text-gray-400">
+          <div className="pt-2 text-center text-xs text-gray-600 dark:text-gray-400">
             Actualizado con datos en vivo
           </div>
         </div>

@@ -567,7 +567,7 @@ export function ProfessionalShareModal({
         <div className="flex items-start justify-between gap-4 rounded-md border border-border/60 bg-muted/20 p-3">
           <div>
             <p className="text-sm font-medium text-foreground">Descargar fotos</p>
-            <p className="text-xs text-muted-foreground">Permite a las familias bajar las fotos originales.</p>
+            <p className="text-xs text-muted-foreground">Permite a los clientes bajar las fotos originales.</p>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
@@ -598,7 +598,7 @@ export function ProfessionalShareModal({
         <div className="flex items-start justify-between gap-4 rounded-md border border-border/60 bg-muted/20 p-3">
           <div>
             <p className="text-sm font-medium text-foreground">Comentarios</p>
-            <p className="text-xs text-muted-foreground">Habilita que las familias dejen comentarios privados.</p>
+            <p className="text-xs text-muted-foreground">Habilita que los clientes dejen comentarios privados.</p>
           </div>
           <div className="flex flex-col items-end gap-2">
             <div className="flex items-center gap-2">
@@ -725,7 +725,7 @@ export function ProfessionalShareModal({
           </Badge>
         </div>
         <CardDescription>
-          Envía este enlace a coordinadores o staff sin mezclarlo con audiencias familiares.
+          Envía este enlace a coordinadores o staff sin mezclarlo con audiencias de clientes.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -848,7 +848,7 @@ export function ProfessionalShareModal({
               <Share2 className="h-5 w-5 text-primary" /> Compartir {type === 'folder' ? 'carpeta' : 'evento'}
             </DialogTitle>
             <DialogDescription className="text-sm text-muted-foreground">
-              Gestioná el enlace antes de compartirlo con familias y equipos.
+              Gestioná el enlace antes de compartirlo con clientes y equipos.
             </DialogDescription>
           </DialogHeader>
           {bodyContent}

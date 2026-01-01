@@ -1,127 +1,70 @@
+import crypto from 'crypto';
 import type { RouteContext } from '@/types/next-route';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 
-export async function GET(
-  request: Request, context: RouteContext<{ id: string }>) {
-  const params = await context.params;
-  try {
-    const { id: eventId } = params;
-    const supabase = await createServerSupabaseServiceClient();
+const UUID_REGEX =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-    // Get event with public visibility
-    const { data: eventData, error: eventError } = await supabase
-      .from('events')
-      .select(`
-        id,
-        name,
-        date,
-        location,
-        status
-      `)
-      .eq('id', eventId)
-      .eq('status', 'active') // Only active events
-      .single();
+async function resolveEventToken(eventId: string) {
+  if (!eventId) return 'invalid-event';
+  if (!UUID_REGEX.test(eventId)) return eventId;
 
-    if (eventError || !eventData) {
-      return NextResponse.json(
-        { 
-          success: false, 
-          error: 'Evento no encontrado o no disponible públicamente' 
-        },
-        { status: 404 }
-      );
-    }
+  const supabase = await createServerSupabaseServiceClient();
+  const nowIso = new Date().toISOString();
 
-    // Get levels (collections) with basic info
-    const { data: levelsData, error: levelsError } = await supabase
-      .from('levels')
-      .select(`
-        id,
-        name,
-        order_index
-      `)
-      .eq('event_id', eventId)
-      .order('order_index', { ascending: true });
+  const { data: shareToken } = await supabase
+    .from('share_tokens')
+    .select('token, expires_at, is_active')
+    .eq('event_id', eventId)
+    .eq('share_type', 'event')
+    .eq('is_active', true)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle();
 
-    // For each level, get courses (subcarpetas) and photo counts
-    const collectionsWithData = await Promise.all(
-      (levelsData || []).map(async (level) => {
-        // Get courses for this level
-        const { data: coursesData } = await supabase
-          .from('courses')
-          .select(`
-            id,
-            name,
-            order_index
-          `)
-          .eq('level_id', level.id)
-          .order('order_index', { ascending: true });
-
-        // Count approved photos for each course
-        const coursesWithCounts = await Promise.all(
-          (coursesData || []).map(async (course) => {
-            const { count: photoCount } = await supabase
-              .from('photos')
-              .select('id', { count: 'exact', head: true })
-              .eq('event_id', eventId)
-              .eq('approved', true)
-              .contains('metadata', { course_id: course.id });
-
-            return {
-              id: course.id,
-              name: course.name,
-              photo_count: photoCount || 0,
-              // Pricing logic
-              individual_price: 200, // $2 per photo
-              album_price: Math.max(800, (photoCount || 0) * 80), // ~$0.8 per photo in album
-            };
-          })
-        );
-
-        const totalPhotos = coursesWithCounts.reduce((sum, course) => sum + course.photo_count, 0);
-
-        return {
-          id: level.id,
-          name: level.name,
-          photo_count: totalPhotos,
-          subcarpetas: coursesWithCounts,
-          // Collection pricing
-          album_price: Math.max(1500, totalPhotos * 60), // ~$0.6 per photo for full collection
-        };
-      })
-    );
-
-    // Calculate event totals
-    const totalEventPhotos = collectionsWithData.reduce((sum, col) => sum + col.photo_count, 0);
-    const eventAlbumPrice = Math.max(3000, totalEventPhotos * 50); // ~$0.5 per photo for full event
-
-    return NextResponse.json({
-      success: true,
-      event: {
-        id: eventData.id,
-        name: eventData.name,
-        date: eventData.date,
-        location: eventData.location,
-        photo_count: totalEventPhotos,
-        colecciones: collectionsWithData,
-        pricing: {
-          event_album_price: eventAlbumPrice,
-          individual_photo_price: 200,
-          bulk_discount_threshold: 3, // 10% off for 3+ individual photos
-          bulk_discount_percent: 10,
-        }
-      }
-    });
-
-  } catch (error) {
-    console.error('Error fetching public gallery:', error);
-    return NextResponse.json(
-      { 
-        success: false, 
-        error: 'Error interno del servidor' 
-      },
-      { status: 500 }
-    );
+  if (
+    shareToken?.token &&
+    (!shareToken.expires_at || shareToken.expires_at > nowIso)
+  ) {
+    return shareToken.token;
   }
+
+  const { data: eventRow } = await supabase
+    .from('events')
+    .select('id, public_gallery_enabled')
+    .eq('id', eventId)
+    .maybeSingle();
+
+  if (eventRow?.public_gallery_enabled) {
+    const newToken = crypto.randomBytes(32).toString('hex');
+    await supabase.from('share_tokens').insert({
+      event_id: eventId,
+      token: newToken,
+      share_type: 'event',
+      is_active: true,
+      allow_download: true,
+      allow_comments: false,
+      metadata: { source: 'public_gallery_legacy_redirect' },
+    });
+    return newToken;
+  }
+
+  return eventId;
+}
+
+export async function GET(
+  request: NextRequest,
+  context: RouteContext<{ id: string }>
+) {
+  const { id: eventId } = await context.params;
+  const token = await resolveEventToken(eventId);
+  const redirectUrl = new URL(`/api/store/${token}`, request.url);
+  const existingParams = new URL(request.url).searchParams;
+  redirectUrl.search = existingParams.toString();
+  if (!redirectUrl.searchParams.has('include_assets')) {
+    redirectUrl.searchParams.set('include_assets', 'true');
+  }
+
+  return NextResponse.redirect(redirectUrl, 307);
 }

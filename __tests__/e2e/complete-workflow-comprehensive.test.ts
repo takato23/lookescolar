@@ -237,15 +237,13 @@ describe('Comprehensive Workflow System Tests', () => {
         // Generate students for this course
         for (let i = 1; i <= course.student_count; i++) {
           const studentNumber = `${course.grade.replace('°', '')}${course.section}${i.toString().padStart(3, '0')}`;
-          const qrCode =
-            course.level === 'Secundaria' ? `STU-${studentNumber}-QR` : null;
 
           students.push({
             name: `Estudiante ${course.name} ${i}`,
             student_number: studentNumber,
             grade: course.grade,
             section: course.section,
-            qr_code: qrCode,
+            generateQrCode: course.level === 'Secundaria',
             generate_token: true,
             active: true,
           });

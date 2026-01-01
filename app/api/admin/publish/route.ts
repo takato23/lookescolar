@@ -132,7 +132,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    const url = `${origin}/f/${token}/simple-page`;
+    const url = `${origin}/store-unified/${token}`;
     return NextResponse.json({ success: true, token, url });
   } catch (error) {
     console.error('[Service] Admin publish error:', error);

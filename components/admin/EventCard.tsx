@@ -666,7 +666,7 @@ export function EventCard({
                 {event.stats.totalSubjects || 0}
               </div>
               <div className="text-xs text-muted-foreground dark:text-gray-300">
-                Familias
+                Clientes
               </div>
             </div>
 

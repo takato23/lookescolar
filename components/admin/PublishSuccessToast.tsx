@@ -104,7 +104,7 @@ export function PublishSuccessToast({
     if (navigator.share) {
       try {
         await navigator.share({
-          title: `Galería familiar - ${data.codeValue}`,
+          title: `Galería para clientes - ${data.codeValue}`,
           text: `Fotos del evento ${data.eventName || 'escolar'}`,
           url: data.familyUrl,
         });
@@ -245,7 +245,7 @@ export function PublishSuccessToast({
                   onClick={handleCopyUrl}
                   disabled={copied === 'url'}
                   className="min-h-[36px] min-w-0 flex-1 text-xs font-medium"
-                  aria-label="Copiar enlace familiar"
+                  aria-label="Copiar enlace para clientes"
                 >
                   {copied === 'url' ? (
                     <>
@@ -372,7 +372,7 @@ export function usePublishSuccessToast() {
       return addNotification({
         type: 'info',
         title: 'Código despublicado',
-        message: `${codeValue} ya no es accesible para las familias`,
+        message: `${codeValue} ya no es accesible para los clientes`,
         category: 'event',
         duration: 5000,
         action: onUndo

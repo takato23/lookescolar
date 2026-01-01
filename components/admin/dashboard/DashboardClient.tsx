@@ -7,47 +7,31 @@ import {
   Camera,
   DollarSign,
   Package,
-  Users,
-  Activity,
   DownloadCloud,
+  Bell,
+  AlertCircle,
+  Activity,
+  Settings,
 } from 'lucide-react';
-import dynamic from 'next/dynamic';
 import { CommandPalette } from '@/components/admin/CommandPalette';
 import { useKeyboardShortcuts } from '@/components/admin/hooks/useKeyboardShortcuts';
-import { formatCurrency } from '@/lib/utils';
+import { BulkGalleryCreator } from '@/components/admin/BulkGalleryCreator';
+import { cn, formatCurrency } from '@/lib/utils';
 import { MobileDashboardLayout } from './MobileDashboardLayout';
 import { ShortcutCard } from './ShortcutCard';
 import { HighlightMetric } from './HighlightMetric';
 import { AlertItem } from './AlertItem';
 import { DashboardWelcome } from './DashboardWelcome';
+import { ActivityItem } from './ActivityItem';
+import { QuickUploadWidget } from './QuickUploadWidget';
+import { DraggableWidgetGrid, Widget } from './DraggableWidgetGrid';
 import type {
   DashboardStats,
   ShortcutCardProps,
   HighlightMetricProps,
   AlertItemProps,
 } from '@/types/dashboard';
-
-// Lazy load charts - they're heavy and not above the fold
-const RevenueChart = dynamic(
-  () => import('./RevenueChart').then((m) => ({ default: m.RevenueChart })),
-  {
-    loading: () => <ChartSkeleton />,
-    ssr: false,
-  }
-);
-const ActivityChart = dynamic(
-  () => import('./ActivityChart').then((m) => ({ default: m.ActivityChart })),
-  {
-    loading: () => <ChartSkeleton />,
-    ssr: false,
-  }
-);
-
-// Chart skeleton for loading state
-const ChartSkeleton = memo(() => (
-  <div className="liquid-glass-intense h-[380px] animate-pulse rounded-3xl border border-white/10 bg-black/20" />
-));
-ChartSkeleton.displayName = 'ChartSkeleton';
+import { Button } from '@/components/ui/button';
 
 // Default empty stats - defined outside component to prevent recreation
 const DEFAULT_STATS: DashboardStats = {
@@ -110,22 +94,54 @@ const SHORTCUTS: ShortcutCardProps[] = [
     icon: Camera,
   },
   {
+    id: 'publish',
+    href: '/admin/publish',
+    title: 'Publicar',
+    description: 'Compartí con clientes',
+    icon: DownloadCloud,
+  },
+  {
     id: 'orders',
     href: '/admin/orders',
     title: 'Pedidos',
     description: 'Seguimiento de ventas y entregas',
     icon: Package,
   },
+];
+
+// Default widget configuration for draggable dashboard
+const DEFAULT_WIDGETS: Widget[] = [
   {
-    id: 'families',
-    href: '/admin/subjects',
-    title: 'Familias',
-    description: 'Gestioná accesos y contactos',
-    icon: Users,
+    id: 'shortcuts',
+    title: 'Accesos Rápidos',
+    size: 'full',
+    visible: true,
+    order: 0,
+  },
+  {
+    id: 'alerts',
+    title: 'Alertas',
+    size: 'full',
+    visible: true,
+    order: 1,
+  },
+  {
+    id: 'quick-upload',
+    title: 'Subida Rápida',
+    size: 'medium',
+    visible: true,
+    order: 2,
+  },
+  {
+    id: 'metrics',
+    title: 'Métricas Clave',
+    size: 'medium',
+    visible: true,
+    order: 3,
   },
 ];
 
-// Optimized fetch function
+// Optimized fetch function (keeping local for now to minimize breakage risk during migration)
 async function fetchDashboardStats(): Promise<DashboardStats> {
   const response = await fetch('/api/admin/stats', {
     headers: { 'Content-Type': 'application/json' },
@@ -157,50 +173,48 @@ async function fetchDashboardStats(): Promise<DashboardStats> {
   };
 }
 
-// Memoized activity item component
-const ActivityItem = memo(
-  ({
-    activity,
-    index,
-    isLast,
-  }: {
-    activity: DashboardStats['recentActivity'][0];
-    index: number;
-    isLast: boolean;
-  }) => (
-    <div className="group relative flex gap-4 rounded-xl p-3 transition-all duration-300 hover:bg-slate-50/50 dark:hover:bg-slate-800/50">
-      <div className="relative mt-1">
-        <div className="absolute inset-0 rounded-full bg-blue-500/20 blur-sm" />
-        <div className="relative flex h-2 w-2 rounded-full bg-blue-500" />
-        {!isLast && (
-          <div className="absolute left-1 top-3 h-full w-px bg-slate-200 dark:bg-slate-700" />
-        )}
-      </div>
-      <div className="flex-1 pb-1">
-        <p className="text-sm font-medium text-slate-900 dark:text-slate-200">
-          {activity.message}
-        </p>
-        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-          {new Date(activity.timestamp).toLocaleTimeString('es-AR', {
-            hour: '2-digit',
-            minute: '2-digit',
-          })}
-        </p>
-      </div>
-    </div>
-  )
-);
-ActivityItem.displayName = 'ActivityItem';
-
 export function DashboardClient() {
   const [showCommandPalette, setShowCommandPalette] = useState(false);
   const [currentTime, setCurrentTime] = useState(() => new Date());
+  const [widgets, setWidgets] = useState<Widget[]>(DEFAULT_WIDGETS);
+  const [quickUploadFiles, setQuickUploadFiles] = useState<File[]>([]);
+  const [quickUploadEventId, setQuickUploadEventId] = useState<string | null>(
+    null
+  );
+  const [isBulkCreatorOpen, setIsBulkCreatorOpen] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
 
   useKeyboardShortcuts({
     onOpenCommandPalette: useCallback(() => setShowCommandPalette(true), []),
   });
 
-  // Update time every minute instead of every second (saves 59 renders/min)
+  const handleWidgetsChange = useCallback((newWidgets: Widget[]) => {
+    setWidgets(newWidgets);
+  }, []);
+
+  const handleQuickUpload = useCallback(
+    ({ files, eventId }: { files: File[]; eventId: string }) => {
+      setQuickUploadFiles(files);
+      setQuickUploadEventId(eventId);
+      setIsBulkCreatorOpen(true);
+    },
+    []
+  );
+
+  const handleCloseBulkCreator = useCallback(() => {
+    setIsBulkCreatorOpen(false);
+    setQuickUploadFiles([]);
+    setQuickUploadEventId(null);
+  }, []);
+
+  const handleCloseCommandPalette = useCallback(() => {
+    setShowCommandPalette(false);
+  }, []);
+
+  const handleCustomize = useCallback(() => {
+    setIsEditMode(true);
+  }, []);
+
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 60000);
     return () => clearInterval(timer);
@@ -209,19 +223,19 @@ export function DashboardClient() {
   const {
     data: stats,
     isLoading,
+    isFetching,
     error,
     refetch,
+    dataUpdatedAt,
   } = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: fetchDashboardStats,
     refetchInterval: 30000,
     staleTime: 60000,
-    gcTime: 300000,
-    retry: 2,
-    retryDelay: (attempt) => Math.min(1000 * 2 ** attempt, 10000),
   });
 
   const dashboardStats = stats ?? DEFAULT_STATS;
+  const lastUpdated = dataUpdatedAt ? new Date(dataUpdatedAt) : undefined;
 
   // Memoize computed values
   const storageUsagePercent = useMemo(() => {
@@ -278,6 +292,13 @@ export function DashboardClient() {
         badge: 'Revisar ahora',
         tone: dashboardStats.pendingOrders > 5 ? 'danger' : 'warning',
         icon: Package,
+        actions: [
+          {
+            label: 'Ver lista',
+            href: '/admin/orders',
+            variant: 'primary',
+          },
+        ],
       });
     }
     if (dashboardStats.todayUploads === 0) {
@@ -288,6 +309,13 @@ export function DashboardClient() {
         badge: 'Seguimiento',
         tone: 'info',
         icon: Camera,
+        actions: [
+          {
+            label: 'Subir fotos',
+            href: '/admin/photos',
+            variant: 'primary',
+          },
+        ],
       });
     }
     if (storageUsagePercent >= 85) {
@@ -298,6 +326,13 @@ export function DashboardClient() {
         badge: 'Planificar descarga',
         tone: storageUsagePercent > 92 ? 'danger' : 'warning',
         icon: DownloadCloud,
+        actions: [
+          {
+            label: 'Revisar ajustes',
+            href: '/admin/settings',
+            variant: 'primary',
+          },
+        ],
       });
     }
     return items;
@@ -307,16 +342,171 @@ export function DashboardClient() {
     storageUsagePercent,
   ]);
 
-  const recentActivity = useMemo(
-    () => dashboardStats.recentActivity.slice(0, 5),
-    [dashboardStats.recentActivity]
-  );
-  const revenueData = dashboardStats.revenueHistory;
-  const activityData = dashboardStats.activityHistory;
+  // Widget content renderer
+  const renderWidgetContent = useCallback(
+    (widget: Widget) => {
+      switch (widget.id) {
+        case 'shortcuts':
+          return (
+            <div className="dashboard-surface h-full rounded-3xl p-5 shadow-xl">
+              <header className="mb-4 flex items-center justify-between">
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">Accesos Rápidos</h2>
+                  <p className="text-sm text-slate-500">Herramientas principales</p>
+                </div>
+              </header>
+              <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {SHORTCUTS.map((shortcut, index) => (
+                  <ShortcutCard
+                    key={shortcut.id}
+                    {...shortcut}
+                    index={index}
+                  />
+                ))}
+              </div>
+            </div>
+          );
 
-  const handleCloseCommandPalette = useCallback(
-    () => setShowCommandPalette(false),
-    []
+        case 'quick-upload':
+          return (
+            <div className="dashboard-surface h-full rounded-3xl p-5 shadow-xl">
+              <header className="mb-4">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Subida Rápida</h2>
+              </header>
+              <QuickUploadWidget
+                events={dashboardStats.eventSummaries}
+                onUpload={handleQuickUpload}
+              />
+            </div>
+          );
+
+        case 'metrics':
+          return (
+            <div className="dashboard-surface h-full rounded-3xl p-5 shadow-xl">
+              <header className="mb-4 flex items-center justify-between">
+                <h2 className="text-xl font-bold text-slate-900 dark:text-white">Métricas del Día</h2>
+              </header>
+              <div className="grid gap-4 sm:grid-cols-1">
+                {highlightMetrics.map((metric, index) => (
+                  <HighlightMetric
+                    key={metric.id}
+                    {...metric}
+                    index={index}
+                  />
+                ))}
+              </div>
+            </div>
+          );
+
+        case 'alerts':
+          return (
+            <div className="dashboard-surface relative h-full overflow-hidden rounded-3xl p-5 shadow-xl">
+              <header className="mb-4 flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-100 text-orange-600 dark:bg-orange-900/30 dark:text-orange-400">
+                  <Bell className="h-5 w-5" />
+                </div>
+                <div>
+                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">Alertas</h2>
+                  <p className="text-sm text-slate-500">Acciones prioritarias</p>
+                </div>
+              </header>
+
+              <div className="relative space-y-3">
+                {alertItems.length === 0 ? (
+                  <div className="text-center py-8">
+                    <p className="text-slate-500">No hay alertas pendientes.</p>
+                  </div>
+                  ) : (
+                    alertItems.map((item, index) => (
+                      <AlertItem
+                        key={item.id}
+                        {...item}
+                        index={index}
+                      />
+                  ))
+                )}
+              </div>
+            </div>
+          );
+
+        case 'recent-activity':
+          return (
+            <div className="dashboard-surface relative h-full overflow-hidden rounded-3xl p-5 shadow-xl">
+              <div className="pointer-events-none absolute right-0 top-0 h-40 w-40 bg-gradient-to-br from-sky-500/10 to-blue-500/10 blur-3xl" />
+              <header
+                className={cn(
+                  'relative mb-4',
+                  'px-1'
+                )}
+              >
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <div
+                      className={cn(
+                        'flex h-10 w-10 items-center justify-center rounded-xl',
+                        'bg-gradient-to-br from-sky-500 to-blue-600 text-white'
+                      )}
+                    >
+                      <Activity
+                        className="h-5 w-5 text-white"
+                      />
+                    </div>
+                    <div>
+                      <h2 className="text-xl font-bold text-slate-900 dark:text-white">
+                        Actividad Reciente
+                      </h2>
+                      <p className="text-sm text-slate-700 dark:text-slate-400">
+                        Últimos eventos
+                      </p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
+                    <span className="text-xs font-medium text-slate-600 dark:text-slate-400">
+                      En vivo
+                    </span>
+                  </div>
+                </div>
+              </header>
+              <div className="relative">
+                {dashboardStats.recentActivity.length === 0 ? (
+                  <div className="liquid-glass rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-6 text-center dark:border-slate-700 dark:bg-slate-800/50">
+                    <Activity className="mx-auto mb-3 h-8 w-8 text-slate-500 dark:text-slate-600" />
+                    <p className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                      Sin actividad reciente
+                    </p>
+                    <p className="mt-1 text-xs text-slate-500 dark:text-slate-500">
+                      Los eventos aparecerán aquí
+                    </p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {dashboardStats.recentActivity.map((activity, index) => (
+                      <ActivityItem
+                        key={activity.id}
+                        activity={activity}
+                        index={index}
+                        isLast={index === dashboardStats.recentActivity.length - 1}
+                      />
+                    ))}
+                  </div>
+                )}
+              </div>
+            </div>
+          );
+
+        default:
+          return null;
+      }
+    },
+    [
+      dashboardStats.eventSummaries,
+      handleQuickUpload,
+      highlightMetrics,
+      alertItems,
+      SHORTCUTS,
+      dashboardStats.recentActivity
+    ]
   );
 
   return (
@@ -324,159 +514,92 @@ export function DashboardClient() {
       <MobileDashboardLayout stats={dashboardStats} currentTime={currentTime} />
 
       <div className="hidden min-h-screen bg-transparent lg:block">
-        <div className="mx-auto flex max-w-7xl flex-col gap-8 px-6 py-8">
+        <div className="flex w-full flex-col gap-4 py-4">
           <DashboardWelcome
             currentTime={currentTime}
-            isLoading={isLoading}
+            isLoading={isLoading || isFetching}
             error={error}
             onRefresh={refetch}
+            lastUpdated={lastUpdated}
+            isFetching={isFetching}
+            actions={
+              !isEditMode ? (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={handleCustomize}
+                  className="h-8 px-3 text-xs font-semibold text-slate-600 hover:text-slate-900 dark:text-slate-300 dark:hover:text-white"
+                >
+                  <Settings className="h-4 w-4" />
+                  <span className="ml-2">Personalizar</span>
+                </Button>
+              ) : null
+            }
           />
 
-          {/* Quick Access Cards */}
-          <section>
-            <header className="mb-5 px-1">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Accesos Rápidos
-              </h2>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Accede directamente a las funciones principales de tu estudio
-              </p>
-            </header>
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-              {SHORTCUTS.map((shortcut, index) => (
-                <ShortcutCard key={shortcut.id} {...shortcut} index={index} />
-              ))}
-            </div>
-          </section>
-
-          {/* Metrics Cards */}
-          <section>
-            <header className="mb-5 px-1">
-              <h2 className="text-2xl font-bold text-slate-900 dark:text-white">
-                Métricas Clave
-              </h2>
-              <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                Indicadores principales de tu negocio en tiempo real
-              </p>
-            </header>
-            <div className="grid gap-5 sm:grid-cols-3">
-              {highlightMetrics.map((metric, index) => (
-                <HighlightMetric key={metric.id} {...metric} index={index} />
-              ))}
-            </div>
-          </section>
-
-          {/* Charts Section - Lazy loaded */}
-          <section className="grid gap-6 lg:grid-cols-2">
-            <RevenueChart data={revenueData} />
-            <ActivityChart data={activityData} />
-          </section>
-
-          {/* Alerts and Recent Activity */}
-          <section className="grid gap-5 xl:grid-cols-[1.5fr,1fr]">
-            {/* Alerts Panel */}
-            <div className="liquid-glass-intense relative overflow-hidden rounded-3xl border border-white/10 bg-black/20 p-6 shadow-xl backdrop-blur-xl">
-              <div className="absolute right-0 top-0 h-40 w-40 bg-gradient-to-br from-orange-500/10 to-red-500/10 blur-3xl" />
-              <header className="relative mb-5 flex items-center justify-between">
-                <div>
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                    Alertas y Notificaciones
-                  </h2>
-                  <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                    Prioridades que requieren tu atención
+          {error && (
+            <div
+              role="alert"
+              className="flex gap-3 rounded-2xl border border-amber-200 bg-amber-50 p-4 text-amber-900 shadow-sm"
+            >
+              <div className="mt-1 flex h-8 w-8 items-center justify-center rounded-full bg-amber-100">
+                <AlertCircle className="h-5 w-5" aria-hidden />
+              </div>
+              <div className="space-y-1 text-sm">
+                <div className="font-semibold">No pudimos actualizar el panel.</div>
+                {error instanceof Error && (
+                  <p className="text-amber-800">
+                    {error.message}
                   </p>
-                </div>
-                {alertItems.length > 0 && (
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-red-500 text-xs font-bold text-white shadow-lg">
-                    {alertItems.length}
-                  </div>
                 )}
-              </header>
-              <div className="relative">
-                {alertItems.length === 0 ? (
-                  <div className="liquid-glass group relative overflow-hidden rounded-xl border-2 border-emerald-500/30 p-6 text-center">
-                    <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-teal-500/10" />
-                    <div className="relative">
-                      <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-gradient-to-br from-emerald-500 to-teal-500">
-                        <svg
-                          className="h-6 w-6 text-white"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
-                        >
-                          <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
-                            strokeWidth={2}
-                            d="M5 13l4 4L19 7"
-                          />
-                        </svg>
-                      </div>
-                      <p className="font-semibold text-emerald-700 dark:text-emerald-300">
-                        ¡Todo está al día!
-                      </p>
-                      <p className="mt-1 text-sm text-emerald-600 dark:text-emerald-400">
-                        No hay alertas pendientes
-                      </p>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {alertItems.map((item, index) => (
-                      <AlertItem key={item.id} {...item} index={index} />
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-
-            {/* Recent Activity Panel */}
-            <div className="liquid-glass-intense relative overflow-hidden rounded-3xl border border-white/10 bg-black/20 p-6 shadow-xl backdrop-blur-xl">
-              <div className="absolute right-0 top-0 h-40 w-40 bg-gradient-to-br from-cyan-500/10 to-blue-500/10 blur-3xl" />
-              <header className="relative mb-5">
-                <div className="flex items-center justify-between">
-                  <h2 className="text-xl font-bold text-slate-900 dark:text-white">
-                    Actividad Reciente
-                  </h2>
-                  <div className="flex items-center gap-2">
-                    <div className="h-2 w-2 animate-pulse rounded-full bg-green-500" />
-                    <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                      En vivo
-                    </span>
-                  </div>
-                </div>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
-                  Últimos eventos del sistema
+                <p className="text-xs text-amber-700">
+                  Verifica tu conexión o intenta nuevamente.
                 </p>
-              </header>
-              <div className="relative">
-                {recentActivity.length === 0 ? (
-                  <div className="liquid-glass rounded-xl border border-dashed border-slate-300 bg-slate-50/50 p-8 text-center dark:border-slate-700 dark:bg-slate-800/50">
-                    <Activity className="mx-auto mb-3 h-8 w-8 text-slate-400 dark:text-slate-600" />
-                    <p className="text-sm font-medium text-slate-500 dark:text-slate-400">
-                      Sin actividad reciente
-                    </p>
-                    <p className="mt-1 text-xs text-slate-400 dark:text-slate-500">
-                      Los eventos aparecerán aquí
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-4">
-                    {recentActivity.map((activity, index) => (
-                      <ActivityItem
-                        key={activity.id}
-                        activity={activity}
-                        index={index}
-                        isLast={index === recentActivity.length - 1}
-                      />
-                    ))}
-                  </div>
-                )}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    size="sm"
+                    variant="secondary"
+                    onClick={() => refetch()}
+                    disabled={isFetching}
+                  >
+                    Reintentar
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-amber-800 hover:text-amber-900"
+                    onClick={() => window.location.reload()}
+                  >
+                    Recargar
+                  </Button>
+                </div>
               </div>
             </div>
-          </section>
+          )}
+
+          {/* Draggable Widget Grid */}
+          <DraggableWidgetGrid
+            widgets={widgets}
+            onWidgetsChange={handleWidgetsChange}
+            storageKey="dashboard-widgets-v2"
+            isEditMode={isEditMode}
+            onEditModeChange={setIsEditMode}
+            showIdleControls={false}
+          >
+            {renderWidgetContent}
+          </DraggableWidgetGrid>
         </div>
       </div>
+
+      <BulkGalleryCreator
+        isOpen={isBulkCreatorOpen}
+        onClose={handleCloseBulkCreator}
+        eventId={quickUploadEventId || ''}
+        initialFiles={quickUploadFiles}
+        onComplete={() => {
+          refetch();
+        }}
+      />
 
       <CommandPalette
         isOpen={showCommandPalette}

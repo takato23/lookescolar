@@ -32,7 +32,7 @@ export async function detectAnchorsRun({
     .eq('event_id', eventId);
   const codeMap = new Map<string, string>();
   (codes ?? []).forEach((c: any) =>
-    codeMap.set(String(c.code_value).toUpperCase(), c.id)
+    codeMap.set(String(c.code_value), c.id)
   );
 
   const limit = pLimit(maxConcurrency);

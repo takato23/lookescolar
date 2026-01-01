@@ -33,7 +33,7 @@ export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Branch 1: Minimal selection-based preference (after POST /api/public/selection)
     if (body && body.orderId && !body.items) {

@@ -1,0 +1,476 @@
+'use client';
+
+import React, { useState, useEffect, useCallback, Suspense, lazy, useMemo } from 'react';
+import { useParams } from 'next/navigation';
+
+// Critical imports (loaded immediately)
+import { PasswordProtectionModal } from '@/components/store/PasswordProtectionModal';
+import { ThemeToggleSimple } from '@/components/ui/theme-toggle-enhanced';
+import { StoreErrorBoundary } from '@/components/ui/ErrorBoundary';
+import { useUnifiedStore } from '@/lib/stores/unified-store';
+import type { StoreSettings } from '@/lib/hooks/useStoreSettings';
+import type { AdditionalCopy, ProductOption } from '@/lib/types/unified-store';
+import { DEFAULT_STORE_DESIGN, resolveStoreDesign } from '@/lib/store/store-design';
+import {
+  fetchStoreAssetsPage,
+  getUnifiedStoreData,
+  type NormalizedCatalog,
+  type UnifiedStoreData,
+  type UnifiedStorePhoto,
+  type UnifiedStorePagination,
+} from '@/lib/services/unified-store-data';
+
+// Lazy load templates for code splitting
+// Each template is a separate chunk loaded only when needed
+const PixiesetTemplate = lazy(
+  () =>
+    import('@/components/store/templates/PixiesetTemplate').then(module => ({
+      default: module.PixiesetTemplate
+    }))
+);
+const PremiumStoreTemplate = lazy(
+  () =>
+    import('@/components/store/templates/PremiumStoreTemplate').then(module => ({
+      default: module.PremiumStoreTemplate
+    }))
+);
+const ModernMinimalTemplate = lazy(
+  () =>
+    import('@/components/store/templates/ModernMinimalTemplate').then(module => ({
+      default: module.ModernMinimalTemplate
+    }))
+);
+const StudioDarkTemplate = lazy(
+  () =>
+    import('@/components/store/templates/StudioDarkTemplate').then(module => ({
+      default: module.StudioDarkTemplate
+    }))
+);
+
+// Optimized loading fallback with minimal layout shift
+const StoreLoadingFallback = React.memo(() => (
+  <div
+    className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-300"
+    style={{ minHeight: '100vh' }} // Prevent CLS
+  >
+    <div className="text-center">
+      <div
+        className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary"
+        role="status"
+        aria-label="Cargando"
+      />
+      <p className="text-muted-foreground">Cargando tienda...</p>
+    </div>
+  </div>
+));
+
+StoreLoadingFallback.displayName = 'StoreLoadingFallback';
+
+interface CatalogForStore {
+  packages: ProductOption[];
+  additionalCopies: AdditionalCopy[];
+  pricing: {
+    currency: string;
+    shippingCost: number;
+    freeShippingThreshold: number;
+    taxIncluded?: boolean;
+  };
+}
+
+function buildCatalogFromSettings(
+  settings: StoreSettings | null
+): CatalogForStore {
+  if (!settings) {
+    return {
+      packages: [],
+      additionalCopies: [],
+      pricing: {
+        currency: 'ARS',
+        shippingCost: 0,
+        freeShippingThreshold: 0,
+        taxIncluded: true,
+      },
+    };
+  }
+
+  const packages: ProductOption[] = [];
+  const additionalCopies: AdditionalCopy[] = [];
+
+  Object.entries(settings.products ?? {}).forEach(([id, product]) => {
+    if (!product || product.enabled === false) return;
+    const normalizedType = (product.type ?? 'package').toLowerCase();
+    const productAny = product as any;
+
+    if (normalizedType === 'package') {
+      packages.push({
+        id,
+        name: product.name ?? id,
+        description: product.description ?? '',
+        basePrice: productAny.basePrice ?? product.price ?? 0,
+        price: product.price ?? productAny.basePrice ?? 0,
+        type: 'package',
+        enabled: true,
+        highlight: Boolean(productAny.highlight),
+        order: productAny.order,
+        contents: (product.features as ProductOption['contents']) ?? {},
+        features: product.features ?? {},
+      } as ProductOption);
+    } else if (
+      normalizedType === 'additional-copy' ||
+      normalizedType === 'additional_copy'
+    ) {
+      additionalCopies.push({
+        id,
+        name: product.name ?? id,
+        size:
+          (productAny.size as string | undefined) ??
+          (product.features?.size as string | undefined) ??
+          '',
+        price: product.price ?? 0,
+        isSet: Boolean(productAny.setQuantity && productAny.setQuantity > 1),
+        setQuantity: productAny.setQuantity,
+        description: product.description,
+      });
+    }
+  });
+
+  return {
+    packages,
+    additionalCopies,
+    pricing: {
+      currency: settings.currency ?? 'ARS',
+      shippingCost: 0,
+      freeShippingThreshold: 0,
+      taxIncluded: true,
+    },
+  };
+}
+
+export default function UnifiedStorePage() {
+  const params = useParams();
+  const token = params.token as string;
+  const setTokenInStore = useUnifiedStore((state) => state.setToken);
+  const setEventInfoInStore = useUnifiedStore((state) => state.setEventInfo);
+  const setCatalogInStore = useUnifiedStore((state) => state.setCatalog);
+
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [storePassword, setStorePassword] = useState('');
+  const [passwordRequired, setPasswordRequired] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [storeAvailable, setStoreAvailable] = useState(true);
+  const [storeAvailabilityMessage, setStoreAvailabilityMessage] = useState<string | null>(null);
+  const [storeData, setStoreData] = useState<
+    UnifiedStoreData['rawStoreResponse'] | null
+  >(null);
+  const [photos, setPhotos] = useState<UnifiedStorePhoto[]>([]);
+  const [settings, setSettings] = useState<StoreSettings | null>(null);
+  const [_catalog, _setCatalog] = useState<NormalizedCatalog | null>(null);
+
+  // Pagination state
+  const [photosPerPage] = useState(20);
+  const [totalPhotos, setTotalPhotos] = useState(0);
+  const [pagination, setPagination] = useState<UnifiedStorePagination | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
+
+  // Memoize template selection to avoid re-renders
+  const templateMap = useMemo(() => ({
+    'premium-store': PremiumStoreTemplate,
+    'modern-minimal': ModernMinimalTemplate,
+    'studio-dark': StudioDarkTemplate,
+    pixieset: PixiesetTemplate,
+  } as const), []);
+
+  const SelectedTemplate = useMemo(() => {
+    if (!settings) return PixiesetTemplate;
+    return templateMap[settings.template as keyof typeof templateMap] || PixiesetTemplate;
+  }, [settings, templateMap]);
+
+  useEffect(() => {
+    if (token) {
+      setTokenInStore(token);
+    }
+  }, [token, setTokenInStore]);
+
+  useEffect(() => {
+    fetchStoreData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, storePassword]);
+
+  const fetchPhotos = useCallback(
+    async (page: number = 1, append: boolean = false) => {
+      try {
+        setLoadingMore(true);
+        const offset = (page - 1) * photosPerPage;
+        const { photos: mappedPhotos, pagination: pageInfo } =
+          await fetchStoreAssetsPage(token, {
+            limit: photosPerPage,
+            offset,
+            password: storePassword || undefined,
+          });
+
+        setPagination(pageInfo);
+        setTotalPhotos(
+          (prev) =>
+            pageInfo?.total ??
+            (append ? prev + mappedPhotos.length : mappedPhotos.length)
+        );
+        setPhotos((prev) =>
+          append ? [...prev, ...mappedPhotos] : mappedPhotos
+        );
+      } catch (error) {
+        console.error('[StoreUnified] Error al cargar fotos:', error);
+        setError('Error al cargar las fotos. Intente recargar la página.');
+      } finally {
+        setLoadingMore(false);
+      }
+    },
+    [token, photosPerPage, storePassword]
+  );
+
+  const loadMorePhotos = useCallback(() => {
+    if (!loadingMore && (pagination?.hasMore ?? false)) {
+      const nextPage = (pagination?.page ?? 1) + 1;
+      fetchPhotos(nextPage, true);
+    }
+  }, [loadingMore, pagination, fetchPhotos]);
+
+  const fetchStoreData = async () => {
+    try {
+      setLoading(true);
+      setError(null);
+      setPasswordError(null);
+      setPasswordRequired(false);
+      setStoreAvailabilityMessage(null);
+      setStoreAvailable(true);
+
+      const result = await getUnifiedStoreData(token, {
+        limit: photosPerPage,
+        includeAssets: true,
+        password: storePassword || undefined,
+      });
+
+      const [_catalogValue] = [result.catalog];
+      setStoreData(result.rawStoreResponse);
+
+      if (result.rawStoreResponse?.available === false) {
+        setStoreAvailable(false);
+        setStoreAvailabilityMessage(
+          result.rawStoreResponse?.schedule?.message ||
+            result.rawStoreResponse?.error ||
+            'Tienda no disponible'
+        );
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
+
+      setPhotos(result.photos);
+      setPagination(result.pagination);
+      setTotalPhotos(result.pagination?.total ?? result.photos.length);
+
+      const heroTitle =
+        result.rawStoreResponse?.store?.name ||
+        result.event?.name ||
+        result.settings.texts?.hero_title ||
+        'Galería Fotográfica';
+
+      const resolvedDesign = resolveStoreDesign(
+        result.settings.design ??
+          result.settings.theme_customization?.design ??
+          DEFAULT_STORE_DESIGN
+      );
+
+      const finalSettings = {
+        ...result.settings,
+        template: (result.settings.template ?? 'pixieset') as StoreSettings['template'],
+        design: resolvedDesign,
+        texts: {
+          hero_title: heroTitle,
+          hero_subtitle:
+            result.settings.texts?.hero_subtitle ||
+            'Galería Fotográfica Escolar',
+          footer_text: result.settings.texts?.footer_text ?? '',
+          contact_email: result.settings.texts?.contact_email ?? '',
+          contact_phone: result.settings.texts?.contact_phone ?? '',
+          terms_url: result.settings.texts?.terms_url ?? '',
+          privacy_url: result.settings.texts?.privacy_url ?? '',
+        },
+        colors: result.settings.colors ?? {
+          primary: '#1f2937',
+          secondary: '#6b7280',
+          accent: '#3b82f6',
+          background: '#f9fafb',
+          surface: '#ffffff',
+          text: '#111827',
+          text_secondary: '#6b7280',
+        },
+        payment_methods: result.settings.payment_methods ?? {},
+        logo_url: result.settings.logo_url ?? '',
+        banner_url: result.settings.banner_url ?? '',
+        theme_customization: {
+          ...result.settings.theme_customization,
+          design: resolvedDesign
+        }
+      } as StoreSettings;
+
+      setSettings(finalSettings);
+      setCatalogInStore(buildCatalogFromSettings(finalSettings));
+      setEventInfoInStore({
+        name: heroTitle,
+        schoolName: result.rawStoreResponse?.event?.school_name ?? '',
+        gradeSection: result.subject?.course ?? '',
+      });
+      setError(null);
+      setPasswordRequired(false);
+    } catch (error) {
+      const payload = (error as any)?.payload;
+      if (payload?.passwordRequired) {
+        setPasswordRequired(true);
+        setPasswordError(payload.error || payload.message || 'Contraseña requerida');
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
+      if (payload?.available === false) {
+        setStoreAvailable(false);
+        setStoreAvailabilityMessage(
+          payload.error ||
+            payload.schedule?.message ||
+            'Tienda no disponible'
+        );
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
+      console.error('Error loading store:', error);
+      setError(error instanceof Error ? error.message : 'Error desconocido');
+    } finally {
+      setLoading(false);
+      setLoadingMore(false);
+    }
+  };
+
+  const handlePasswordSubmit = (password: string) => {
+    setStorePassword(password);
+    setPasswordRequired(false);
+    setPasswordError(null);
+  };
+
+  // Memoize template photos to avoid recalculation
+  const templatePhotos = useMemo(() =>
+    photos.map((photo) => ({
+      id: photo.id,
+      url: photo.preview_url ?? photo.url,
+      alt: photo.alt,
+    })),
+    [photos]
+  );
+
+  const isPreselected = useMemo(() =>
+    Boolean(storeData?.store?.is_preselected),
+    [storeData]
+  );
+
+  if (loading) {
+    return <StoreLoadingFallback />;
+  }
+
+  if (passwordRequired) {
+    return (
+      <PasswordProtectionModal
+        isOpen={passwordRequired}
+        onClose={() => {
+          setPasswordRequired(false);
+          setError('Contraseña requerida');
+        }}
+        onSubmit={handlePasswordSubmit}
+        error={passwordError}
+        brandName={settings?.custom_branding?.brand_name || 'LookEscolar'}
+        welcomeMessage={settings?.welcome_message}
+      />
+    );
+  }
+
+  if (!storeAvailable) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-300">
+        <div className="mx-auto max-w-md p-6 text-center">
+          <div className="absolute right-4 top-4">
+            <ThemeToggleSimple />
+          </div>
+          <h1 className="mb-4 text-2xl font-bold text-foreground">
+            Tienda no disponible
+          </h1>
+          <p className="text-muted-foreground">
+            {storeAvailabilityMessage ||
+              'La tienda no está disponible por el momento.'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-300">
+        <div className="mx-auto max-w-md p-6 text-center">
+          <div className="absolute right-4 top-4">
+            <ThemeToggleSimple />
+          </div>
+          <h1 className="mb-4 text-2xl font-bold text-foreground">Error</h1>
+          <p className="mb-6 text-destructive">{error}</p>
+          <button
+            onClick={() => window.location.reload()}
+            className="rounded-lg bg-primary px-6 py-3 font-medium text-primary-foreground transition-colors duration-200 hover:bg-primary/90"
+          >
+            Reintentar
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (!settings || photos.length === 0) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-300">
+        <div className="mx-auto max-w-md p-6 text-center">
+          <div className="absolute right-4 top-4">
+            <ThemeToggleSimple />
+          </div>
+          <h1 className="mb-4 text-2xl font-bold text-foreground">
+            Galería no disponible
+          </h1>
+          <p className="text-muted-foreground">
+            No se encontraron fotos en esta galería.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <StoreErrorBoundary>
+      <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
+        {/* Theme Toggle - Fixed position */}
+        <div className="fixed right-4 top-4 z-50">
+          <ThemeToggleSimple />
+        </div>
+
+        <Suspense fallback={<StoreLoadingFallback />}>
+          <SelectedTemplate
+            settings={settings}
+            photos={templatePhotos as any}
+            token={token}
+            subject={storeData?.subject}
+            totalPhotos={totalPhotos}
+            isPreselected={isPreselected}
+            onLoadMorePhotos={loadMorePhotos}
+            hasMorePhotos={Boolean(pagination?.hasMore)}
+            loadingMore={loadingMore}
+          />
+        </Suspense>
+      </div>
+    </StoreErrorBoundary>
+  );
+}

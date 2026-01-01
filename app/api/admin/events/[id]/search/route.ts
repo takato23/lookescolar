@@ -25,6 +25,24 @@ interface SearchResult {
   };
 }
 
+function calculateScore(text: string, term: string): number {
+  const lowerText = text.toLowerCase();
+  let score = 0;
+
+  if (lowerText === term) score += 1.0;
+  else if (lowerText.startsWith(term)) score += 0.8;
+  else if (lowerText.includes(term)) score += 0.6;
+  else if (new RegExp(`\\b${term}`, 'i').test(text)) score += 0.7;
+
+  return Math.min(score, 1.0);
+}
+
+function highlightMatch(text: string, term: string): string {
+  const safe = term.replace(/[.*+?^${}()|[\\]\\]/g, '\\$&');
+  const regex = new RegExp(`(${safe})`, 'gi');
+  return text.replace(regex, '<mark>$1</mark>');
+}
+
 export async function GET(
   request: NextRequest,
   context: RouteContext<{ id: string }>
@@ -33,9 +51,11 @@ export async function GET(
     const { id: eventId } = await context.params;
     const { searchParams } = new URL(request.url);
 
-    const query = searchParams.get('q')?.trim();
-    const limit = parseInt(searchParams.get('limit') || '50');
-    const types = searchParams.get('types')?.split(',') || [];
+    const query = searchParams.get('q')?.trim() ?? '';
+    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10) || 50, 100);
+    const types = (searchParams.get('types')?.split(',') || [])
+      .map((t) => t.trim())
+      .filter(Boolean);
     const hasPhotos = searchParams.get('has_photos') === 'true';
     const approved = searchParams.get('approved') === 'true';
     const recent = searchParams.get('recent') === 'true';
@@ -53,402 +73,154 @@ export async function GET(
     const results: SearchResult[] = [];
     const searchTerm = query.toLowerCase();
 
-    // Helper function to calculate relevance score
-    const calculateScore = (text: string, term: string): number => {
-      const lowerText = text.toLowerCase();
-      let score = 0;
+    const includeFolders = types.length === 0 || types.includes('course') || types.includes('level');
+    const includeSubjects = types.length === 0 || types.includes('student');
+    const includeAssets = types.length === 0 || types.includes('photo');
 
-      // Exact match gets highest score
-      if (lowerText === term) score += 1.0;
-      // Starts with term gets high score
-      else if (lowerText.startsWith(term)) score += 0.8;
-      // Contains term gets medium score
-      else if (lowerText.includes(term)) score += 0.6;
-      // Word boundary match gets good score
-      else if (new RegExp(`\\b${term}`, 'i').test(text)) score += 0.7;
-
-      return Math.min(score, 1.0);
-    };
-
-    // Helper function to highlight matches
-    const highlightMatch = (text: string, term: string): string => {
-      const regex = new RegExp(`(${term})`, 'gi');
-      return text.replace(regex, '<mark>$1</mark>');
-    };
-
-    // Search in event levels
-    if (types.length === 0 || types.includes('level')) {
-      const { data: levels } = await supabase
-        .from('event_levels')
-        .select(
-          `
-          id, name, description,
-          courses:courses(count),
-          students:students(count)
-        `
-        )
+    // Folders (hierarchy)
+    if (includeFolders) {
+      const folderQuery = supabase
+        .from('folders')
+        .select('id, name, path, depth, photo_count, updated_at')
         .eq('event_id', eventId)
-        .eq('active', true);
+        .or(`name.ilike.%${query}%,path.ilike.%${query}%`)
+        .order('updated_at', { ascending: recent ? false : true })
+        .limit(limit);
 
-      if (levels) {
-        for (const level of levels) {
-          const nameScore = calculateScore(level.name, searchTerm);
-          const descScore = level.description
-            ? calculateScore(level.description, searchTerm)
-            : 0;
-          const maxScore = Math.max(nameScore, descScore);
+      if (hasPhotos) {
+        folderQuery.gt('photo_count', 0);
+      }
 
-          if (maxScore > 0) {
-            // Get photo count for this level
-            const { count: photoCount } = await supabase
-              .from('assets')
-              .select('id', { count: 'exact', head: true })
-              .eq('event_id', eventId)
-              .in(
-                'id',
-                supabase
-                  .from('photo_students')
-                  .select('photo_id')
-                  .in(
-                    'student_id',
-                    supabase
-                      .from('students')
-                      .select('id')
-                      .in(
-                        'course_id',
-                        supabase
-                          .from('courses')
-                          .select('id')
-                          .eq('level_id', level.id)
-                      )
-                  )
-              );
+      const { data: folders } = await folderQuery;
 
-            results.push({
-              id: level.id,
-              type: 'level',
-              title: level.name,
-              subtitle: level.description || undefined,
-              description: `Nivel escolar con ${level.courses?.[0]?.count || 0} cursos`,
-              path: [level.name],
-              metadata: {
-                courseCount: level.courses?.[0]?.count || 0,
-                studentCount: level.students?.[0]?.count || 0,
-                photoCount: photoCount || 0,
-              },
-              score: maxScore,
-              highlighted: {
-                title:
-                  nameScore > 0 ? highlightMatch(level.name, query) : undefined,
-                subtitle:
-                  descScore > 0 && level.description
-                    ? highlightMatch(level.description, query)
-                    : undefined,
-              },
-            });
-          }
-        }
+      for (const folder of folders ?? []) {
+        const title = folder.name ?? 'Carpeta';
+        const folderPath = (folder.path ?? title).split('/').filter(Boolean);
+        const score = Math.max(
+          calculateScore(folder.name ?? '', searchTerm),
+          calculateScore(folder.path ?? '', searchTerm)
+        );
+
+        if (score <= 0) continue;
+
+        results.push({
+          id: folder.id,
+          type: (folder.depth ?? 0) === 0 ? 'level' : 'course',
+          title,
+          subtitle: folder.path ?? undefined,
+          description: `Carpeta con ${folder.photo_count ?? 0} fotos`,
+          path: folderPath,
+          metadata: {
+            photoCount: folder.photo_count ?? 0,
+            lastActivity: folder.updated_at ?? undefined,
+          },
+          score,
+          highlighted: {
+            title: highlightMatch(title, query),
+            subtitle: folder.path ? highlightMatch(folder.path, query) : undefined,
+          },
+        });
       }
     }
 
-    // Search in courses
-    if (types.length === 0 || types.includes('course')) {
-      const { data: courses } = await supabase
-        .from('courses')
-        .select(
-          `
-          id, name, grade, section, description,
-          event_levels:event_levels(name),
-          students:students(count)
-        `
-        )
+    // Subjects (students)
+    if (includeSubjects) {
+      const { data: subjects } = await supabase
+        .from('subjects')
+        .select('id, name, grade, section, updated_at')
         .eq('event_id', eventId)
-        .eq('active', true);
+        .or(`name.ilike.%${query}%,grade.ilike.%${query}%,section.ilike.%${query}%`)
+        .order('updated_at', { ascending: recent ? false : true })
+        .limit(limit);
 
-      if (courses) {
-        for (const course of courses) {
-          const nameScore = calculateScore(course.name, searchTerm);
-          const gradeScore = course.grade
-            ? calculateScore(course.grade, searchTerm)
-            : 0;
-          const sectionScore = course.section
-            ? calculateScore(course.section, searchTerm)
-            : 0;
-          const descScore = course.description
-            ? calculateScore(course.description, searchTerm)
-            : 0;
-          const maxScore = Math.max(
-            nameScore,
-            gradeScore,
-            sectionScore,
-            descScore
-          );
+      for (const subject of subjects ?? []) {
+        const title = subject.name ?? 'Alumno/a';
+        const subtitle = [subject.grade, subject.section].filter(Boolean).join(' · ') || undefined;
+        const score = Math.max(
+          calculateScore(subject.name ?? '', searchTerm),
+          calculateScore(subject.grade ?? '', searchTerm),
+          calculateScore(subject.section ?? '', searchTerm)
+        );
 
-          if (maxScore > 0) {
-            // Get photo count for this course
-            const { count: photoCount } = await supabase
-              .from('assets')
-              .select('id', { count: 'exact', head: true })
-              .eq('event_id', eventId)
-              .in(
-                'id',
-                supabase
-                  .from('photo_students')
-                  .select('photo_id')
-                  .in(
-                    'student_id',
-                    supabase
-                      .from('students')
-                      .select('id')
-                      .eq('course_id', course.id)
-                  )
-              );
+        if (score <= 0) continue;
 
-            const path = [
-              course.event_levels?.name || 'Sin nivel',
-              course.name,
-            ].filter(Boolean);
-
-            results.push({
-              id: course.id,
-              type: 'course',
-              title: course.name,
-              subtitle: [course.grade, course.section]
-                .filter(Boolean)
-                .join(' - '),
-              description:
-                course.description ||
-                `Curso con ${course.students?.[0]?.count || 0} estudiantes`,
-              path,
-              metadata: {
-                studentCount: course.students?.[0]?.count || 0,
-                photoCount: photoCount || 0,
-              },
-              score: maxScore,
-              highlighted: {
-                title:
-                  nameScore > 0
-                    ? highlightMatch(course.name, query)
-                    : undefined,
-                subtitle:
-                  gradeScore > 0 || sectionScore > 0
-                    ? highlightMatch(
-                        [course.grade, course.section]
-                          .filter(Boolean)
-                          .join(' - '),
-                        query
-                      )
-                    : undefined,
-              },
-            });
-          }
-        }
+        results.push({
+          id: subject.id,
+          type: 'student',
+          title,
+          subtitle,
+          description: 'Sujeto/estudiante',
+          path: [title],
+          metadata: {
+            lastActivity: subject.updated_at ?? undefined,
+          },
+          score,
+          highlighted: {
+            title: highlightMatch(title, query),
+            subtitle: subtitle ? highlightMatch(subtitle, query) : undefined,
+          },
+        });
       }
     }
 
-    // Search in students
-    if (types.length === 0 || types.includes('student')) {
-      const { data: students } = await supabase
-        .from('students')
-        .select(
-          `
-          id, name, grade, section, parent_name, created_at,
-          courses:courses(
-            name,
-            event_levels:event_levels(name)
-          )
-        `
-        )
-        .eq('event_id', eventId)
-        .eq('active', true);
+    // Assets (photos) — join folders to filter by event
+    if (includeAssets) {
+      let assetsQuery = supabase
+        .from('assets')
+        .select('id, filename, created_at, approved, folders!inner(event_id, path)')
+        .eq('folders.event_id', eventId)
+        .ilike('filename', `%${query}%`)
+        .order('created_at', { ascending: recent ? false : true })
+        .limit(limit);
 
-      if (students) {
-        for (const student of students) {
-          const nameScore = calculateScore(student.name, searchTerm);
-          const parentScore = student.parent_name
-            ? calculateScore(student.parent_name, searchTerm)
-            : 0;
-          const gradeScore = student.grade
-            ? calculateScore(student.grade, searchTerm)
-            : 0;
-          const maxScore = Math.max(nameScore, parentScore, gradeScore);
-
-          if (maxScore > 0) {
-            // Get photo count for this student
-            const { count: photoCount } = await supabase
-              .from('photo_students')
-              .select('photo_id', { count: 'exact', head: true })
-              .eq('student_id', student.id);
-
-            const path = [
-              student.courses?.event_levels?.name || 'Sin nivel',
-              student.courses?.name || 'Sin curso',
-              student.name,
-            ].filter(Boolean);
-
-            results.push({
-              id: student.id,
-              type: 'student',
-              title: student.name,
-              subtitle: [student.grade, student.section]
-                .filter(Boolean)
-                .join(' - '),
-              description: student.parent_name
-                ? `Padre/Madre: ${student.parent_name}`
-                : undefined,
-              path,
-              metadata: {
-                photoCount: photoCount || 0,
-                uploadDate: student.created_at,
-              },
-              score: maxScore,
-              highlighted: {
-                title:
-                  nameScore > 0
-                    ? highlightMatch(student.name, query)
-                    : undefined,
-                description:
-                  parentScore > 0 && student.parent_name
-                    ? `Padre/Madre: ${highlightMatch(student.parent_name, query)}`
-                    : undefined,
-              },
-            });
-          }
-        }
-      }
-    }
-
-    // Search in photos
-    if (types.length === 0 || types.includes('photo')) {
-      let photoQuery = supabase
-        .from('photos')
-        .select(
-          `
-          id, filename, created_at, approved,
-          photo_students:photo_students(
-            students:students(
-              name,
-              courses:courses(
-                name,
-                event_levels:event_levels(name)
-              )
-            )
-          )
-        `
-        )
-        .eq('event_id', eventId);
-
-      // Apply filters
       if (approved) {
-        photoQuery = photoQuery.eq('approved', true);
+        assetsQuery = assetsQuery.eq('approved', true);
       }
 
-      if (recent) {
-        const oneWeekAgo = new Date();
-        oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
-        photoQuery = photoQuery.gte('created_at', oneWeekAgo.toISOString());
-      }
+      const { data: assets } = await assetsQuery;
 
-      const { data: photos } = await photoQuery;
+      for (const asset of assets ?? []) {
+        const title = asset.filename ?? 'Foto';
+        const score = calculateScore(title, searchTerm);
+        if (score <= 0) continue;
 
-      if (photos) {
-        for (const photo of photos) {
-          const filenameScore = calculateScore(photo.filename, searchTerm);
+        // folders relationship comes back as object | null
+        const folderPathRaw = (asset as any)?.folders?.path as string | undefined;
+        const folderPath = folderPathRaw ? folderPathRaw.split('/').filter(Boolean) : [];
 
-          // Also search in tagged student names
-          let studentNamesScore = 0;
-          const studentNames =
-            photo.photo_students
-              ?.map((ps) => ps.students?.name)
-              .filter(Boolean) || [];
-          for (const studentName of studentNames) {
-            studentNamesScore = Math.max(
-              studentNamesScore,
-              calculateScore(studentName, searchTerm)
-            );
-          }
-
-          const maxScore = Math.max(filenameScore, studentNamesScore);
-
-          if (maxScore > 0) {
-            const firstStudent = photo.photo_students?.[0]?.students;
-            const path = [
-              firstStudent?.courses?.event_levels?.name || 'Sin nivel',
-              firstStudent?.courses?.name || 'Sin curso',
-              photo.filename,
-            ].filter(Boolean);
-
-            results.push({
-              id: photo.id,
-              type: 'photo',
-              title: photo.filename,
-              subtitle:
-                studentNames.length > 0
-                  ? `Etiquetada: ${studentNames.join(', ')}`
-                  : 'Sin etiquetar',
-              description: `${photo.approved ? 'Aprobada' : 'Pendiente de aprobación'}`,
-              path,
-              metadata: {
-                uploadDate: photo.created_at,
-                tags: studentNames,
-              },
-              score: maxScore,
-              highlighted: {
-                title:
-                  filenameScore > 0
-                    ? highlightMatch(photo.filename, query)
-                    : undefined,
-                subtitle:
-                  studentNamesScore > 0 && studentNames.length > 0
-                    ? `Etiquetada: ${studentNames
-                        .map((name) =>
-                          calculateScore(name, searchTerm) > 0
-                            ? highlightMatch(name, query)
-                            : name
-                        )
-                        .join(', ')}`
-                    : undefined,
-              },
-            });
-          }
-        }
+        results.push({
+          id: asset.id,
+          type: 'photo',
+          title,
+          subtitle: folderPathRaw,
+          description: 'Foto',
+          path: [...folderPath, title],
+          metadata: {
+            uploadDate: asset.created_at ?? undefined,
+          },
+          score,
+          highlighted: {
+            title: highlightMatch(title, query),
+            subtitle: folderPathRaw ? highlightMatch(folderPathRaw, query) : undefined,
+          },
+        });
       }
     }
 
-    // Apply additional filters
-    let filteredResults = results;
-
-    if (hasPhotos) {
-      filteredResults = filteredResults.filter(
-        (result) => (result.metadata?.photoCount || 0) > 0
-      );
-    }
-
-    // Sort by score (descending) and limit results
-    filteredResults.sort((a, b) => b.score - a.score);
-    filteredResults = filteredResults.slice(0, limit);
+    const sorted = results
+      .sort((a, b) => b.score - a.score)
+      .slice(0, limit);
 
     return NextResponse.json({
       success: true,
-      results: filteredResults,
+      results: sorted,
       query,
-      total: filteredResults.length,
-      filters: {
-        types,
-        hasPhotos,
-        approved,
-        recent,
-      },
+      total: sorted.length,
     });
-  } catch (error: any) {
-    console.error('Search error:', error);
+  } catch (error) {
+    console.error('Search API error:', error);
     return NextResponse.json(
-      {
-        success: false,
-        error: 'Internal server error',
-        results: [],
-        total: 0,
-      },
+      { success: false, results: [], error: 'Error interno del servidor' },
       { status: 500 }
     );
   }

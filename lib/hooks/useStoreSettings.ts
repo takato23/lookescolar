@@ -3,6 +3,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import { DEFAULT_STORE_DESIGN, resolveStoreDesign, type StoreDesignSettings } from '@/lib/store/store-design';
 
 export interface StoreProduct {
   name: string;
@@ -111,7 +112,10 @@ export interface StoreSettings {
     mobile_columns?: number;
     desktop_columns?: number;
     template_variant?: string;
+    design?: StoreDesignSettings;
   };
+
+  design?: StoreDesignSettings;
   
   // SEO
   seo_settings?: {
@@ -166,6 +170,7 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
   enabled: false,
   template: 'pixieset',
   currency: 'ARS',
+  design: DEFAULT_STORE_DESIGN,
   colors: {
     primary: '#1f2937',
     secondary: '#6b7280',
@@ -194,7 +199,8 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
     enable_fullscreen: true,
     mobile_columns: 2,
     desktop_columns: 4,
-    template_variant: 'pixieset'
+    template_variant: 'pixieset',
+    design: DEFAULT_STORE_DESIGN
   },
   products: {
     // PAQUETES PRINCIPALES - Usar AMBOS nombres para compatibilidad
@@ -426,10 +432,14 @@ const DEFAULT_STORE_SETTINGS: StoreSettings = {
 // API Functions
 function mergeStoreSettings(partial?: Partial<StoreSettings> | null): StoreSettings {
   const base = partial ?? {};
+  const resolvedDesign = resolveStoreDesign(
+    base.design ?? base.theme_customization?.design ?? DEFAULT_STORE_DESIGN
+  );
 
   return {
     ...DEFAULT_STORE_SETTINGS,
     ...base,
+    design: resolvedDesign,
     colors: {
       ...DEFAULT_STORE_SETTINGS.colors,
       ...(base?.colors ?? {})
@@ -440,7 +450,8 @@ function mergeStoreSettings(partial?: Partial<StoreSettings> | null): StoreSetti
     },
     theme_customization: {
       ...DEFAULT_STORE_SETTINGS.theme_customization,
-      ...(base?.theme_customization ?? {})
+      ...(base?.theme_customization ?? {}),
+      design: resolvedDesign
     },
     products: {
       ...DEFAULT_STORE_SETTINGS.products,
@@ -504,7 +515,8 @@ async function saveStoreSettings(settings: StoreSettings): Promise<StoreSettings
     enabled: settings.enabled,
     template: settings.template,
     products: settings.products,
-    payment_methods: settings.payment_methods // 🔥 CRUCIAL: Debe enviarse para que se guarde
+    payment_methods: settings.payment_methods, // 🔥 CRUCIAL: Debe enviarse para que se guarde
+    design: settings.design ?? settings.theme_customization?.design ?? DEFAULT_STORE_DESIGN
   };
   
   console.log('🔧 Sending only valid fields:', JSON.stringify(validSettings, null, 2));
@@ -716,30 +728,8 @@ export function usePublicStore(token?: string, password?: string) {
 
   const loadPublicSettings = useCallback(async () => {
     if (!token) {
-      // Load legacy store settings if no token provided
-      try {
-        setLoading(true);
-        setError(null);
-
-        const response = await fetch('/api/store/settings', {
-          method: 'GET',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-        });
-
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
-        }
-
-        const data = await response.json();
-        setSettings(data.settings as PublicStoreSettings);
-      } catch (err) {
-        console.error('Error loading legacy store settings:', err);
-        setError(err instanceof Error ? err.message : 'Error loading store');
-      } finally {
-        setLoading(false);
-      }
+      setLoading(false);
+      setError('Token requerido');
       return;
     }
 
@@ -748,13 +738,20 @@ export function usePublicStore(token?: string, password?: string) {
       setLoading(true);
       setError(null);
       setPasswordRequired(false);
+      setStoreAvailable(true);
 
-      const response = await fetch('/api/public/store/config', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ token, password })
+      const params = new URLSearchParams({ include_assets: 'false' });
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (password) {
+        headers['X-Store-Password'] = password;
+      }
+
+      const response = await fetch(`/api/store/${token}?${params.toString()}`, {
+        method: 'GET',
+        headers,
+        cache: 'no-store',
       });
 
       const data = await response.json();
@@ -766,21 +763,37 @@ export function usePublicStore(token?: string, password?: string) {
           return;
         }
         
-        if (!data.available) {
+        if (data.available === false) {
           setStoreAvailable(false);
-          setError(data.error || 'Tienda no disponible');
+          setError(data.error || data.schedule?.message || 'Tienda no disponible');
           return;
         }
 
         throw new Error(data.error || `HTTP error! status: ${response.status}`);
       }
 
+      if (data.available === false) {
+        setSettings({
+          ...data.settings,
+          storeUrl: `/store-unified/${token}`,
+          mercadoPagoConnected: data.mercadoPagoConnected,
+          available: data.available,
+          schedule: data.schedule,
+        } as PublicStoreSettings);
+        setStoreAvailable(false);
+        setError(data.error || data.schedule?.message || 'Tienda no disponible');
+        return;
+      }
+
       setSettings({
         ...data.settings,
-        storeUrl: data.storeUrl,
-        mercadoPagoConnected: data.mercadoPagoConnected
+        storeUrl: `/store-unified/${token}`,
+        mercadoPagoConnected: data.mercadoPagoConnected,
+        available: data.available,
+        schedule: data.schedule,
       } as PublicStoreSettings);
       setStoreAvailable(true);
+      setPasswordRequired(false);
     } catch (err) {
       console.error('Error loading comprehensive store settings:', err);
       setError(err instanceof Error ? err.message : 'Error loading store');

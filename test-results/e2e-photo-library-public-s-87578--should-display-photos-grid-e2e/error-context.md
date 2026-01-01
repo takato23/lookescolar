@@ -1,0 +1,105 @@
+# Page snapshot
+
+```yaml
+- main "Landing" [ref=e7]:
+  - generic [ref=e8]:
+    - generic:
+      - generic:
+        - generic:
+          - paragraph: OJO DE LOCA
+          - heading "Tu armario, potenciado con IA" [level=1]
+          - paragraph: Organizá tu ropa, descubrí combinaciones increíbles y nunca más digas "no tengo qué ponerme".
+        - generic:
+          - button "Ingresar" [ref=e16]
+          - button "Crear cuenta" [ref=e17]
+  - generic [ref=e19]:
+    - generic [ref=e20]:
+      - heading "Tu armario, potenciado por IA" [level=2] [ref=e21]:
+        - text: Tu armario,
+        - generic [ref=e22]: potenciado por IA
+      - paragraph [ref=e23]: Combinamos lo último en visión artificial y modelos de lenguaje para que nunca más digas "no tengo qué ponerme".
+    - generic [ref=e24]:
+      - generic [ref=e25]:
+        - generic [ref=e28]: auto_awesome
+        - heading "Estilista con IA" [level=3] [ref=e29]
+        - paragraph [ref=e30]: Generá outfits perfectos para cualquier ocasión usando solo las prendas de tu armario real. Tu propio personal shopper en el bolsillo.
+      - generic [ref=e31]:
+        - generic [ref=e34]: view_in_ar
+        - heading "Probador Virtual" [level=3] [ref=e35]
+        - paragraph [ref=e36]: Visualizá cómo te quedan las combinaciones antes de vestirte con nuestra tecnología de visualización avanzada.
+      - generic [ref=e37]:
+        - generic [ref=e40]: checkroom
+        - heading "Tu Armario Inteligente" [level=3] [ref=e41]
+        - paragraph [ref=e42]: La IA identifica tus prendas, colores y estilos automáticamente para que organizar tu guardarropa sea un placer.
+      - generic [ref=e43]:
+        - generic [ref=e46]: luggage
+        - heading "Maleta Perfecta" [level=3] [ref=e47]
+        - paragraph [ref=e48]: ¿Te vas de viaje? Armamos la maleta ideal basada en el clima y los días de tu destino. Nada sobra, nada falta.
+  - generic [ref=e50]:
+    - generic [ref=e51]:
+      - generic [ref=e52]: PROCESO SIMPLE
+      - heading "Cómo funciona Ojo de Loca" [level=2] [ref=e53]:
+        - text: Cómo funciona
+        - generic [ref=e54]: Ojo de Loca
+    - generic [ref=e55]:
+      - generic [ref=e58]:
+        - generic [ref=e59]:
+          - generic [ref=e60]: "01"
+          - generic [ref=e62]: photo_camera
+        - heading "Digitaliza" [level=3] [ref=e63]
+        - paragraph [ref=e64]: Saca fotos a tus prendas o sube imágenes de tu galería. Nuestra IA las limpia y etiqueta por ti.
+      - generic [ref=e67]:
+        - generic [ref=e68]:
+          - generic [ref=e69]: "02"
+          - generic [ref=e71]: grid_view
+        - heading "Organiza" [level=3] [ref=e72]
+        - paragraph [ref=e73]: Mira tu armario como nunca antes. Filtra por color, categoría o estilo con un solo toque.
+      - generic [ref=e75]:
+        - generic [ref=e76]:
+          - generic [ref=e77]: "03"
+          - generic [ref=e79]: auto_fix_high
+        - heading "Luce Increíble" [level=3] [ref=e80]
+        - paragraph [ref=e81]: Genera outfits para cualquier evento o deja que la IA te sorprenda con combinaciones que no habías imaginado.
+    - generic [ref=e82]:
+      - paragraph [ref=e83]: ¿Lista para revolucionar tu forma de vestir?
+      - paragraph [ref=e84]: Más de 5,000 outfits generados este mes.
+  - generic [ref=e85]:
+    - generic [ref=e86]:
+      - generic [ref=e87]:
+        - generic [ref=e88]:
+          - generic [ref=e89]: 👗
+          - generic [ref=e90]: Ojo de Loca
+        - paragraph [ref=e91]: Tu asistente personal de moda impulsado por inteligencia artificial. Hecho para las que nunca tienen qué ponerse.
+      - generic [ref=e92]:
+        - generic [ref=e93]:
+          - heading "Producto" [level=4] [ref=e94]
+          - link "Características" [ref=e95] [cursor=pointer]:
+            - /url: "#"
+          - link "Precio" [ref=e96] [cursor=pointer]:
+            - /url: "#"
+          - link "IA Stylist" [ref=e97] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e98]:
+          - heading "Compañía" [level=4] [ref=e99]
+          - link "Sobre nosotros" [ref=e100] [cursor=pointer]:
+            - /url: "#"
+          - link "Contacto" [ref=e101] [cursor=pointer]:
+            - /url: "#"
+          - link "Blog" [ref=e102] [cursor=pointer]:
+            - /url: "#"
+        - generic [ref=e103]:
+          - heading "Legal" [level=4] [ref=e104]
+          - link "Privacidad" [ref=e105] [cursor=pointer]:
+            - /url: "#"
+          - link "Términos" [ref=e106] [cursor=pointer]:
+            - /url: "#"
+    - generic [ref=e107]:
+      - paragraph [ref=e108]: © 2025 Ojo de Loca. Todos los derechos reservados.
+      - generic [ref=e109]:
+        - link "Instagram" [ref=e110] [cursor=pointer]:
+          - /url: "#"
+        - link "TikTok" [ref=e111] [cursor=pointer]:
+          - /url: "#"
+        - link "Twitter" [ref=e112] [cursor=pointer]:
+          - /url: "#"
+```

@@ -25,7 +25,7 @@ export function DashboardError({ error, onRetry }: DashboardErrorProps) {
             Error al cargar el dashboard
           </h3>
 
-          <p className="text-gray-500 dark:text-gray-400 mb-6 max-w-md">
+          <p className="text-gray-600 dark:text-gray-400 mb-6 max-w-md">
             {errorMessage}. Por favor, intenta recargar los datos.
           </p>
 
@@ -50,11 +50,11 @@ export function DashboardError({ error, onRetry }: DashboardErrorProps) {
             <Card key={title}>
               <CardContent className="p-6">
                 <div className="space-y-2">
-                  <h3 className="text-gray-500 dark:text-gray-400 text-sm font-medium">
+                  <h3 className="text-gray-600 dark:text-gray-400 text-sm font-medium">
                     {title}
                   </h3>
                   <p className="text-2xl font-bold">—</p>
-                  <p className="text-gray-500 dark:text-gray-400 text-xs">Sin datos</p>
+                  <p className="text-gray-600 dark:text-gray-400 text-xs">Sin datos</p>
                 </div>
               </CardContent>
             </Card>

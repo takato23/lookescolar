@@ -8,6 +8,9 @@ import {
   qrCacheService,
   QRCacheEntry,
 } from '@/lib/cache/qr-enhanced-cache.service';
+import { parseStudentQRCode, STUDENT_QR_PREFIX } from '@/lib/qr/format';
+import { resolveQrSizePx } from '@/lib/qr/settings';
+import { getAppSettings } from '@/lib/settings';
 import 'server-only';
 
 const supabase = createClient(
@@ -77,7 +80,7 @@ export interface QRResult {
  * Integra con TokenService para URLs seguras al portal
  */
 export class QRService {
-  private readonly QR_PREFIX_STUDENT = 'LKSTUDENT_';
+  private readonly QR_PREFIX_STUDENT = STUDENT_QR_PREFIX;
   private readonly QR_PREFIX_FAMILY = 'LKFAMILY_';
 
   private defaultOptions: QRGenerationOptions = {
@@ -365,6 +368,22 @@ export class QRService {
     const requestId = crypto.randomUUID();
 
     try {
+      const { data: studentRecord } = await supabase
+        .from('students')
+        .select('id, metadata, course_id')
+        .eq('id', studentId)
+        .maybeSingle();
+
+      const { data: subjectRecord } = await supabase
+        .from('subjects')
+        .select('id, metadata')
+        .eq('id', studentId)
+        .maybeSingle();
+
+      if (!studentRecord && !subjectRecord) {
+        throw new Error('Student not found in students or subjects tables');
+      }
+
       // Generate secure token for student identification
       const token = this.generateSecureToken();
       const codeValue = `${this.QR_PREFIX_STUDENT}${token}`;
@@ -374,11 +393,17 @@ export class QRService {
         .from('codes')
         .insert({
           event_id: eventId,
-          course_id: courseId,
+          course_id: courseId ?? (studentRecord as any)?.course_id ?? null,
+          student_id: studentRecord ? studentRecord.id : null,
+          qr_type: 'student_identification',
           code_value: codeValue,
           token: token,
           title: `QR Identificación - ${studentName}`,
           is_published: true,
+          generation_options: options,
+          metadata: {
+            subject_id: subjectRecord?.id ?? null,
+          },
         })
         .select()
         .single();
@@ -387,44 +412,69 @@ export class QRService {
         throw new Error(`Failed to store student QR code: ${error.message}`);
       }
 
-      const { data: subjectMetadata, error: subjectMetadataError } =
-        await supabase
-          .from('subjects')
-          .select('metadata')
-          .eq('id', studentId)
-          .single();
+      if (studentRecord) {
+        const existingMetadata =
+          (studentRecord.metadata as Record<string, any>) || {};
+        const { error: updateStudentError } = await supabase
+          .from('students')
+          .update({
+            qr_code: codeValue,
+            primary_qr_code_id: qrData.id,
+            qr_status: 'generated',
+            metadata: {
+              ...existingMetadata,
+              qr_token: token,
+              qr_code_value: codeValue,
+              qr_type: 'student_identification',
+            },
+          })
+          .eq('id', studentId);
 
-      if (subjectMetadataError) {
-        throw new Error(
-          `Failed to fetch subject metadata: ${subjectMetadataError.message}`
-        );
+        if (updateStudentError) {
+          throw new Error(
+            `Failed to update student with QR metadata: ${updateStudentError.message}`
+          );
+        }
       }
 
-      const existingMetadata =
-        (subjectMetadata?.metadata as Record<string, any>) || {};
+      if (subjectRecord && !studentRecord) {
+        const existingMetadata =
+          (subjectRecord.metadata as Record<string, any>) || {};
+        const { error: updateSubjectError } = await supabase
+          .from('subjects')
+          .update({
+            qr_code: codeValue,
+            metadata: {
+              ...existingMetadata,
+              qr_token: token,
+              qr_code_value: codeValue,
+              qr_type: 'student_identification',
+            },
+          })
+          .eq('id', studentId);
 
-      // Link QR code to student in subjects table
-      const { error: updateSubjectError } = await supabase
-        .from('subjects')
-        .update({
-          qr_code: qrData.id,
-          metadata: {
-            ...existingMetadata,
-            qr_token: token,
-            qr_code_value: codeValue,
-            qr_type: 'student_identification',
-          },
-        })
-        .eq('id', studentId);
-
-      if (updateSubjectError) {
-        throw new Error(
-          `Failed to update subject with QR metadata: ${updateSubjectError.message}`
-        );
+        if (updateSubjectError) {
+          throw new Error(
+            `Failed to update subject with QR metadata: ${updateSubjectError.message}`
+          );
+        }
       }
 
       // Generate QR code image
       const qrOptions = { ...this.defaultOptions, ...options };
+      if (typeof options.size !== 'number') {
+        try {
+          const settings = await getAppSettings();
+          qrOptions.size = resolveQrSizePx(
+            settings.qrDefaultSize,
+            qrOptions.size ?? this.defaultOptions.size ?? 200
+          );
+        } catch (error) {
+          logger.warn('Failed to resolve QR default size, using fallback', {
+            error: error instanceof Error ? error.message : 'Unknown error',
+          });
+        }
+      }
       const dataUrl = await QRCode.toDataURL(codeValue, {
         errorCorrectionLevel: qrOptions.errorCorrectionLevel,
         type: 'image/png',
@@ -474,6 +524,27 @@ export class QRService {
 
     try {
       const results = [];
+      let resolvedOptions = request.options;
+
+      if (!resolvedOptions?.size) {
+        try {
+          const settings = await getAppSettings();
+          resolvedOptions = {
+            ...resolvedOptions,
+            size: resolveQrSizePx(
+              settings.qrDefaultSize,
+              this.defaultOptions.size ?? 200
+            ),
+          };
+        } catch (error) {
+          logger.warn(
+            'Failed to resolve batch QR default size, using fallback',
+            {
+              error: error instanceof Error ? error.message : 'Unknown error',
+            }
+          );
+        }
+      }
 
       // Process in smaller batches to avoid overwhelming the database
       const batchSize = 10;
@@ -487,7 +558,7 @@ export class QRService {
               student.id,
               student.name,
               student.courseId,
-              request.options
+              resolvedOptions ?? request.options
             );
 
             return {
@@ -541,13 +612,14 @@ export class QRService {
     eventId?: string
   ): Promise<StudentQRData | null> {
     try {
-      // Check if QR code follows student identification format
-      if (!qrCodeValue.startsWith(this.QR_PREFIX_STUDENT)) {
+      const parsed = parseStudentQRCode(qrCodeValue);
+      if (!parsed) {
         return null;
       }
 
-      // Extract token
-      const token = qrCodeValue.replace(this.QR_PREFIX_STUDENT, '');
+      if (parsed.kind === 'legacy') {
+        return await this.validateLegacyStudentQRCode(parsed, eventId);
+      }
 
       // Look up QR code in database
       let query = supabase
@@ -557,6 +629,7 @@ export class QRService {
           id,
           event_id,
           course_id,
+          student_id,
           code_value,
           token,
           title,
@@ -564,7 +637,7 @@ export class QRService {
           created_at
         `
         )
-        .eq('token', token)
+        .eq('token', parsed.token)
         .eq('is_published', true);
 
       if (eventId) {
@@ -577,13 +650,7 @@ export class QRService {
         return null;
       }
 
-      // Find associated student
-      const { data: student } = await supabase
-        .from('subjects')
-        .select('id, name, metadata')
-        .eq('qr_code', data.id)
-        .single();
-
+      const student = await this.findStudentForCode(data);
       if (!student) {
         return null;
       }
@@ -601,6 +668,7 @@ export class QRService {
           studentName: student.name,
           createdAt: data.created_at,
           ...(student.metadata ?? {}),
+          qr_source: student.source,
         },
       };
     } catch (error) {
@@ -611,6 +679,195 @@ export class QRService {
       });
       return null;
     }
+  }
+
+  private async validateLegacyStudentQRCode(
+    parsed: {
+      kind: 'legacy';
+      studentId: string;
+      studentName?: string;
+      eventId?: string;
+    },
+    eventId?: string
+  ): Promise<StudentQRData | null> {
+    const legacyEventId = parsed.eventId ?? eventId;
+    if (!legacyEventId) {
+      return null;
+    }
+
+    if (eventId && parsed.eventId && eventId !== parsed.eventId) {
+      return null;
+    }
+
+    const student = await this.findLegacyStudent(parsed.studentId, legacyEventId);
+    if (!student) {
+      return null;
+    }
+
+    if (
+      parsed.studentName &&
+      !this.normalizedNameEquals(student.name, parsed.studentName)
+    ) {
+      return null;
+    }
+
+    const { data: code } = await supabase
+      .from('codes')
+      .select(
+        `
+        id,
+        event_id,
+        course_id,
+        code_value,
+        token,
+        title,
+        is_published,
+        created_at
+      `
+      )
+      .eq('id', student.qr_code_id)
+      .eq('is_published', true)
+      .single();
+
+    if (!code) {
+      return null;
+    }
+
+    return {
+      id: code.id,
+      eventId: code.event_id,
+      courseId: code.course_id,
+      studentId: student.id,
+      codeValue: code.code_value,
+      token: code.token,
+      type: 'student_identification',
+      metadata: {
+        title: code.title,
+        studentName: student.name,
+        createdAt: code.created_at,
+        ...(student.metadata ?? {}),
+        legacy_qr: true,
+        qr_source: student.source,
+      },
+    };
+  }
+
+  private normalizedNameEquals(left: string, right: string): boolean {
+    const normalize = (value: string) =>
+      value.trim().toLowerCase().replace(/\s+/g, ' ');
+    return normalize(left) === normalize(right);
+  }
+
+  private async findStudentForCode(code: {
+    id: string;
+    code_value: string;
+    event_id: string;
+    student_id?: string | null;
+  }): Promise<{
+    id: string;
+    name: string;
+    metadata: Record<string, any> | null;
+    source: 'students' | 'subjects';
+  } | null> {
+    if (code.student_id) {
+      const { data: student } = await supabase
+        .from('students')
+        .select('id, name, metadata')
+        .eq('id', code.student_id)
+        .single();
+
+      if (student) {
+        return {
+          id: student.id,
+          name: student.name,
+          metadata: (student.metadata as Record<string, any>) ?? null,
+          source: 'students',
+        };
+      }
+    }
+
+    const { data: studentByCode } = await supabase
+      .from('students')
+      .select('id, name, metadata, primary_qr_code_id, qr_code')
+      .eq('event_id', code.event_id)
+      .or(
+        `primary_qr_code_id.eq.${code.id},qr_code.eq.${code.code_value}`
+      )
+      .maybeSingle();
+
+    if (studentByCode) {
+      return {
+        id: studentByCode.id,
+        name: studentByCode.name,
+        metadata: (studentByCode.metadata as Record<string, any>) ?? null,
+        source: 'students',
+      };
+    }
+
+    const { data: subject } = await supabase
+      .from('subjects')
+      .select('id, name, metadata, qr_code')
+      .eq('event_id', code.event_id)
+      .or(`qr_code.eq.${code.id},qr_code.eq.${code.code_value}`)
+      .maybeSingle();
+
+    if (subject) {
+      return {
+        id: subject.id,
+        name: subject.name,
+        metadata: (subject.metadata as Record<string, any>) ?? null,
+        source: 'subjects',
+      };
+    }
+
+    return null;
+  }
+
+  private async findLegacyStudent(
+    studentId: string,
+    eventId: string
+  ): Promise<{
+    id: string;
+    name: string;
+    metadata: Record<string, any> | null;
+    qr_code_id: string;
+    source: 'students' | 'subjects';
+  } | null> {
+    const { data: student } = await supabase
+      .from('students')
+      .select('id, name, metadata, primary_qr_code_id, event_id')
+      .eq('id', studentId)
+      .eq('event_id', eventId)
+      .maybeSingle();
+
+    if (student?.primary_qr_code_id) {
+      return {
+        id: student.id,
+        name: student.name,
+        metadata: (student.metadata as Record<string, any>) ?? null,
+        qr_code_id: student.primary_qr_code_id,
+        source: 'students',
+      };
+    }
+
+    const { data: subject } = await supabase
+      .from('subjects')
+      .select('id, name, metadata, qr_code, event_id')
+      .eq('id', studentId)
+      .eq('event_id', eventId)
+      .maybeSingle();
+
+    if (subject?.qr_code) {
+      return {
+        id: subject.id,
+        name: subject.name,
+        metadata: (subject.metadata as Record<string, any>) ?? null,
+        qr_code_id: subject.qr_code,
+        source: 'subjects',
+      };
+    }
+
+    return null;
   }
 
   /**
@@ -625,6 +882,7 @@ export class QRService {
           id,
           event_id,
           course_id,
+          student_id,
           code_value,
           token,
           title,
@@ -650,11 +908,7 @@ export class QRService {
       // Get associated students for each QR code
       const qrCodes = await Promise.all(
         data.map(async (code) => {
-          const { data: student } = await supabase
-            .from('subjects')
-            .select('id, name, metadata')
-            .eq('qr_code', code.id)
-            .single();
+          const student = await this.findStudentForCode(code);
 
           if (!student) {
             return null;
@@ -673,6 +927,7 @@ export class QRService {
               studentName: student.name,
               createdAt: code.created_at,
               ...student.metadata,
+              qr_source: student.source,
             },
           };
         })
@@ -712,14 +967,32 @@ export class QRService {
         );
       }
 
-      // Get students with QR codes
-      const { data: studentsWithQR, error: studentsError } = await supabase
-        .from('subjects')
+      // Get students with QR codes (prefer students table, fallback to subjects)
+      let studentsWithQR: Array<{ id: string; qr_code: string | null }> = [];
+      const { data: studentsData, error: studentsError } = await supabase
+        .from('students')
         .select('id, qr_code')
         .eq('event_id', eventId);
 
       if (studentsError) {
-        throw new Error(`Failed to get students: ${studentsError.message}`);
+        const { data: subjectsData, error: subjectsError } = await supabase
+          .from('subjects')
+          .select('id, qr_code')
+          .eq('event_id', eventId);
+
+        if (subjectsError) {
+          throw new Error(`Failed to get students: ${subjectsError.message}`);
+        }
+
+        studentsWithQR = (subjectsData || []) as Array<{
+          id: string;
+          qr_code: string | null;
+        }>;
+      } else {
+        studentsWithQR = (studentsData || []) as Array<{
+          id: string;
+          qr_code: string | null;
+        }>;
       }
 
       // Get photos with detected student QR codes

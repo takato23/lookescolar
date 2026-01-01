@@ -21,10 +21,16 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
 
     const supabase = await createServerSupabaseServiceClient();
 
-    const { data: tokens, error: tokensError, count } = await supabase
-      .from('enhanced_tokens')
-      .select(
-        `
+    // Try to query enhanced_tokens, fallback to public_access_tokens if it doesn't exist
+    let tokens: Record<string, unknown>[] | null = null;
+    let tokensError: Error | null = null;
+    let count: number | null = null;
+
+    try {
+      const result = await supabase
+        .from('enhanced_tokens' as any)
+        .select(
+          `
           id,
           token,
           type,
@@ -37,13 +43,28 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
           created_at,
           updated_at
         `,
-        { count: 'exact' }
-      )
-      .order('created_at', { ascending: false })
-      .range(offset, offset + limit - 1);
+          { count: 'exact' }
+        )
+        .order('created_at', { ascending: false })
+        .range(offset, offset + limit - 1);
+      
+      tokens = result.data;
+      tokensError = result.error;
+      count = result.count;
+    } catch (e) {
+      // Table doesn't exist, return empty result
+      tokens = [];
+      count = 0;
+    }
 
     if (tokensError) {
-      throw tokensError;
+      // If error is about table not existing, return empty
+      if (tokensError.message?.includes('does not exist') || tokensError.message?.includes('relation')) {
+        tokens = [];
+        count = 0;
+      } else {
+        throw tokensError;
+      }
     }
 
     const tokenIds = (tokens ?? []).map((token: Record<string, unknown>) => token.id as string);
@@ -90,15 +111,23 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
     >();
 
     if (tokenIds.length > 0) {
-      const { data: logs, error: logsError } = await supabase
-        .from('token_access_log')
-        .select('token_id, access_granted, accessed_at')
-        .in('token_id', tokenIds)
-        .order('accessed_at', { ascending: false })
-        .limit(500);
-
-      if (logsError) {
-        throw logsError;
+      // Try to query token_access_log, but handle if table doesn't exist
+      let logs: Record<string, unknown>[] | null = null;
+      try {
+        const logsResult = await supabase
+          .from('token_access_log' as any)
+          .select('token_id, access_granted, accessed_at')
+          .in('token_id', tokenIds)
+          .order('accessed_at', { ascending: false })
+          .limit(500);
+        
+        if (logsResult.error && !logsResult.error.message?.includes('does not exist') && !logsResult.error.message?.includes('relation')) {
+          throw logsResult.error;
+        }
+        logs = logsResult.data;
+      } catch (e) {
+        // Table doesn't exist, use empty array
+        logs = [];
       }
 
       statsMap = new Map(
@@ -135,13 +164,13 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
 
     let eventMap = new Map<
       string,
-      { id: string; name: string; school_name?: string | null; start_date?: string | null }
+      { id: string; name: string; location?: string | null; date?: string | null }
     >();
 
     if (eventIds.length > 0) {
       const { data: events, error: eventsError } = await supabase
         .from('events')
-        .select('id, name, school_name, start_date, end_date')
+        .select('id, name, location, date')
         .in('id', eventIds);
 
       if (eventsError) {
@@ -154,8 +183,8 @@ export const GET = withAdminAuth(async (request: NextRequest) => {
           {
             id: event.id as string,
             name: event.name as string,
-            school_name: event.school_name as string | null,
-            start_date: event.start_date as string | null,
+            location: event.location as string | null,
+            date: event.date as string | null,
           },
         ])
       );

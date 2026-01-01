@@ -29,7 +29,7 @@ export default function QuickSetupPage() {
         json.subjects.map((s: any) => ({ name: s.name, token: s.token }))
       );
       setMessage(
-        `✅ Evento creado: ${json.event.name}\n✅ ${json.subjects.length} alumnos creados con tokens`
+        `✅ Evento creado: ${json.event.name}\n✅ ${json.subjects.length} invitados creados con tokens`
       );
     } catch (error) {
       console.error('Error:', error);
@@ -56,17 +56,17 @@ export default function QuickSetupPage() {
           </p>
           <ul className="mb-6 list-inside list-disc space-y-2 text-gray-500 dark:text-gray-400">
             <li>1 Evento: "Graduación 2024"</li>
-            <li>4 Alumnos con sus tokens únicos</li>
+            <li>4 Invitados con sus tokens únicos</li>
             <li>Todo listo para empezar a subir fotos</li>
           </ul>
 
           <button
             onClick={createTestData}
             disabled={loading}
-            aria-label="Crear evento y alumnos de prueba"
+            aria-label="Crear evento e invitados de prueba"
             className="mb-6 rounded-lg bg-blue-600 px-6 py-3 font-semibold text-white transition hover:bg-blue-700 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-blue-400 disabled:opacity-50"
           >
-            {loading ? 'Creando...' : 'Crear Evento y Alumnos de Prueba'}
+            {loading ? 'Creando...' : 'Crear Evento e Invitados de Prueba'}
           </button>
 
           {message && (
@@ -101,10 +101,10 @@ export default function QuickSetupPage() {
           {tokens.length > 0 && (
             <div className="mt-6 rounded-lg bg-yellow-50 p-6">
               <h3 className="mb-4 text-lg font-semibold text-yellow-900">
-                🔑 Tokens de Acceso Familiar
+                🔑 Tokens de Acceso para Clientes
               </h3>
               <p className="mb-4 text-sm text-gray-500 dark:text-gray-400">
-                Guarda estos enlaces. Cada familia accede con su link único:
+                Guarda estos enlaces. Cada cliente accede con su link único:
               </p>
               <div className="space-y-3">
                 {tokens.map((item, idx) => (
@@ -119,14 +119,14 @@ export default function QuickSetupPage() {
                       <input
                         type="text"
                         readOnly
-                        value={`http://localhost:3000/f/${item.token}`}
+                        value={`http://localhost:3000/store-unified/${item.token}`}
                         className="flex-1 rounded border bg-muted p-2 text-sm"
                         onClick={(e) => (e.target as HTMLInputElement).select()}
                       />
                       <button
                         onClick={() => {
                           navigator.clipboard.writeText(
-                            `http://localhost:3000/f/${item.token}`
+                            `http://localhost:3000/store-unified/${item.token}`
                           );
                           alert('Copiado!');
                         }}
@@ -136,7 +136,7 @@ export default function QuickSetupPage() {
                         Copiar
                       </button>
                       <a
-                        href={`/f/${item.token}`}
+                        href={`/store-unified/${item.token}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         aria-label={`Abrir enlace de ${item.name}`}
@@ -159,8 +159,8 @@ export default function QuickSetupPage() {
 
           <ol className="list-inside list-decimal space-y-4 text-gray-500 dark:text-gray-400">
             <li>
-              <strong>Crear Datos:</strong> Click en el botón "Crear Evento y
-              Alumnos de Prueba"
+              <strong>Crear Datos:</strong> Click en el botón "Crear Evento e
+              Invitados de Prueba"
             </li>
             <li>
               <strong>Subir Fotos:</strong> Ve a "Ir a Subir Fotos" y sube
@@ -168,11 +168,11 @@ export default function QuickSetupPage() {
             </li>
             <li>
               <strong>Etiquetar:</strong> En la galería, selecciona fotos y
-              asígnalas a los alumnos
+              asígnalas a los invitados
             </li>
             <li>
-              <strong>Ver como Familia:</strong> Usa los enlaces generados para
-              ver las fotos de cada alumno
+              <strong>Ver como Cliente:</strong> Usa los enlaces generados para
+              ver las fotos de cada invitado
             </li>
           </ol>
 
@@ -180,7 +180,7 @@ export default function QuickSetupPage() {
             <p className="text-sm font-semibold text-amber-900">💡 Tip:</p>
             <p className="text-sm text-amber-700 dark:text-amber-300">
               Las fotos se procesan con marca de agua "MUESTRA" automáticamente.
-              Las familias solo verán las fotos que les asignes.
+              Los clientes solo verán las fotos que les asignes.
             </p>
           </div>
         </div>

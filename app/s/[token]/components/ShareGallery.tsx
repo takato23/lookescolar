@@ -28,6 +28,7 @@ import {
   GalleryAsset,
 } from '@/lib/services/hierarchical-gallery.service';
 import { AssetGrid } from './AssetGrid';
+import { PLACEHOLDER_IMAGES } from '@/lib/config/placeholder-images';
 import { FolderList } from './FolderList';
 import { GalleryHeader } from './GalleryHeader';
 import { formatFileSize, formatDate } from '@/lib/utils';
@@ -248,7 +249,12 @@ export function ShareGallery({
                   />
                 ) : (
                   <div className="py-12 text-center">
-                    <ImageIcon className="mx-auto mb-4 h-12 w-12 text-gray-400" />
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={PLACEHOLDER_IMAGES.illustrations.emptyGallery}
+                      alt="Sin fotos"
+                      className="mx-auto mb-6 h-48 w-auto opacity-80"
+                    />
                     <h3 className="mb-2 text-lg font-medium text-gray-900">
                       No photos found
                     </h3>

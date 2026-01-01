@@ -217,8 +217,8 @@ export const qrCodeSchema = z.object({
     .min(1, 'QR code text is required')
     .max(1000, 'QR code text too long')
     .regex(
-      /^STUDENT:[a-f0-9-]{36}:[^:]+:[a-f0-9-]{36}$/i,
-      'Invalid QR code format. Expected: STUDENT:ID:NAME:EVENT_ID'
+      /LKSTUDENT_[A-Za-z0-9_-]+/i,
+      'Invalid QR code format. Expected: LKSTUDENT_<token>'
     ),
 });
 

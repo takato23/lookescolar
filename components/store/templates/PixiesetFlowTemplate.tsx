@@ -788,7 +788,7 @@ export function PixiesetFlowTemplate({
               badge: 'Paso 4 · Checkout',
               title: 'Revisá tu pedido antes de confirmar',
               subtitle:
-                'Completá los datos del responsable y alumno/a para coordinar la entrega educativa.',
+                'Completá los datos del responsable e invitado/a para coordinar la entrega educativa.',
             }}
             sidebar={
               <CheckoutOrderSummary

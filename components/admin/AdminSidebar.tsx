@@ -13,7 +13,6 @@ import {
   BarChart3,
   PanelLeftClose,
   PanelLeftOpen,
-  ShoppingBag,
 } from 'lucide-react';
 import { useResolvedTheme } from '@/components/providers/theme-provider';
 import {
@@ -65,28 +64,20 @@ const mainNavItems: NavItem[] = [
     isLiquidIcon: true,
   },
   {
+    href: '/admin/publish',
+    label: 'Publicar',
+    icon: QrIcon,
+    description: 'Compartir con clientes',
+    shortcut: '⌘5',
+    isLiquidIcon: true,
+  },
+  {
     href: '/admin/orders',
     label: 'Pedidos',
     icon: OrdersIcon,
     description: 'Pedidos y ventas',
     shortcut: '⌘4',
     isLiquidIcon: true,
-  },
-  {
-    href: '/admin/publish',
-    label: 'Publicar',
-    icon: QrIcon,
-    description: 'Compartir con familias',
-    shortcut: '⌘5',
-    isLiquidIcon: true,
-  },
-  {
-    href: '/admin/store-settings',
-    label: 'Tienda',
-    icon: ShoppingBag,
-    description: 'Configuración de tienda',
-    shortcut: '⌘7',
-    isLiquidIcon: false,
   },
   {
     href: '/admin/settings',

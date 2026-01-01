@@ -9,7 +9,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'token requerido' }, { status: 400 });
     }
 
-    const url = `${request.nextUrl.origin}/f/${token}`;
+    const url = `${request.nextUrl.origin}/store-unified/${token}`;
     const png = await QRCode.toBuffer(url, {
       type: 'png',
       margin: 1,

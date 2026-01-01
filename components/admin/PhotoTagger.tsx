@@ -244,7 +244,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
       case 'couple':
         return `${subject.first_name} ${subject.last_name || ''}`.trim();
       case 'family':
-        return subject.family_name || `Familia ${subject.first_name}`;
+        return subject.family_name || `Cliente ${subject.first_name}`;
       default:
         return subject.first_name;
     }
@@ -360,11 +360,11 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
           />
         </div>
 
-        {/* Lado derecho: Lista de alumnos */}
+        {/* Lado derecho: Lista de invitados */}
         <div className="space-y-4">
           <h2 className="text-foreground flex items-center text-xl font-semibold">
             <span className="mr-3 h-3 w-3 rounded-full bg-green-400"></span>
-            Alumnos ({data.subjects.length})
+            Invitados ({data.subjects.length})
           </h2>
 
           <StudentList
@@ -385,7 +385,7 @@ export function PhotoTagger({ eventId }: PhotoTaggerProps) {
             • Click en fotos para seleccionar (Ctrl/Cmd + Click para selección
             múltiple)
           </li>
-          <li>• Click en alumno para asignar fotos seleccionadas</li>
+          <li>• Click en invitado para asignar fotos seleccionadas</li>
           <li>
             • Usa Ctrl+A para seleccionar todas, Esc para limpiar selección
           </li>

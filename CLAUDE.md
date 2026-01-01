@@ -31,33 +31,43 @@ LookEscolar is a multi-tenant school photography management system built with Ne
 ```bash
 # Development
 npm run dev              # Start Next.js dev server (port 3000)
-npm run dev:db          # Start local Supabase instance
-npm run build           # Production build
-npm run typecheck       # Run TypeScript type checking
-npm run lint            # Run ESLint
+npm run build            # Production build
+npm start                # Start production server
+npm run typecheck        # Run TypeScript type checking
+npm run lint             # Run ESLint
 
-# Storage Management
-npm run storage:cleanup # Clean up old storage files
-curl http://localhost:3000/api/admin/storage/monitor  # Check storage usage
+# Testing - Unit & Integration
+npm test                 # Run all Vitest tests once
+npm run test:watch       # Run tests in watch mode
+npm run test:ui          # Run tests with Vitest UI
+npm run test:coverage    # Run tests with coverage report
+npm run test:unit        # Run unit tests only
+npm run test:integration # Run integration tests only
+npm run test:security    # Run security validation tests
 
-# Testing - Always run these before marking tasks complete
-npm test                # Run Vitest unit tests
-npm run test:security   # Security validation tests
-npm run test:integration # Integration tests
-npm run test:e2e        # End-to-end tests with Playwright
-npm run test:mvp        # Complete MVP workflow tests
-npm run test:comprehensive # Full test suite
+# Testing - E2E & Usability (Playwright)
+npm run test:e2e         # Run end-to-end tests
+npm run test:usability   # Run accessibility & responsive tests
+npm run test:visual      # Run visual regression tests
+npm run test:playwright  # Run all Playwright tests
+npm run test:comprehensive # Run full test suite (coverage + e2e)
 
-# Database
-npm run db:migrate      # Apply database migrations
-npm run db:types        # Generate TypeScript types from database
-npm run db:seed         # Seed database with test data
-npm run db:reset        # Reset database (danger!)
+# Database (requires Supabase CLI)
+npm run db:migrate       # Push local migrations to database
+npm run db:types         # Generate TypeScript types from schema
+npm run db:reset         # Reset database (⚠️ destructive!)
+npm run db:consolidate   # Run consolidated migration script
+
+# Storage & Monitoring
+npm run storage:cleanup  # Clean up old/orphaned storage files
+npm run storage:monitor  # Check storage usage via API
+npm run metrics:egress   # Monitor Supabase egress bandwidth
 
 # Utilities
-npm run storage:cleanup  # Clean up old storage files
-npm run metrics:egress   # Monitor Supabase egress usage
-npm run qr:class        # Generate QR codes for a class
+npm run qr:generate      # Generate QR codes for testing
+npm run security:audit   # Run comprehensive security audit
+npm run photos:verify    # Verify photo system integrity
+npm run cleanup:watermarks # Clean up orphaned watermark files
 ```
 
 ## Architecture
@@ -247,11 +257,30 @@ Mercado Pago integration with:
 4. **Security Tests**: Auth, rate limiting, input validation
 5. **Performance Tests**: Load testing, Web Vitals
 
+### Running Tests
+```bash
+# Run specific test categories
+npm run test:unit        # Unit tests (services, utilities, components)
+npm run test:integration # API endpoints, database operations
+npm run test:security    # Auth, rate limiting, input validation
+npm run test:e2e         # Complete user workflows
+npm run test:usability   # Accessibility & responsive design
+
+# Development workflow
+npm run test:watch       # Watch mode for TDD
+npm run test:ui          # Visual test interface
+npm run test:coverage    # Generate coverage reports
+
+# Before deployment
+npm run test:comprehensive # Full suite (unit + integration + e2e)
+```
+
 ### Key Test Files
-- `__tests__/e2e/complete-mvp-workflow.test.ts`: Full admin workflow
-- `__tests__/integration/admin-apis.test.ts`: Admin API integration
-- `__tests__/security/security-comprehensive.test.ts`: Security validation
-- `__tests__/usability/`: Accessibility and responsive design tests
+- `__tests__/e2e/`: End-to-end user workflows with Playwright
+- `__tests__/integration/`: API integration and database tests
+- `__tests__/security/`: Security validation and auth tests
+- `__tests__/unit/`: Service, utility, and component unit tests
+- `__tests__/components/`: React component tests with Testing Library
 
 ## Environment Configuration
 
@@ -322,9 +351,10 @@ Mercado Pago integration with:
 4. Ensure Sharp dependencies installed correctly (`npm install sharp`)
 5. Verify signed URL generation and expiry (default 1 hour)
 6. Check tenant context in headers (`x-tenant-id`)
-7. Monitor storage usage: `curl http://localhost:3000/api/admin/storage/monitor`
+7. Monitor storage usage: `npm run storage:monitor`
 8. Run cleanup if needed: `npm run storage:cleanup`
 9. Monitor egress limits: `npm run metrics:egress`
+10. Verify photo system integrity: `npm run photos:verify`
 
 ### Working with Multi-Tenant Context
 1. **Local Development**: Set `NEXT_PUBLIC_MULTITENANT_DEFAULT_TENANT_ID` in `.env.local`
@@ -347,9 +377,10 @@ Mercado Pago integration with:
 1. Run full test suite: `npm run test:comprehensive`
 2. Type check: `npm run typecheck`
 3. Build locally: `npm run build` to catch build errors
-4. Apply database migrations: `npm run db:migrate`
-5. Update TypeScript types: `npm run db:types`
-6. Verify environment variables in hosting platform (Vercel)
+4. Run security audit: `npm run security:audit`
+5. Apply database migrations: `npm run db:migrate` (requires Supabase CLI)
+6. Update TypeScript types: `npm run db:types`
+7. Verify environment variables in hosting platform (Vercel)
 
 **Vercel-Specific Configuration**:
 - Next.js automatically optimizes builds
@@ -373,8 +404,10 @@ Mercado Pago integration with:
 3. Test token-based family access
 4. Verify Mercado Pago payment flow (use test mode first)
 5. Check webhook handling with test notifications
-6. Monitor storage egress: `curl https://yourdomain.com/api/admin/storage/monitor`
-7. Verify multi-tenant domain resolution
+6. Monitor storage: `curl https://yourdomain.com/api/admin/storage/monitor`
+7. Check health endpoint: `curl https://yourdomain.com/api/health`
+8. Verify multi-tenant domain resolution
+9. Run smoke tests in production environment
 
 **Common Deployment Issues**:
 - **Sharp Build Errors**: Ensure Sharp is in `dependencies`, not `devDependencies`
@@ -479,7 +512,7 @@ const { data, error, isLoading } = useQuery({
 
 **Code Changes**:
 1. Always create a feature branch: `git checkout -b feature/description`
-2. Run tests before committing: `npm test && npm run test:integration`
+2. Run tests before committing: `npm run test:coverage`
 3. Check types: `npm run typecheck`
 4. Verify build: `npm run build`
 5. Review changes carefully, especially in services and API routes

@@ -13,7 +13,7 @@ const PaymentSettingsSchema = z.object({
 // GET - Retrieve current configuration
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Get active payment settings
     const { data: settings, error } = await supabase
@@ -73,7 +73,7 @@ export async function POST(request: NextRequest) {
     // Validate input
     const validatedData = PaymentSettingsSchema.parse(body);
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check if settings already exist
     const { data: existingSettings } = await supabase

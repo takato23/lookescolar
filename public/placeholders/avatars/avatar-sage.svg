@@ -1,0 +1,25 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="sageBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8f0e8"/>
+      <stop offset="100%" style="stop-color:#d4e4d4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo circular -->
+  <circle cx="40" cy="40" r="40" fill="url(#sageBg)"/>
+
+  <!-- Cabeza -->
+  <ellipse cx="40" cy="32" rx="14" ry="15" fill="#e0cfc0"/>
+
+  <!-- Cabello largo -->
+  <path d="M24 32C24 18 31 12 40 12C49 12 56 18 56 32" fill="#5c4a3a"/>
+  <path d="M24 32C24 32 22 50 26 55" stroke="#5c4a3a" stroke-width="8" stroke-linecap="round"/>
+  <path d="M56 32C56 32 58 50 54 55" stroke="#5c4a3a" stroke-width="8" stroke-linecap="round"/>
+
+  <!-- Cuello -->
+  <ellipse cx="40" cy="54" rx="12" ry="6" fill="#e0cfc0"/>
+
+  <!-- Ropa/hombros -->
+  <path d="M20 80C20 65 28 58 40 58C52 58 60 65 60 80" fill="#7a9a7a" opacity="0.4"/>
+</svg>

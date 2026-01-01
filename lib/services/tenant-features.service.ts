@@ -168,13 +168,34 @@ class TenantFeaturesService {
       // Remove readonly fields
       const { id, tenant_id, created_at, updated_at, ...updateData } = updates;
 
+      // Ensure the config row exists before updating
+      // This will create the row if it doesn't exist
+      await this.getConfig(supabase, tenantId);
+
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const { data, error } = await supabase
+      let { data, error } = await supabase
         .from('tenant_feature_configs')
         .update(updateData)
         .eq('tenant_id', tenantId)
         .select()
         .single() as { data: any; error: any };
+
+      // If update failed (no row matched), try upsert
+      if (error && error.code === 'PGRST116') {
+        console.log('[TenantFeatures] No row found, attempting upsert...');
+        const upsertResult = await supabase
+          .from('tenant_feature_configs')
+          .upsert({
+            tenant_id: tenantId,
+            ...DEFAULT_CONFIG,
+            ...updateData,
+          })
+          .select()
+          .single() as { data: any; error: any };
+
+        data = upsertResult.data;
+        error = upsertResult.error;
+      }
 
       if (error) {
         console.error('[TenantFeatures] Error updating config:', error);

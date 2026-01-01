@@ -94,9 +94,9 @@ async function resolveFriendlyEventIdInline(identifier: string, tenantId: string
         .trim()
         .substring(0, 50)
         .replace(/^-+|-+$/g, '');
-        
+
       if (!slug) slug = 'evento';
-      
+
       if (event.date) {
         const year = new Date(event.date).getFullYear();
         slug = `${slug}-${year}`;
@@ -281,6 +281,8 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
       }
 
       if (body.metadata !== undefined) {
+        // We need to merge metadata, so we'll handle it after fetching current event
+        // Mark that we have metadata to merge
         updateData.metadata = body.metadata as Json | null;
       }
 
@@ -292,6 +294,47 @@ export const PATCH = RateLimitMiddleware.withRateLimit(
       }
 
       const supabase = await createServerSupabaseServiceClient();
+
+      // If we have metadata to update, we need to merge it with existing
+      if (body.metadata !== undefined && body.metadata !== null) {
+        const { data: currentEvent, error: fetchError } = await supabase
+          .from('events')
+          .select('metadata')
+          .eq('id', id)
+          .eq('tenant_id', tenantId)
+          .single();
+
+        if (fetchError) {
+          return NextResponse.json(
+            { error: 'No se pudo obtener el evento actual', details: fetchError.message },
+            { status: 500 }
+          );
+        }
+
+        // Deep merge the metadata
+        const existingMetadata = (currentEvent?.metadata as Record<string, unknown>) || {};
+        const newMetadata = body.metadata as Record<string, unknown>;
+
+        // Merge settings deeply if both exist
+        const mergedMetadata: Record<string, unknown> = { ...existingMetadata };
+        for (const key of Object.keys(newMetadata)) {
+          if (
+            key === 'settings' &&
+            typeof newMetadata[key] === 'object' &&
+            typeof mergedMetadata[key] === 'object'
+          ) {
+            // Deep merge settings
+            mergedMetadata[key] = {
+              ...(mergedMetadata[key] as Record<string, unknown>),
+              ...(newMetadata[key] as Record<string, unknown>),
+            };
+          } else {
+            mergedMetadata[key] = newMetadata[key];
+          }
+        }
+
+        updateData.metadata = mergedMetadata as Json;
+      }
 
       const { data, error } = await supabase
         .from('events')

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import Link from 'next/link';
-import { Calendar, Camera, Users, Package, Zap, QrCode, BarChart3, ShoppingBag, Settings } from 'lucide-react';
+import { Calendar, Camera, Package, Share2, Settings } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface QuickAction {
@@ -35,24 +35,6 @@ const actions: QuickAction[] = [
     textColor: 'text-white',
   },
   {
-    href: '/admin/tagging',
-    icon: Users,
-    title: 'Asignar Fotos',
-    subtitle: 'Con QR codes',
-    gradient: 'from-amber-500 to-amber-600',
-    iconBg: 'bg-white/20',
-    textColor: 'text-white',
-  },
-  {
-    href: '/admin/quick-flow',
-    icon: Zap,
-    title: 'Flujo rápido',
-    subtitle: '4 pasos',
-    gradient: 'from-pink-500 to-pink-600',
-    iconBg: 'bg-white/20',
-    textColor: 'text-white',
-  },
-  {
     href: '/admin/orders',
     icon: Package,
     title: 'Ver Pedidos',
@@ -62,37 +44,19 @@ const actions: QuickAction[] = [
     textColor: 'text-white',
   },
   {
-    href: '/admin/codes',
-    icon: QrCode,
-    title: 'Códigos QR',
-    subtitle: 'Generar códigos',
-    gradient: 'from-indigo-500 to-indigo-600',
+    href: '/admin/publish',
+    icon: Share2,
+    title: 'Publicar',
+    subtitle: 'Compartir con clientes',
+    gradient: 'from-emerald-500 to-emerald-600',
     iconBg: 'bg-white/20',
     textColor: 'text-white',
   },
   {
-    href: '/admin/analytics',
-    icon: BarChart3,
-    title: 'Estadísticas',
-    subtitle: 'Ver rendimiento',
-    gradient: 'from-teal-500 to-teal-600',
-    iconBg: 'bg-white/20',
-    textColor: 'text-white',
-  },
-  {
-    href: '/admin/products',
-    icon: ShoppingBag,
-    title: 'Productos',
-    subtitle: 'Gestionar catálogo',
-    gradient: 'from-purple-500 to-pink-500',
-    iconBg: 'bg-white/20',
-    textColor: 'text-white',
-  },
-  {
-    href: '/admin/store-settings',
+    href: '/admin/settings',
     icon: Settings,
-    title: 'Configurar Tienda',
-    subtitle: 'Ajustes y precios',
+    title: 'Ajustes',
+    subtitle: 'Configuración general',
     gradient: 'from-blue-500 to-cyan-500',
     iconBg: 'bg-white/20',
     textColor: 'text-white',

@@ -6,8 +6,47 @@ import { useParams } from 'next/navigation';
 // Lazy loading de componentes para bundle splitting
 // Use direct import + dynamic to avoid Vercel alias resolution issues
 // Extract named export and wrap as default for lazy()
-const PixiesetFlowTemplate = lazy(
-  () => import('@/components/store/templates/PixiesetFlowTemplate').then(module => ({ default: module.PixiesetFlowTemplate }))
+const PixiesetTemplate = lazy(
+  () =>
+    import('@/components/store/templates/PixiesetTemplate').then(module => ({
+      default: module.PixiesetTemplate
+    }))
+);
+const PremiumStoreTemplate = lazy(
+  () =>
+    import('@/components/store/templates/PremiumStoreTemplate').then(module => ({
+      default: module.PremiumStoreTemplate
+    }))
+);
+const ModernMinimalTemplate = lazy(
+  () =>
+    import('@/components/store/templates/ModernMinimalTemplate').then(module => ({
+      default: module.ModernMinimalTemplate
+    }))
+);
+const StudioDarkTemplate = lazy(
+  () =>
+    import('@/components/store/templates/StudioDarkTemplate').then(module => ({
+      default: module.StudioDarkTemplate
+    }))
+);
+const PixiesetStyleTemplate = lazy(
+  () =>
+    import('@/components/store/templates/PixiesetStyleTemplate').then(module => ({
+      default: module.PixiesetStyleTemplate
+    }))
+);
+const EditorialTemplate = lazy(
+  () =>
+    import('@/components/store/templates/EditorialTemplate').then(module => ({
+      default: module.EditorialTemplate
+    }))
+);
+const ClassicGalleryTemplate = lazy(
+  () =>
+    import('@/components/store/templates/ClassicGalleryTemplate').then(module => ({
+      default: module.ClassicGalleryTemplate
+    }))
 );
 
 // Componente de loading optimizado para Suspense
@@ -19,11 +58,13 @@ const StoreLoadingFallback = () => (
     </div>
   </div>
 );
+import { PasswordProtectionModal } from '@/components/store/PasswordProtectionModal';
 import { ThemeToggleSimple } from '@/components/ui/theme-toggle-enhanced';
 import { StoreErrorBoundary } from '@/components/ui/ErrorBoundary';
 import { useUnifiedStore } from '@/lib/stores/unified-store';
 import type { StoreSettings } from '@/lib/hooks/useStoreSettings';
 import type { AdditionalCopy, ProductOption } from '@/lib/types/unified-store';
+import { DEFAULT_STORE_DESIGN, resolveStoreDesign } from '@/lib/store/store-design';
 import {
   fetchStoreAssetsPage,
   getUnifiedStoreData,
@@ -122,6 +163,11 @@ export default function UnifiedStorePage() {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [storePassword, setStorePassword] = useState('');
+  const [passwordRequired, setPasswordRequired] = useState(false);
+  const [passwordError, setPasswordError] = useState<string | null>(null);
+  const [storeAvailable, setStoreAvailable] = useState(true);
+  const [storeAvailabilityMessage, setStoreAvailabilityMessage] = useState<string | null>(null);
   const [storeData, setStoreData] = useState<
     UnifiedStoreData['rawStoreResponse'] | null
   >(null);
@@ -146,7 +192,7 @@ export default function UnifiedStorePage() {
   useEffect(() => {
     fetchStoreData();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [token]);
+  }, [token, storePassword]);
 
   const fetchPhotos = useCallback(
     async (page: number = 1, append: boolean = false) => {
@@ -157,6 +203,7 @@ export default function UnifiedStorePage() {
           await fetchStoreAssetsPage(token, {
             limit: photosPerPage,
             offset,
+            password: storePassword || undefined,
           });
 
         setPagination(pageInfo);
@@ -175,7 +222,7 @@ export default function UnifiedStorePage() {
         setLoadingMore(false);
       }
     },
-    [token, photosPerPage]
+    [token, photosPerPage, storePassword]
   );
 
   // Cargar más fotos al hacer scroll
@@ -189,13 +236,30 @@ export default function UnifiedStorePage() {
   const fetchStoreData = async () => {
     try {
       setLoading(true);
+      setError(null);
+      setPasswordError(null);
+      setPasswordRequired(false);
+      setStoreAvailabilityMessage(null);
+      setStoreAvailable(true);
       const result = await getUnifiedStoreData(token, {
         limit: photosPerPage,
         includeAssets: true,
+        password: storePassword || undefined,
       });
 
       const [_catalogValue] = [result.catalog];
       setStoreData(result.rawStoreResponse);
+      if (result.rawStoreResponse?.available === false) {
+        setStoreAvailable(false);
+        setStoreAvailabilityMessage(
+          result.rawStoreResponse?.schedule?.message ||
+          result.rawStoreResponse?.error ||
+          'Tienda no disponible'
+        );
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
       setPhotos(result.photos);
       setPagination(result.pagination);
       setTotalPhotos(result.pagination?.total ?? result.photos.length);
@@ -208,9 +272,16 @@ export default function UnifiedStorePage() {
 
       // Convert SafeStoreSettings to StoreSettings
       // We'll use a type assertion since SafeStoreSettings is compatible
+      const resolvedDesign = resolveStoreDesign(
+        result.settings.design ??
+        result.settings.theme_customization?.design ??
+        DEFAULT_STORE_DESIGN
+      );
+
       const finalSettings = {
         ...result.settings,
-        template: 'pixieset' as const,
+        template: (result.settings.template ?? 'pixieset') as StoreSettings['template'],
+        design: resolvedDesign,
         texts: {
           hero_title: heroTitle,
           hero_subtitle:
@@ -234,6 +305,10 @@ export default function UnifiedStorePage() {
         payment_methods: result.settings.payment_methods ?? {},
         logo_url: result.settings.logo_url ?? '',
         banner_url: result.settings.banner_url ?? '',
+        theme_customization: {
+          ...result.settings.theme_customization,
+          design: resolvedDesign
+        }
       } as StoreSettings;
 
       setSettings(finalSettings);
@@ -244,7 +319,27 @@ export default function UnifiedStorePage() {
         gradeSection: result.subject?.course ?? '',
       });
       setError(null);
+      setPasswordRequired(false);
     } catch (error) {
+      const payload = (error as any)?.payload;
+      if (payload?.passwordRequired) {
+        setPasswordRequired(true);
+        setPasswordError(payload.error || payload.message || 'Contraseña requerida');
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
+      if (payload?.available === false) {
+        setStoreAvailable(false);
+        setStoreAvailabilityMessage(
+          payload.error ||
+          payload.schedule?.message ||
+          'Tienda no disponible'
+        );
+        setLoading(false);
+        setLoadingMore(false);
+        return;
+      }
       console.error('Error loading store:', error);
       setError(error instanceof Error ? error.message : 'Error desconocido');
     } finally {
@@ -253,12 +348,53 @@ export default function UnifiedStorePage() {
     }
   };
 
+  const handlePasswordSubmit = (password: string) => {
+    setStorePassword(password);
+    setPasswordRequired(false);
+    setPasswordError(null);
+  };
+
   if (loading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-300">
         <div className="text-center">
           <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-b-2 border-t-2 border-primary"></div>
           <p className="text-muted-foreground">Cargando galería...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (passwordRequired) {
+    return (
+      <PasswordProtectionModal
+        isOpen={passwordRequired}
+        onClose={() => {
+          setPasswordRequired(false);
+          setError('Contraseña requerida');
+        }}
+        onSubmit={handlePasswordSubmit}
+        error={passwordError}
+        brandName={settings?.custom_branding?.brand_name || 'LookEscolar'}
+        welcomeMessage={settings?.welcome_message}
+      />
+    );
+  }
+
+  if (!storeAvailable) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background text-foreground transition-colors duration-300">
+        <div className="mx-auto max-w-md p-6 text-center">
+          <div className="absolute right-4 top-4">
+            <ThemeToggleSimple />
+          </div>
+          <h1 className="mb-4 text-2xl font-bold text-foreground">
+            Tienda no disponible
+          </h1>
+          <p className="text-muted-foreground">
+            {storeAvailabilityMessage ||
+              'La tienda no está disponible por el momento.'}
+          </p>
         </div>
       </div>
     );
@@ -302,6 +438,28 @@ export default function UnifiedStorePage() {
     );
   }
 
+  const templatePhotos = photos.map((photo) => ({
+    id: photo.id,
+    url: photo.preview_url ?? photo.url,
+    watermark_url: photo.watermark_url,
+    alt: photo.alt,
+  }));
+
+  const isPreselected = Boolean(storeData?.store?.is_preselected);
+  const templateMap = {
+    'premium-store': PremiumStoreTemplate,
+    'modern-minimal': ModernMinimalTemplate,
+    'studio-dark': StudioDarkTemplate,
+    pixieset: PixiesetStyleTemplate, // New Pixieset-style template
+    'pixieset-legacy': PixiesetTemplate, // Original Pixieset template
+    editorial: EditorialTemplate, // Magazine-style layout
+    classic: ClassicGalleryTemplate, // Classic gallery with gradient overlay
+  } as const;
+
+  const SelectedTemplate =
+    templateMap[settings.template as keyof typeof templateMap] ||
+    PixiesetStyleTemplate;
+
   return (
     <StoreErrorBoundary>
       <div className="min-h-screen bg-background text-foreground transition-colors duration-300">
@@ -311,22 +469,13 @@ export default function UnifiedStorePage() {
         </div>
 
         <Suspense fallback={<StoreLoadingFallback />}>
-          <PixiesetFlowTemplate
+          <SelectedTemplate
             settings={settings}
-            photos={
-              photos.map((photo) => ({
-                id: photo.id,
-                url: photo.url,
-                preview_url: photo.preview_url ?? photo.url,
-                alt: photo.alt,
-                download_url: photo.download_url,
-                type: photo.type ?? undefined,
-              })) as any
-            }
+            photos={templatePhotos as any}
             token={token}
             subject={storeData?.subject}
             totalPhotos={totalPhotos}
-            isPreselected={false}
+            isPreselected={isPreselected}
             onLoadMorePhotos={loadMorePhotos}
             hasMorePhotos={Boolean(pagination?.hasMore)}
             loadingMore={loadingMore}

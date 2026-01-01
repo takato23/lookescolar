@@ -92,7 +92,7 @@ export async function FamilyHeader({ token }: FamilyHeaderProps) {
             </div>
             <div>
               <h1 className="text-gradient text-2xl font-bold">LookEscolar</h1>
-              <p className="text-gray-500 dark:text-gray-400 text-sm">Portal de Familia</p>
+              <p className="text-gray-500 dark:text-gray-400 text-sm">Portal de Clientes</p>
             </div>
           </div>
 
@@ -113,7 +113,7 @@ export async function FamilyHeader({ token }: FamilyHeaderProps) {
                     {new Date(subject.event.date).toLocaleDateString('es-AR')}
                   </>
                 ) : (
-                  'Alumno registrado'
+                  'Cliente registrado'
                 )}
               </div>
               <div className="text-success mt-1 flex items-center gap-1 text-xs font-medium">

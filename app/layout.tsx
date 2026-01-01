@@ -8,6 +8,7 @@ import { QueryProvider } from '@/components/providers/query-provider';
 import { Toaster } from 'sonner';
 import './globals.css';
 import { SkipToContent } from '@/components/ui/accessible';
+import { WebVitalsTracker } from '@/components/performance/WebVitalsTracker';
 import '@/lib/utils/message-channel-error-handler';
 // Force rebuild
 
@@ -18,12 +19,18 @@ const display = BricolageGrotesque({
   subsets: ['latin'],
   weight: ['400', '500', '600', '700'],
   variable: '--font-display',
+  display: 'swap',
+  preload: true,
+  adjustFontFallback: true,
 });
 
 const body = Manrope({
   subsets: ['latin'],
   weight: ['300', '400', '500', '600', '700'],
   variable: '--font-body',
+  display: 'swap',
+  preload: true,
+  adjustFontFallback: true,
 });
 
 export const metadata: Metadata = {
@@ -55,6 +62,12 @@ export default function RootLayout({
   return (
     <html lang="es" suppressHydrationWarning data-scroll-behavior="smooth">
       <head>
+        {/* Preconnect to critical origins for faster resource loading */}
+        <link rel="preconnect" href="https://sdk.mercadopago.com" crossOrigin="anonymous" />
+        <link rel="preconnect" href="https://exaighpowgvbdappydyx.supabase.co" crossOrigin="anonymous" />
+        <link rel="dns-prefetch" href="https://sdk.mercadopago.com" />
+        <link rel="dns-prefetch" href="https://exaighpowgvbdappydyx.supabase.co" />
+
         {/* Mercado Pago SDK */}
         <script src="https://sdk.mercadopago.com/js/v2" async></script>
         {/* Forzar limpieza de SW/caché en dev si quedó algo colgado */}
@@ -84,6 +97,8 @@ export default function RootLayout({
                 backgroundImage: `var(--liquid-noise-texture, ${NOISE_TEXTURE_FALLBACK})`,
               }}
             />
+            {/* Web Vitals Performance Tracking */}
+            <WebVitalsTracker />
           </ThemeProvider>
         </QueryProvider>
       </body>

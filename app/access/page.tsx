@@ -1,8 +1,27 @@
-import { FamilyAccessCard } from '@/components/ui/family-access-card';
+import { redirect } from 'next/navigation';
+import { enhancedTokenService } from '@/lib/services/enhanced-token.service';
+import { tokenAliasService } from '@/lib/services/token-alias.service';
+import { looksLikeAlias } from '@/lib/utils/token-alias';
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
 export const dynamic = 'force-dynamic';
+
+function buildRedirectUrl(token: string, searchParams: SearchParams) {
+  const queryString = new URLSearchParams();
+
+  Object.entries(searchParams).forEach(([key, value]) => {
+    if (value === undefined) return;
+    if (Array.isArray(value)) {
+      value.forEach((v) => queryString.append(key, v));
+    } else {
+      queryString.append(key, value);
+    }
+  });
+
+  const qs = queryString.toString();
+  return qs ? `/store-unified/${token}?${qs}` : `/store-unified/${token}`;
+}
 
 export default async function AccessPage(props: any) {
   const maybePromise = props?.searchParams as
@@ -21,24 +40,29 @@ export default async function AccessPage(props: any) {
     (Array.isArray(tokenParam) ? tokenParam[0] : tokenParam) ??
     '';
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 via-white to-purple-100 px-6 py-16 dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-      <div className="mx-auto max-w-5xl space-y-10">
-        <div className="text-center">
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900 dark:text-gray-100">
-            Recuperá tu galería familiar
-          </h1>
-          <p className="mt-2 text-sm text-gray-600 dark:text-gray-400">
-            Si escaneaste un código QR o ingresaste desde un enlace directo,
-            confirmamos el acceso automáticamente.
-          </p>
-        </div>
+  if (initialCode) {
+    const trimmed = String(initialCode).trim();
+    if (trimmed) {
+      try {
+        let resolvedToken = trimmed;
+        if (looksLikeAlias(trimmed)) {
+          const aliasRecord = await tokenAliasService.findByAlias(trimmed);
+          if (aliasRecord?.token?.token) {
+            resolvedToken = aliasRecord.token.token;
+          }
+        }
 
-        <FamilyAccessCard
-          initialCode={initialCode}
-          autoResolve={Boolean(initialCode)}
-        />
-      </div>
-    </div>
-  );
+        const validation = await enhancedTokenService.validateToken(
+          resolvedToken
+        );
+        if (validation.isValid && validation.token?.token) {
+          redirect(buildRedirectUrl(validation.token.token, resolvedParams));
+        }
+      } catch (error) {
+        console.warn('[AccessPage] No se pudo redirigir desde /access', error);
+      }
+    }
+  }
+
+  redirect(buildRedirectUrl('invalid-access', resolvedParams));
 }

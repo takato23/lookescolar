@@ -263,7 +263,7 @@ export default function QuickPublishButton({
             </DialogTitle>
             <DialogDescription>
               Se han generado {publishResults.length} enlaces para compartir con
-              las familias
+              los clientes
             </DialogDescription>
           </DialogHeader>
 

@@ -26,7 +26,7 @@ export function FAQSection() {
     {
       question: '¿Cómo funcionan los pagos?',
       answer:
-        'Integramos con Mercado Pago para procesar los pagos de manera segura. Las familias pueden pagar directamente en la plataforma.',
+        'Integramos con Mercado Pago para procesar los pagos de manera segura. Los clientes pueden pagar directamente en la plataforma.',
     },
     {
       question: '¿Ofrecen soporte técnico?',

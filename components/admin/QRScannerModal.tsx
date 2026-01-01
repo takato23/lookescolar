@@ -27,6 +27,7 @@ interface QRScannerModalProps {
   isOpen: boolean;
   onClose: () => void;
   onStudentScanned: (student: StudentInfo) => void;
+  eventId?: string;
   className?: string;
 }
 
@@ -50,6 +51,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
   isOpen,
   onClose,
   onStudentScanned,
+  eventId,
   className,
 }) => {
   // State management
@@ -212,29 +214,38 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
       setIsProcessing(true);
 
       try {
-        // Parse QR data - expecting format like "STUDENT:12345:JUAN_PEREZ"
-        const student = await parseQRData(qrData);
+        const response = await fetch('/api/qr/validate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ qrCode: qrData, eventId }),
+        });
+        const data = await response.json();
 
-        if (student) {
+        if (data?.success && data?.valid) {
+          const student: StudentInfo = {
+            id: data.data.studentId,
+            name: data.data.studentName || 'Estudiante sin nombre',
+            code: qrData,
+            event_id: data.data.eventId || eventId,
+          };
+
           setScannedStudent(student);
           setScannerState('success');
 
-          // Visual feedback
           toast.success(`Estudiante detectado: ${student.name}`);
 
-          // Call parent callback after brief delay for UX
           setTimeout(() => {
             onStudentScanned(student);
           }, 800);
-        } else {
-          throw new Error('Invalid QR code format');
+          return;
         }
+
+        throw new Error(data?.message || 'QR code no válido');
       } catch (error) {
         console.error('QR parsing error:', error);
         setScannerState('error');
         setErrorMessage('QR code no válido. Intenta con otro código.');
 
-        // Reset to scanning after error
         setTimeout(() => {
           setScannerState('scanning');
           startScanning();
@@ -244,66 +255,7 @@ const QRScannerModal: React.FC<QRScannerModalProps> = ({
         setIsProcessing(false);
       }
     },
-    [onStudentScanned, stopScanning]
-  );
-
-  // Parse QR data into student info
-  const parseQRData = useCallback(
-    async (qrData: string): Promise<StudentInfo | null> => {
-      try {
-        // Try to parse as student QR format: "STUDENT:ID:NAME:EVENT_ID?"
-        const parts = qrData.split(':');
-        if (parts.length >= 3 && parts[0] === 'STUDENT') {
-          const studentId = parts[1];
-          const studentName = parts[2].replace(/_/g, ' ');
-          const eventId = parts[3] || undefined;
-
-          return {
-            id: studentId,
-            name: studentName,
-            code: qrData,
-            event_id: eventId,
-          };
-        }
-
-        // Alternative format: Just the token/ID
-        if (qrData.length >= 10) {
-          // Try to fetch student info from API
-          try {
-            const response = await fetch(
-              `/api/admin/students/by-token?token=${encodeURIComponent(qrData)}`
-            );
-            if (response.ok) {
-              const studentData = await response.json();
-              return {
-                id: studentData.id,
-                name: studentData.name,
-                code: qrData,
-                event_id: studentData.event_id,
-              };
-            }
-          } catch (apiError) {
-            console.warn('Failed to fetch student data:', apiError);
-          }
-        }
-
-        // Fallback: try to extract student ID from various formats
-        const studentIdMatch = qrData.match(/\d+/);
-        if (studentIdMatch) {
-          return {
-            id: studentIdMatch[0],
-            name: `Estudiante ${studentIdMatch[0]}`,
-            code: qrData,
-          };
-        }
-
-        return null;
-      } catch (error) {
-        console.error('Error parsing QR data:', error);
-        return null;
-      }
-    },
-    []
+    [eventId, onStudentScanned, startScanning, stopScanning]
   );
 
   // Handle file upload

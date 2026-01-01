@@ -10,6 +10,8 @@ const nextConfig = {
   // Basic configuration
   reactStrictMode: true,
   poweredByHeader: false,
+  // Disable the Next.js dev indicator (loading triangle)
+  devIndicators: false,
   // Use standalone output to avoid static page generation issues
   output: 'standalone',
   // Skip trailing slash redirect
@@ -85,16 +87,27 @@ const nextConfig = {
         canvas: 'commonjs canvas',
       });
 
-      // Use resolve.alias to replace @react-three packages with empty stubs on server
-      // This prevents the Html context error during static generation
-      const emptyModulePath = path.resolve(__dirname, 'lib/stubs/empty-module.js');
+      // Use resolve.alias to replace @react-three packages with SSR-safe stubs on server.
+      // These stubs must export the symbols we import in client components, otherwise
+      // Next will fail the server build with "Attempted import error: X is not exported".
+      const dreiStubPath = path.resolve(__dirname, 'lib/stubs/drei-ssr-stub.js');
+      const fiberStubPath = path.resolve(__dirname, 'lib/stubs/fiber-ssr-stub.js');
+      const threeStubPath = path.resolve(__dirname, 'lib/stubs/three-ssr-stub.js');
+      const postprocessingStubPath = path.resolve(
+        __dirname,
+        'lib/stubs/postprocessing-ssr-stub.js'
+      );
+      const reactThreePostprocessingStubPath = path.resolve(
+        __dirname,
+        'lib/stubs/react-three-postprocessing-ssr-stub.js'
+      );
       config.resolve.alias = {
         ...config.resolve.alias,
-        '@react-three/drei': emptyModulePath,
-        '@react-three/fiber': emptyModulePath,
-        '@react-three/postprocessing': emptyModulePath,
-        'three': emptyModulePath,
-        'postprocessing': emptyModulePath,
+        '@react-three/drei': dreiStubPath,
+        '@react-three/fiber': fiberStubPath,
+        '@react-three/postprocessing': reactThreePostprocessingStubPath,
+        three: threeStubPath,
+        postprocessing: postprocessingStubPath,
       };
     }
 

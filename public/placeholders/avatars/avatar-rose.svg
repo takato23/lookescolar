@@ -1,0 +1,24 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="roseBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fef0f0"/>
+      <stop offset="100%" style="stop-color:#fce4e4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo circular -->
+  <circle cx="40" cy="40" r="40" fill="url(#roseBg)"/>
+
+  <!-- Cabeza -->
+  <ellipse cx="40" cy="32" rx="14" ry="15" fill="#e8d8d0"/>
+
+  <!-- Cabello recogido -->
+  <path d="M26 28C26 18 32 12 40 12C48 12 54 18 54 28" fill="#6b4c3a"/>
+  <ellipse cx="40" cy="14" rx="10" ry="6" fill="#6b4c3a"/>
+
+  <!-- Cuello -->
+  <ellipse cx="40" cy="54" rx="12" ry="6" fill="#e8d8d0"/>
+
+  <!-- Ropa/hombros -->
+  <path d="M20 80C20 65 28 58 40 58C52 58 60 65 60 80" fill="#c48888" opacity="0.4"/>
+</svg>

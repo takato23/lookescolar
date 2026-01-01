@@ -65,6 +65,7 @@ interface QRScannerProps {
   autoConfirm?: boolean;
   scanMode?: 'continuous' | 'single';
   enableSound?: boolean;
+  eventId?: string;
 }
 
 interface ScanResult {
@@ -94,6 +95,7 @@ export function QRScanner({
   autoConfirm = false,
   scanMode = 'continuous',
   enableSound = true,
+  eventId,
 }: QRScannerProps) {
   const [isScanning, setIsScanning] = useState(false);
   const [hasCamera, setHasCamera] = useState<boolean | null>(null);
@@ -380,18 +382,23 @@ export function QRScanner({
   // Validate token format and lookup subject
   const validateAndLookupToken = useCallback(async (token: string) => {
     try {
-      const response = await fetch(
-        `/api/admin/subjects/validate-token?token=${encodeURIComponent(token)}`
-      );
-      if (response.ok) {
-        const data = await response.json();
-        return data.subject;
+      const response = await fetch('/api/qr/validate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ qrCode: token, eventId }),
+      });
+      const data = await response.json();
+      if (data?.success && data?.valid) {
+        return {
+          id: data.data.studentId,
+          name: data.data.studentName || 'Estudiante sin nombre',
+        };
       }
     } catch (error) {
       console.error('Error validating token:', error);
     }
     return null;
-  }, []);
+  }, [eventId]);
 
   const handleQRDetection = useCallback(
     async (token: string, location?: any) => {
@@ -400,14 +407,6 @@ export function QRScanner({
 
       setLastScannedToken(token);
       updateScanStats('success');
-
-      // Validate token format (should be 20+ characters)
-      if (token.length < 20) {
-        addScanResult(token, 'invalid', 'Token inválido: muy corto');
-        playSound('error');
-        updateScanStats('error');
-        return;
-      }
 
       // Check for duplicates in recent scans (last 10 seconds)
       const isDuplicate = scanResults.some(

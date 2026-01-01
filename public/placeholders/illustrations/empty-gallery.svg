@@ -1,0 +1,37 @@
+<svg width="280" height="220" viewBox="0 0 280 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="bgGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f7f4"/>
+      <stop offset="100%" style="stop-color:#f0ede6"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo suave -->
+  <rect width="280" height="220" fill="url(#bgGradient)" rx="12"/>
+
+  <!-- Marco de foto vacío principal -->
+  <rect x="90" y="40" width="100" height="120" fill="white" stroke="#e0dcd4" stroke-width="2" rx="4"/>
+  <rect x="98" y="48" width="84" height="96" fill="#f5f3ef" stroke="#e8e4dc" stroke-width="1" rx="2"/>
+
+  <!-- Icono de imagen dentro del marco -->
+  <path d="M125 80L135 95L145 85L160 105H120L125 80Z" fill="#d4cfc4" opacity="0.6"/>
+  <circle cx="130" cy="72" r="6" fill="#d4cfc4" opacity="0.6"/>
+
+  <!-- Marcos pequeños decorativos (efecto de galería) -->
+  <rect x="55" y="60" width="28" height="35" fill="white" stroke="#e0dcd4" stroke-width="1.5" rx="2" opacity="0.5"/>
+  <rect x="197" y="60" width="28" height="35" fill="white" stroke="#e0dcd4" stroke-width="1.5" rx="2" opacity="0.5"/>
+
+  <!-- Líneas decorativas (guías) -->
+  <line x1="40" y1="175" x2="240" y2="175" stroke="#e0dcd4" stroke-width="1" stroke-dasharray="4 4"/>
+
+  <!-- Texto placeholder -->
+  <text x="140" y="195" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" fill="#9a9489">
+    Sin fotos aún
+  </text>
+
+  <!-- Estrellitas decorativas -->
+  <path d="M60 45L62 49L66 47L64 51L68 53L64 55L66 59L62 57L60 61L58 57L54 59L56 55L52 53L56 51L54 47L58 49L60 45Z"
+        fill="#d4cfc4" opacity="0.4"/>
+  <path d="M220 140L221.5 143L225 141.5L223 145L226 147L223 149L225 152.5L221.5 151L220 154L218.5 151L215 152.5L217 149L214 147L217 145L215 141.5L218.5 143L220 140Z"
+        fill="#d4cfc4" opacity="0.4"/>
+</svg>

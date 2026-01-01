@@ -272,7 +272,7 @@ export default function SecuencialPage() {
                     Asignación Secuencial
                   </h1>
                   <p className="text-gray-500 dark:text-gray-400">
-                    Asigna fotos por alumno en orden cronológico sin QR
+                    Asigna fotos por invitado en orden cronológico sin QR
                   </p>
                 </div>
               </div>
@@ -370,7 +370,7 @@ export default function SecuencialPage() {
         {/* Student Assignment */}
         <Card variant="glass">
           <CardHeader>
-            <CardTitle>Alumnos ({subjects.length})</CardTitle>
+            <CardTitle>Invitados ({subjects.length})</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">

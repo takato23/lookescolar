@@ -74,7 +74,7 @@ export const GET = withAuth(async function (request: NextRequest, context) {
 
     const csvRows = subjects.map((subject) => {
       const accessLink = subject.token
-        ? `${baseUrl}/f/${subject.token}`
+        ? `${baseUrl}/store-unified/${subject.token}`
         : 'Sin token generado';
       const expirationDate = subject.token_expires_at
         ? new Date(subject.token_expires_at).toLocaleDateString('es-ES')
@@ -87,7 +87,7 @@ export const GET = withAuth(async function (request: NextRequest, context) {
         subject.token || 'Sin token',
         accessLink,
         expirationDate,
-        'Comparta este link con la familia para ver y comprar las fotos',
+        'Comparta este link con el cliente para ver y comprar las fotos',
       ];
     });
 

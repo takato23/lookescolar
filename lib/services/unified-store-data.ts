@@ -4,6 +4,7 @@ export interface UnifiedStorePhoto {
   id: string;
   url: string;
   preview_url?: string | null;
+  watermark_url?: string | null;
   alt: string;
   download_url?: string | null;
   type?: string | null;
@@ -95,39 +96,37 @@ export function normalizeCatalog(rawCatalog: any): NormalizedCatalog | null {
 
   const items = Array.isArray(rawCatalog.items)
     ? [...rawCatalog.items].sort((a, b) => {
-        const orderA =
-          typeof a.sortOrder === 'number'
-            ? a.sortOrder
-            : typeof a.sort_order === 'number'
-              ? a.sort_order
-              : 0;
-        const orderB =
-          typeof b.sortOrder === 'number'
-            ? b.sortOrder
-            : typeof b.sort_order === 'number'
-              ? b.sort_order
-              : 0;
+      const orderA =
+        typeof a.sortOrder === 'number'
+          ? a.sortOrder
+          : typeof a.sort_order === 'number'
+            ? a.sort_order
+            : 0;
+      const orderB =
+        typeof b.sortOrder === 'number'
+          ? b.sortOrder
+          : typeof b.sort_order === 'number'
+            ? b.sort_order
+            : 0;
 
-        if (orderA !== orderB) {
-          return orderA - orderB;
-        }
+      if (orderA !== orderB) {
+        return orderA - orderB;
+      }
 
-        const labelA = (a.label ?? a.name ?? '').toString();
-        const labelB = (b.label ?? b.name ?? '').toString();
-        return labelA.localeCompare(labelB);
-      })
+      const labelA = (a.label ?? a.name ?? '').toString();
+      const labelB = (b.label ?? b.name ?? '').toString();
+      return labelA.localeCompare(labelB);
+    })
     : [];
 
   const overrides = Array.isArray(rawCatalog.overrides)
     ? [...rawCatalog.overrides].sort((a, b) => {
-        const keyA = `${a.productId ?? a.product_id ?? ''}::${
-          a.comboId ?? a.combo_id ?? ''
+      const keyA = `${a.productId ?? a.product_id ?? ''}::${a.comboId ?? a.combo_id ?? ''
         }`;
-        const keyB = `${b.productId ?? b.product_id ?? ''}::${
-          b.comboId ?? b.combo_id ?? ''
+      const keyB = `${b.productId ?? b.product_id ?? ''}::${b.comboId ?? b.combo_id ?? ''
         }`;
-        return keyA.localeCompare(keyB);
-      })
+      return keyA.localeCompare(keyB);
+    })
     : [];
 
   return {
@@ -153,6 +152,8 @@ export function mapAssetsToPhotos(rawAssets: any[] | undefined): UnifiedStorePho
       '/placeholder-image.svg',
     preview_url:
       asset.previewUrl ?? asset.preview_url ?? asset.watermark_url ?? null,
+    watermark_url:
+      asset.watermark_url ?? asset.watermarkUrl ?? asset.preview_url ?? null,
     alt: asset.filename || asset.original_filename || 'Foto',
     download_url: asset.downloadUrl ?? asset.download_url ?? null,
     type: asset.type ?? asset.photo_type ?? null,
@@ -186,8 +187,8 @@ function extractPagination(storePayload: any, limit: number, offset: number): Un
     total: source.total ?? 0,
     hasMore: Boolean(
       source.hasMore ??
-        source.has_more ??
-        (source.total ?? 0) > ((source.offset ?? offset) + (source.limit ?? limit))
+      source.has_more ??
+      (source.total ?? 0) > ((source.offset ?? offset) + (source.limit ?? limit))
     ),
     page:
       source.page ??
@@ -230,6 +231,7 @@ export async function getUnifiedStoreData(
     const message = storePayload.data?.error || 'No se pudo cargar la tienda';
     const error = new Error(message);
     (error as any).status = storePayload.status;
+    (error as any).payload = storePayload.data;
     throw error;
   }
 
@@ -299,6 +301,7 @@ export async function fetchStoreAssetsPage(
     const message = parsed.data?.error || 'No se pudieron cargar las fotos';
     const error = new Error(message);
     (error as any).status = parsed.status;
+    (error as any).payload = parsed.data;
     throw error;
   }
 

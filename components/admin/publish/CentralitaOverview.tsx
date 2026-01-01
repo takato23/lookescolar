@@ -15,7 +15,6 @@ import {
   Eye,
   EyeOff,
   Link2,
-  BarChart3,
   TrendingUp,
   Image as ImageIcon,
   Loader2,
@@ -204,15 +203,6 @@ export function CentralitaOverview({ eventId }: CentralitaOverviewProps) {
     bulkUnpublishMutation.mutate(publishedIds);
   };
 
-  const handleViewAnalytics = () => {
-    // Redirect to analytics page or open analytics view
-    if (eventId) {
-      router.push(`/admin/events/${eventId}/analytics`);
-    } else {
-      router.push('/admin/analytics');
-    }
-  };
-
   const handleRotateLinks = async () => {
     if (!eventId) {
       toast.error('Se requiere un evento para rotar enlaces');
@@ -261,15 +251,6 @@ export function CentralitaOverview({ eventId }: CentralitaOverviewProps) {
             <EyeOff className="h-6 w-6" />
           )}
           <span className="text-sm font-medium">Despublicar Todo</span>
-        </Button>
-
-        <Button
-          variant="outline"
-          className="h-24 flex-col gap-2"
-          onClick={handleViewAnalytics}
-        >
-          <BarChart3 className="h-6 w-6" />
-          <span className="text-sm font-medium">Ver Analytics</span>
         </Button>
 
         <Button
@@ -364,12 +345,8 @@ export function CentralitaOverview({ eventId }: CentralitaOverviewProps) {
             • <strong>Ver galería pública:</strong> Cambia a la pestaña "Galería
             Pública"
           </p>
-          <p>
-            • <strong>Analytics:</strong> Ve estadísticas de clics y vistas
-          </p>
         </CardContent>
       </Card>
     </div>
   );
 }
-

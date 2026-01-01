@@ -5,6 +5,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { qrService } from '@/lib/services/qr.service';
+import { getQrTaggingStatus } from '@/lib/qr/feature';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
+import { STUDENT_QR_PREFIX } from '@/lib/qr/format';
 
 const bulkActionSchema = z.object({
   action: z.enum(['export', 'qr', 'tokens', 'email', 'archive', 'delete']),
@@ -31,6 +35,7 @@ export const POST = withAuth(
       const { action, item_ids: studentIds, email_options } = validatedData;
 
       const supabase = await createServerSupabaseServiceClient();
+      const { tenantId } = resolveTenantFromHeaders(req.headers);
 
       // Verify all students belong to this event
       const { data: students, error: studentsError } = await supabase
@@ -74,8 +79,16 @@ export const POST = withAuth(
 
       // Execute the requested action
       switch (action) {
-        case 'qr':
-          return await generateQRCodes(supabase, students, eventId);
+        case 'qr': {
+          const qrFeature = await getQrTaggingStatus({ tenantId, eventId });
+          if (!qrFeature.enabled) {
+            return NextResponse.json(
+              { error: 'QR tagging disabled for this event' },
+              { status: 403 }
+            );
+          }
+          return await generateQRCodes(students, eventId);
+        }
 
         case 'tokens':
           return await generateTokens(supabase, students);
@@ -117,11 +130,7 @@ export const POST = withAuth(
 );
 
 // Generate QR codes for students who don't have them
-async function generateQRCodes(
-  supabase: any,
-  students: any[],
-  eventId: string
-) {
+async function generateQRCodes(students: any[], eventId: string) {
   const results = {
     success_count: 0,
     error_count: 0,
@@ -136,29 +145,19 @@ async function generateQRCodes(
         continue;
       }
 
-      // Generate unique QR code
-      const qrCode = await generateStudentQRCode(eventId, student.name);
+      const qrResult = await qrService.generateStudentIdentificationQR(
+        eventId,
+        student.id,
+        student.name
+      );
+      const qrCodeValue = `${STUDENT_QR_PREFIX}${qrResult.token}`;
 
-      const { error } = await supabase
-        .from('students')
-        .update({ qr_code: qrCode, updated_at: new Date().toISOString() })
-        .eq('id', student.id);
-
-      if (error) {
-        results.errors.push({
-          student_id: student.id,
-          student_name: student.name,
-          error: error.message,
-        });
-        results.error_count++;
-      } else {
-        results.generated_codes.push({
-          student_id: student.id,
-          student_name: student.name,
-          qr_code: qrCode,
-        });
-        results.success_count++;
-      }
+      results.generated_codes.push({
+        student_id: student.id,
+        student_name: student.name,
+        qr_code: qrCodeValue,
+      });
+      results.success_count++;
     } catch (error) {
       results.errors.push({
         student_id: student.id,
@@ -216,7 +215,7 @@ async function generateTokens(supabase: any, students: any[]) {
           student_name: student.name,
           token,
           expires_at: expiresAt.toISOString(),
-          access_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/f/${token}`,
+          access_url: `${process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'}/store-unified/${token}`,
         });
         results.success_count++;
       }
@@ -419,19 +418,6 @@ async function deleteStudents(
 }
 
 // Utility functions
-async function generateStudentQRCode(
-  eventId: string,
-  studentName: string
-): Promise<string> {
-  const prefix = 'STU';
-  const eventShort = eventId.substring(0, 8);
-  const nameShort = studentName.substring(0, 3).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-  const timestamp = Date.now().toString(36).toUpperCase();
-
-  return `${prefix}-${eventShort}-${nameShort}-${random}-${timestamp}`;
-}
-
 function generateSecureToken(): string {
   const chars =
     'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';

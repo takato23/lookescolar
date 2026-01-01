@@ -31,7 +31,6 @@ import { cn } from '@/lib/utils';
 
 interface WebVitals {
   CLS: number;
-  FID: number;
   FCP: number;
   LCP: number;
   TTFB: number;
@@ -114,16 +113,11 @@ export function PerformanceMonitorEnhanced() {
   useEffect(() => {
     if (typeof window !== 'undefined') {
       import('web-vitals').then(
-        ({ getCLS, getFID, getFCP, getLCP, getTTFB }) => {
+        ({ getCLS, getFCP, getLCP, getTTFB }) => {
           const vitals: Partial<WebVitals> = {};
 
           getCLS((metric) => {
             vitals.CLS = metric.value;
-            setWebVitals((prev) => ({ ...prev, ...vitals }) as WebVitals);
-          });
-
-          getFID((metric) => {
-            vitals.FID = metric.value;
             setWebVitals((prev) => ({ ...prev, ...vitals }) as WebVitals);
           });
 
@@ -175,19 +169,6 @@ export function PerformanceMonitorEnhanced() {
               ? 'needs-improvement'
               : 'poor',
         threshold: { good: 2500, poor: 4000 },
-      },
-      {
-        name: 'First Input Delay',
-        value: webVitals.FID,
-        unit: 'ms',
-        trend: webVitals.FID < 100 ? 'down' : 'up',
-        status:
-          webVitals.FID < 100
-            ? 'good'
-            : webVitals.FID < 300
-              ? 'needs-improvement'
-              : 'poor',
-        threshold: { good: 100, poor: 300 },
       },
       {
         name: 'Cumulative Layout Shift',

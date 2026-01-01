@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { StoreSettings } from '@/lib/hooks/useStoreSettings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -28,12 +29,26 @@ import {
   LayoutGrid,
   Filter,
   Info,
-  Loader2
 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { TemplateBaseProps } from '@/lib/types/folder-hierarchy-types';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import { useTemplateFavorites } from '@/hooks/useTemplateFavorites';
+import { StoreCheckoutDialog } from '@/components/store/StoreCheckoutDialog';
+import { ProductOptionsSelector, type StoreProduct } from '@/components/store/ProductOptionsSelector';
+import { useUnifiedCartStore, type ProductOptions } from '@/lib/stores/unified-cart-store';
+import {
+  getGridClasses,
+  getPaletteTokens,
+  getTypographyPreset,
+  resolveStoreDesign
+} from '@/lib/store/store-design';
+
+const WebGLHeroBackground = dynamic(
+  () => import('./backgrounds/WebGLHeroBackground'),
+  { ssr: false, loading: () => null }
+);
 
 interface Photo {
   id: string;
@@ -56,6 +71,9 @@ interface PremiumStoreTemplateProps extends TemplateBaseProps {
   subject?: Subject;
   isPreselected?: boolean;
   totalPhotos?: number;
+  onLoadMorePhotos?: () => void;
+  hasMorePhotos?: boolean;
+  loadingMore?: boolean;
 }
 
 interface CartItem {
@@ -65,6 +83,8 @@ interface CartItem {
   price: number;
   quantity: number;
   photo?: Photo;
+  options?: ProductOptions;
+  photoUrl?: string;
 }
 
 type ViewMode = 'grid' | 'list' | 'masonry';
@@ -76,6 +96,9 @@ export function PremiumStoreTemplate({
   subject,
   isPreselected: _isPreselected = false,
   totalPhotos: _totalPhotos = 0,
+  onLoadMorePhotos,
+  hasMorePhotos = false,
+  loadingMore = false,
 }: PremiumStoreTemplateProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -84,9 +107,31 @@ export function PremiumStoreTemplate({
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
-  const [isProcessingPayment, setIsProcessingPayment] = useState(false);
   const [showOnlyFavorites, setShowOnlyFavorites] = useState(false);
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  // Product Options Selector State
+  const [optionsSelectorOpen, setOptionsSelectorOpen] = useState(false);
+  const [selectedPhotoForOptions, setSelectedPhotoForOptions] = useState<Photo | null>(null);
+
+  // Unified Cart Store
+  const unifiedCart = useUnifiedCartStore();
+
+  const design = resolveStoreDesign(
+    settings.design ?? settings.theme_customization?.design ?? null
+  );
+  const palette = getPaletteTokens(design.color.palette);
+  const typography = getTypographyPreset(design.typography.preset);
+  const gridLayout = getGridClasses(design.grid);
+  const showNavText = design.grid.nav === 'icons_text';
+
+  // Brand colors from config
+  const brandColors = {
+    primary: (settings as any)?.brand_colors?.primary || palette.accent,
+    secondary: (settings as any)?.brand_colors?.secondary || palette.accentSoft,
+    accent: (settings as any)?.brand_colors?.accent || palette.accent,
+  };
 
   // Default products if none are configured
   const defaultProducts = [
@@ -119,37 +164,94 @@ export function PremiumStoreTemplate({
         .map(([id, product]) => ({ id, ...product }))
     : defaultProducts;
 
-  const addToCart = useCallback((photoId: string, productId: string) => {
-    const product = activeProducts.find(p => p.id === productId);
-    const photo = photos.find(p => p.id === photoId);
-    if (!product || !photo) return;
+  // Convert activeProducts to StoreProduct format for ProductOptionsSelector
+  const storeProducts: StoreProduct[] = useMemo(() => {
+    return activeProducts.map(p => ({
+      id: p.id,
+      name: p.name,
+      type: (p as any).type === 'digital' ? 'digital' as const : 'physical' as const,
+      enabled: p.enabled,
+      price: p.price,
+      description: p.description,
+      options: {
+        sizes: (p as any).options?.sizes || ['10x15', '13x18', '15x21'],
+        formats: (p as any).options?.formats || ['Brillante', 'Mate'],
+        quality: (p as any).options?.quality || 'standard',
+      },
+    }));
+  }, [activeProducts]);
+
+  // Handler to open the options selector
+  const handleOpenOptionsSelector = useCallback((photo: Photo) => {
+    setSelectedPhotoForOptions(photo);
+    setOptionsSelectorOpen(true);
+  }, []);
+
+  // Handler when options are confirmed
+  const handleOptionsConfirm = useCallback((options: ProductOptions, finalPrice: number) => {
+    if (!selectedPhotoForOptions) return;
+
+    const photo = selectedPhotoForOptions;
 
     setCart(prev => {
       const existingItem = prev.find(
-        item => item.photoId === photoId && item.productId === productId
+        item => item.photoId === photo.id &&
+                item.productId === options.productId &&
+                item.options?.size === options.size
       );
 
       if (existingItem) {
         return prev.map(item =>
-          item.photoId === photoId && item.productId === productId
+          item.photoId === photo.id &&
+          item.productId === options.productId &&
+          item.options?.size === options.size
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
 
       return [...prev, {
-        photoId,
-        productId,
-        productName: product.name,
-        price: product.price,
+        photoId: photo.id,
+        productId: options.productId || '',
+        productName: options.productName || '',
+        price: finalPrice,
         quantity: 1,
+        photoUrl: photo.url,
         photo,
+        options,
       }];
     });
 
-    // Show cart after adding
+    // Sync with unified cart
+    unifiedCart.addItem({
+      photoId: photo.id,
+      filename: photo.alt || photo.id,
+      price: finalPrice,
+      watermarkUrl: photo.url,
+      options: {
+        productId: options.productId,
+        productName: options.productName,
+        size: options.size,
+        format: options.format,
+        quality: options.quality,
+      },
+      metadata: {
+        context: 'family',
+        token,
+      },
+    });
+
+    toast.success(`${options.productName} agregado al carrito`);
+    setSelectedPhotoForOptions(null);
     setShowCart(true);
-  }, [activeProducts, photos]);
+  }, [selectedPhotoForOptions, token, unifiedCart]);
+
+  // addToCart now opens the options selector
+  const addToCart = useCallback((photoId: string, _productId: string) => {
+    const photo = photos.find(p => p.id === photoId);
+    if (!photo) return;
+    handleOpenOptionsSelector(photo);
+  }, [photos, handleOpenOptionsSelector]);
 
   const removeFromCart = useCallback((photoId: string, productId: string) => {
     setCart(prev => prev.filter(
@@ -208,74 +310,10 @@ export function PremiumStoreTemplate({
     return filtered;
   }, [photos, searchTerm, showOnlyFavorites, favorites]);
 
-  const handleCheckout = async () => {
+  const handleCheckout = () => {
     if (cart.length === 0) return;
-
-    setIsProcessingPayment(true);
-
-    try {
-      // Prepare order data
-      const orderData = {
-        order: {
-          id: crypto.randomUUID(),
-          token,
-          basePackage: {
-            id: 'standard',
-            name: 'Paquete Estándar',
-            basePrice: 0,
-          },
-          selectedPhotos: {
-            individual: cart.map(item => item.photoId),
-            group: [],
-          },
-          additionalCopies: cart.map(item => ({
-            id: crypto.randomUUID(),
-            productId: item.productId,
-            quantity: item.quantity,
-            unitPrice: item.price,
-            totalPrice: item.price * item.quantity,
-          })),
-          contactInfo: {
-            name: subject?.name || 'Cliente',
-            email: 'cliente@example.com',
-            phone: '',
-            address: {
-              street: 'Por definir',
-              city: 'Buenos Aires',
-              state: 'CABA',
-              zipCode: '1000',
-              country: 'Argentina',
-            },
-          },
-          totalPrice: getTotalPrice(),
-        },
-        callbackBase: 'store-unified'
-      };
-
-      // Create MercadoPago preference
-      const response = await fetch('/api/store/create-preference', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(orderData),
-      });
-
-      const data = await response.json();
-
-      if (data.success && data.init_point) {
-        // Redirect to MercadoPago checkout
-        window.location.href = data.init_point;
-      } else {
-        console.error('Error creating payment preference:', data);
-        alert('Error al procesar el pago. Por favor, intenta nuevamente.');
-      }
-    } catch (error) {
-      console.error('Error during checkout:', error);
-      alert('Error al procesar el pago. Por favor, intenta nuevamente.');
-    } finally {
-      setIsProcessingPayment(false);
-    }
+    setShowCart(false);
+    setCheckoutOpen(true);
   };
 
   const navigatePhoto = (direction: 'prev' | 'next') => {
@@ -291,22 +329,33 @@ export function PremiumStoreTemplate({
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 via-white to-gray-50">
+    <div
+      className={cn('relative min-h-screen', typography.baseClass)}
+      style={{ backgroundColor: palette.background, color: palette.text }}
+    >
+      <WebGLHeroBackground className="-z-10 opacity-70" />
       {/* Premium Header */}
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-gray-100 shadow-sm">
+      <header
+        className="sticky top-0 z-40 backdrop-blur-xl border-b shadow-sm"
+        style={{ backgroundColor: palette.surface, borderColor: palette.border }}
+      >
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex items-center justify-between h-16">
             {/* Logo and Title */}
             <div className="flex items-center space-x-4">
-              <div className="flex items-center justify-center w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg">
-                <Sparkles className="h-5 w-5 text-white" />
-              </div>
+              {settings.logo_url ? (
+                <img src={settings.logo_url} alt="Logo" className="h-10 w-auto rounded-xl shadow-lg" />
+              ) : (
+                <div className="flex items-center justify-center w-10 h-10 rounded-xl shadow-lg" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.accent})` }}>
+                  <Sparkles className="h-5 w-5 text-white" />
+                </div>
+              )}
               <div>
-                <h1 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
-                  {settings.texts.hero_title || 'Galería Premium'}
+                <h1 className="text-lg font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent dark:from-gray-100 dark:to-gray-300">
+                  {settings.texts?.hero_title || 'Galería Premium'}
                 </h1>
                 {subject && (
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-gray-500 dark:text-gray-400">
                     {subject.name} • {subject.grade} {subject.section}
                   </p>
                 )}
@@ -321,28 +370,34 @@ export function PremiumStoreTemplate({
                   onClick={() => setViewMode('grid')}
                   className={cn(
                     "p-2 rounded transition-colors",
+                    showNavText && "flex items-center gap-2 px-3 text-xs",
                     viewMode === 'grid' ? 'bg-white shadow-sm' : 'hover:bg-gray-50'
                   )}
                 >
                   <Grid className="h-4 w-4" />
+                  {showNavText && <span>Grilla</span>}
                 </button>
                 <button
                   onClick={() => setViewMode('list')}
                   className={cn(
                     "p-2 rounded transition-colors",
+                    showNavText && "flex items-center gap-2 px-3 text-xs",
                     viewMode === 'list' ? 'bg-white shadow-sm' : 'hover:bg-gray-50'
                   )}
                 >
                   <LayoutGrid className="h-4 w-4" />
+                  {showNavText && <span>Lista</span>}
                 </button>
                 <button
                   onClick={() => setViewMode('masonry')}
                   className={cn(
                     "p-2 rounded transition-colors",
+                    showNavText && "flex items-center gap-2 px-3 text-xs",
                     viewMode === 'masonry' ? 'bg-white shadow-sm' : 'hover:bg-gray-50'
                   )}
                 >
                   <ImageIcon className="h-4 w-4" />
+                  {showNavText && <span>Mosaico</span>}
                 </button>
               </div>
 
@@ -382,7 +437,8 @@ export function PremiumStoreTemplate({
                 variant="default"
                 size="sm"
                 onClick={() => setShowCart(!showCart)}
-                className="relative bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
+                className="relative text-white shadow-lg"
+                style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.accent})` }}
               >
                 <ShoppingCart className="h-4 w-4" />
                 {cart.length > 0 && (
@@ -428,12 +484,11 @@ export function PremiumStoreTemplate({
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Hero Section */}
         <div className="text-center mb-10">
-          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-4">
-            {settings.texts.hero_subtitle || 'Captura los Mejores Momentos'}
+          <h2 className="text-3xl sm:text-4xl font-bold text-gray-900 dark:text-white mb-4">
+            {settings.texts?.hero_subtitle || 'Captura los Mejores Momentos'}
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Fotos profesionales de alta calidad listas para descargar.
-            Selecciona tus favoritas y completa tu pedido de forma segura.
+          <p className="text-lg text-gray-600 dark:text-gray-300 max-w-2xl mx-auto">
+            {settings.texts?.welcome_message || 'Fotos profesionales de alta calidad listas para descargar. Selecciona tus favoritas y completa tu pedido de forma segura.'}
           </p>
         </div>
 
@@ -492,11 +547,13 @@ export function PremiumStoreTemplate({
             )}
           </div>
         ) : (
-          <div className={cn(
-            viewMode === 'grid' && "grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4",
-            viewMode === 'list' && "space-y-4",
-            viewMode === 'masonry' && "columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4"
-          )}>
+          <div
+            className={cn(
+              viewMode === 'grid' && cn('grid', gridLayout.colsClass, gridLayout.gapClass),
+              viewMode === 'list' && 'space-y-4',
+              viewMode === 'masonry' && 'columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4'
+            )}
+          >
             {filteredPhotos.map((photo, index) => (
               <div
                 key={photo.id}
@@ -514,11 +571,14 @@ export function PremiumStoreTemplate({
                   "transform hover:-translate-y-1",
                   viewMode === 'list' && "flex"
                 )}>
-                  <div className={cn(
-                    "relative overflow-hidden bg-gray-100",
-                    viewMode !== 'list' && "aspect-square",
-                    viewMode === 'list' && "w-32 h-32 flex-shrink-0"
-                  )}>
+                  <div
+                    className={cn(
+                      'relative overflow-hidden bg-gray-100',
+                      viewMode === 'grid' && gridLayout.aspectClass,
+                      viewMode === 'masonry' && 'aspect-square',
+                      viewMode === 'list' && 'w-32 h-32 flex-shrink-0'
+                    )}
+                  >
                     <img
                       src={photo.url}
                       alt={photo.alt}
@@ -631,6 +691,19 @@ export function PremiumStoreTemplate({
                 </Card>
               </div>
             ))}
+          </div>
+        )}
+
+        {hasMorePhotos && onLoadMorePhotos && (
+          <div className="mt-8 flex justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onLoadMorePhotos}
+              disabled={loadingMore}
+            >
+              {loadingMore ? 'Cargando...' : 'Cargar mas fotos'}
+            </Button>
           </div>
         )}
       </main>
@@ -766,24 +839,15 @@ export function PremiumStoreTemplate({
                       </div>
                       <Button
                         onClick={handleCheckout}
-                        disabled={isProcessingPayment || cart.length === 0}
+                        disabled={cart.length === 0}
                         className="w-full h-12 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-lg"
                       >
-                        {isProcessingPayment ? (
-                          <>
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                            Procesando...
-                          </>
-                        ) : (
-                          <>
-                            <CreditCard className="h-4 w-4 mr-2" />
-                            Pagar con Mercado Pago
-                            <ArrowRight className="h-4 w-4 ml-2" />
-                          </>
-                        )}
+                        <CreditCard className="h-4 w-4 mr-2" />
+                        Continuar al checkout
+                        <ArrowRight className="h-4 w-4 ml-2" />
                       </Button>
                       <p className="text-xs text-center text-gray-500">
-                        Pago seguro con Mercado Pago
+                        Elegi tu metodo de pago en el siguiente paso
                       </p>
                     </div>
                   </div>
@@ -940,6 +1004,30 @@ export function PremiumStoreTemplate({
           </div>
         </div>
       )}
+
+      <StoreCheckoutDialog
+        open={checkoutOpen}
+        onOpenChange={setCheckoutOpen}
+        token={token}
+        settings={settings}
+        cartItems={cart}
+        photos={photos}
+        onOrderComplete={() => setCart([])}
+      />
+
+      {/* Product Options Selector Modal */}
+      <ProductOptionsSelector
+        open={optionsSelectorOpen}
+        onClose={() => {
+          setOptionsSelectorOpen(false);
+          setSelectedPhotoForOptions(null);
+        }}
+        onConfirm={handleOptionsConfirm}
+        products={storeProducts}
+        photoUrl={selectedPhotoForOptions?.url || ''}
+        photoName={selectedPhotoForOptions?.alt}
+        defaultProductId={storeProducts[0]?.id}
+      />
     </div>
   );
 }

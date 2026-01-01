@@ -241,7 +241,7 @@ export const processWebhookNotification = async (
   retryCount: number = 0
 ): Promise<{ success: boolean; message: string }> => {
   const MAX_RETRIES = 3;
-  const supabase = createServerSupabaseServiceClient();
+  const supabase = await createServerSupabaseServiceClient();
 
   try {
     // Obtener información del pago desde MP

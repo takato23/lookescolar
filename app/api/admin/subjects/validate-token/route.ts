@@ -9,7 +9,7 @@ const ValidateTokenSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(true); // Service role
+    const supabase = await createClient(true); // Service role
     const { searchParams } = new URL(request.url);
     const token = searchParams.get('token');
 

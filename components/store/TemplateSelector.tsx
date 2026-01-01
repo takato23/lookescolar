@@ -1,446 +1,494 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Palette,
-  Sparkles,
-  Camera,
-  Crown,
-  Eye,
-  Zap,
-  Award,
-  Settings,
-  Monitor,
-  Smartphone,
-  Layout,
-  Image
-} from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { cn } from '@/lib/utils';
+import { Check, MoreHorizontal } from 'lucide-react';
+import { PLACEHOLDER_IMAGES } from '@/lib/config/placeholder-images';
 
-export type TemplateType = 'modern-minimal' | 'bold-vibrant' | 'premium-photography' | 'pixieset' | 'editorial' | 'minimal';
+export type TemplateType =
+  | 'pixieset'
+  | 'editorial'
+  | 'minimal'
+  | 'modern-minimal'
+  | 'bold-vibrant'
+  | 'premium-photography'
+  | 'studio-dark'
+  | 'classic-gallery'
+  | 'fashion-editorial'
+  | 'modern'
+  | 'classic'
+  | 'premium-store';
 
-interface TemplateInfo {
-  id: TemplateType;
+// Cover style types matching Pixieset's design
+export type CoverStyleType = 'stripe' | 'divider' | 'journal' | 'stamp' | 'outline' | 'classic' | 'none';
+
+interface CoverStyleInfo {
+  id: CoverStyleType;
   name: string;
-  description: string;
-  icon: React.ComponentType<any>;
-  preview: string;
-  features: string[];
-  style: 'minimal' | 'vibrant' | 'premium' | 'classic';
-  colorScheme: string;
-  recommended?: boolean;
-  new?: boolean;
+  preview: React.ReactNode;
 }
 
-const TEMPLATES: TemplateInfo[] = [
-  {
-    id: 'modern-minimal',
-    name: 'Modern Minimal',
-    description: 'Diseño limpio y elegante con mucho espacio en blanco y sombras sutiles',
-    icon: Layout,
-    preview: '/templates/modern-minimal-preview.jpg',
-    features: [
-      'Diseño minimalista y limpio',
-      'Espacios en blanco generosos',
-      'Sombras sutiles y elegantes',
-      'Tipografía moderna',
-      'Interfaz intuitiva',
-      'Optimizado para móviles'
-    ],
-    style: 'minimal',
-    colorScheme: 'bg-gradient-to-br from-gray-50 to-gray-100',
-    new: true
-  },
-  {
-    id: 'bold-vibrant',
-    name: 'Bold & Vibrant',
-    description: 'Diseño colorido y energético con gradientes, tipografía audaz y elementos dinámicos',
-    icon: Zap,
-    preview: '/templates/bold-vibrant-preview.jpg',
-    features: [
-      'Colores vibrantes y gradientes',
-      'Tipografía audaz y llamativa',
-      'Elementos dinámicos animados',
-      'Interfaz energética',
-      'Iconos coloridos',
-      'Experiencia visual impactante'
-    ],
-    style: 'vibrant',
-    colorScheme: 'bg-gradient-to-br from-purple-500 via-pink-500 to-orange-400',
-    recommended: true,
-    new: true
-  },
-  {
-    id: 'premium-photography',
-    name: 'Premium Photography',
-    description: 'Estilo de portafolio fotográfico de alta gama con modo oscuro y diseño sofisticado',
-    icon: Crown,
-    preview: '/templates/premium-photography-preview.jpg',
-    features: [
-      'Modo oscuro sofisticado',
-      'Estilo portafolio profesional',
-      'Efectos cinematográficos',
-      'Diseño de lujo',
-      'Vista mosaico avanzada',
-      'Experiencia premium'
-    ],
-    style: 'premium',
-    colorScheme: 'bg-gradient-to-br from-black via-zinc-900 to-amber-900/20',
-    new: true
-  },
-  {
-    id: 'pixieset',
-    name: 'Pixieset Classic',
-    description: 'Diseño profesional inspirado en galerías fotográficas clásicas',
-    icon: Camera,
-    preview: '/templates/pixieset-preview.jpg',
-    features: [
-      'Diseño profesional',
-      'Vista de galería clásica',
-      'Navegación intuitiva',
-      'Colores neutros',
-      'Enfoque en las fotos'
-    ],
-    style: 'classic',
-    colorScheme: 'bg-gradient-to-br from-blue-50 to-indigo-100'
-  },
-  {
-    id: 'editorial',
-    name: 'Editorial',
-    description: 'Estilo editorial con enfoque en la presentación de contenido',
-    icon: Image,
-    preview: '/templates/editorial-preview.jpg',
-    features: [
-      'Estilo editorial',
-      'Tipografía legible',
-      'Organización clara',
-      'Diseño equilibrado',
-      'Presentación profesional'
-    ],
-    style: 'classic',
-    colorScheme: 'bg-gradient-to-br from-green-50 to-emerald-100'
-  },
-  {
-    id: 'minimal',
-    name: 'Minimal Simple',
-    description: 'Diseño minimalista básico con funcionalidad esencial',
-    icon: Monitor,
-    preview: '/templates/minimal-preview.jpg',
-    features: [
-      'Diseño simple',
-      'Funcionalidad básica',
-      'Carga rápida',
-      'Fácil navegación',
-      'Interfaz limpia'
-    ],
-    style: 'minimal',
-    colorScheme: 'bg-gradient-to-br from-gray-100 to-gray-200'
-  }
+// Visual preview components for each cover style
+function StripePreview() {
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-sm">
+      <img
+        src={PLACEHOLDER_IMAGES.heroes.groupPrimary}
+        alt=""
+        className="h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="bg-white/90 px-4 py-1.5">
+          <span className="text-[10px] font-semibold tracking-[0.15em] text-gray-800">TITLE</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DividerPreview() {
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-sm">
+      <img
+        src={PLACEHOLDER_IMAGES.heroes.groupPrimary}
+        alt=""
+        className="h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <div className="h-px w-8 bg-white/80" />
+        <span className="my-2 text-[10px] font-semibold tracking-[0.15em] text-white drop-shadow-md">TITLE</span>
+        <div className="h-px w-8 bg-white/80" />
+      </div>
+    </div>
+  );
+}
+
+function JournalPreview() {
+  return (
+    <div className="flex h-full w-full overflow-hidden rounded-sm bg-[#f5f3ef]">
+      <div className="flex w-1/2 items-center justify-center p-2">
+        <span className="text-[9px] font-medium tracking-[0.1em] text-gray-700">TITLE</span>
+      </div>
+      <div className="w-1/2">
+        <img
+          src={PLACEHOLDER_IMAGES.heroes.groupPrimary}
+          alt=""
+          className="h-full w-full object-cover"
+        />
+      </div>
+    </div>
+  );
+}
+
+function StampPreview() {
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-sm">
+      <img
+        src={PLACEHOLDER_IMAGES.heroes.groupPrimary}
+        alt=""
+        className="h-full w-full object-cover"
+      />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="flex h-10 w-10 items-center justify-center rounded-full border-2 border-white/90 bg-transparent">
+          <span className="text-[7px] font-bold tracking-wider text-white drop-shadow-md">TITLE</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function OutlinePreview() {
+  return (
+    <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-sm bg-[#f5f3ef]">
+      <div className="relative">
+        <img
+          src={PLACEHOLDER_IMAGES.heroes.groupPrimary}
+          alt=""
+          className="h-12 w-16 object-cover opacity-30"
+        />
+        <div className="absolute inset-0 flex items-center justify-center">
+          <span className="border border-gray-400 px-2 py-0.5 text-[9px] font-medium tracking-[0.1em] text-gray-600">
+            TITLE
+          </span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ClassicPreview() {
+  return (
+    <div className="relative h-full w-full overflow-hidden rounded-sm">
+      <img
+        src={PLACEHOLDER_IMAGES.heroes.groupPrimary}
+        alt=""
+        className="h-full w-full object-cover"
+      />
+      <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/60 to-transparent p-2">
+        <span className="text-[8px] font-medium tracking-[0.1em] text-white">TITLE</span>
+      </div>
+    </div>
+  );
+}
+
+function NonePreview() {
+  return (
+    <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-sm border-2 border-dashed border-gray-200 bg-gray-50">
+      <div className="h-8 w-12 rounded border border-gray-300 bg-white" />
+    </div>
+  );
+}
+
+function MorePreview() {
+  return (
+    <div className="flex h-full w-full items-center justify-center overflow-hidden rounded-sm border border-gray-200 bg-white">
+      <MoreHorizontal className="h-5 w-5 text-gray-400" />
+    </div>
+  );
+}
+
+const COVER_STYLES: CoverStyleInfo[] = [
+  { id: 'stripe', name: 'Stripe', preview: <StripePreview /> },
+  { id: 'divider', name: 'Divider', preview: <DividerPreview /> },
+  { id: 'journal', name: 'Journal', preview: <JournalPreview /> },
+  { id: 'stamp', name: 'Stamp', preview: <StampPreview /> },
+  { id: 'outline', name: 'Outline', preview: <OutlinePreview /> },
+  { id: 'classic', name: 'Classic', preview: <ClassicPreview /> },
 ];
+
+// Map templates to cover styles
+const TEMPLATE_TO_COVER: Record<TemplateType, CoverStyleType> = {
+  'pixieset': 'divider',
+  'editorial': 'journal',
+  'minimal': 'outline',
+  'modern-minimal': 'stripe',
+  'bold-vibrant': 'classic',
+  'premium-photography': 'divider',
+  'studio-dark': 'classic',
+  'classic-gallery': 'classic',
+  'fashion-editorial': 'journal',
+  'modern': 'stripe',
+  'classic': 'classic',
+  'premium-store': 'divider',
+};
+
+// Map cover styles to templates (primary mapping)
+const COVER_TO_TEMPLATE: Record<CoverStyleType, TemplateType> = {
+  'stripe': 'modern-minimal',
+  'divider': 'pixieset',
+  'journal': 'editorial',
+  'stamp': 'premium-store',
+  'outline': 'minimal',
+  'classic': 'classic',
+  'none': 'minimal',
+};
 
 interface TemplateSelectorProps {
   currentTemplate: TemplateType;
   onTemplateChange: (template: TemplateType) => void;
   className?: string;
+  showPreview?: boolean;
 }
 
-export function TemplateSelector({ currentTemplate, onTemplateChange, className = '' }: TemplateSelectorProps) {
-  const [selectedTemplate, setSelectedTemplate] = useState<TemplateType>(currentTemplate);
-  const [showPreview, setShowPreview] = useState(false);
+export function TemplateSelector({
+  currentTemplate,
+  onTemplateChange,
+  className = '',
+  showPreview = true,
+}: TemplateSelectorProps) {
+  const [selectedCover, setSelectedCover] = useState<CoverStyleType>(
+    TEMPLATE_TO_COVER[currentTemplate] || 'divider'
+  );
 
-  const currentTemplateInfo = TEMPLATES.find(t => t.id === currentTemplate);
+  // Sync with external template changes
+  useEffect(() => {
+    const coverStyle = TEMPLATE_TO_COVER[currentTemplate];
+    if (coverStyle && coverStyle !== selectedCover) {
+      setSelectedCover(coverStyle);
+    }
+  }, [currentTemplate]);
 
-  const handleTemplateSelect = (templateId: TemplateType) => {
-    setSelectedTemplate(templateId);
-    onTemplateChange(templateId);
+  const handleCoverSelect = (coverId: CoverStyleType) => {
+    setSelectedCover(coverId);
+    const template = COVER_TO_TEMPLATE[coverId];
+    if (template) {
+      onTemplateChange(template);
+    }
   };
 
+  // Get the current selected style info
+  const selectedStyleInfo = COVER_STYLES.find((s) => s.id === selectedCover);
+
   return (
-    <div className={`space-y-4 ${className}`}>
-      {/* Quick Selector */}
-      <div className="flex items-center space-x-4">
-        <div className="flex items-center space-x-2">
-          <Palette className="h-5 w-5 text-gray-600" />
-          <span className="text-sm font-medium text-gray-700">Template:</span>
+    <div className={cn('space-y-6', className)}>
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-semibold text-gray-900">Cover</h3>
+          <p className="mt-0.5 text-sm text-gray-500">
+            Elige el estilo de portada para tu galeria
+          </p>
         </div>
-        <Select value={currentTemplate} onValueChange={handleTemplateSelect}>
-          <SelectTrigger className="w-64">
-            <SelectValue placeholder="Seleccionar template" />
-          </SelectTrigger>
-          <SelectContent>
-            {TEMPLATES.map(template => (
-              <SelectItem key={template.id} value={template.id}>
-                <div className="flex items-center space-x-2">
-                  <template.icon className="h-4 w-4" />
-                  <span>{template.name}</span>
-                  {template.new && (
-                    <Badge className="text-xs bg-blue-100 dark:bg-blue-950/30 text-blue-700 px-1">
-                      Nuevo
-                    </Badge>
-                  )}
-                  {template.recommended && (
-                    <Badge className="text-xs bg-green-100 text-green-700 px-1">
-                      ⭐
-                    </Badge>
-                  )}
-                </div>
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        
-        <Dialog open={showPreview} onOpenChange={setShowPreview}>
-          <DialogTrigger asChild>
-            <Button variant="outline" size="sm">
-              <Eye className="h-4 w-4 mr-2" />
-              Vista Previa
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-6xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle className="flex items-center space-x-2">
-                <Palette className="h-5 w-5" />
-                <span>Seleccionar Template</span>
-              </DialogTitle>
-              <DialogDescription>
-                Elige el diseño que mejor represente tu estilo fotográfico
-              </DialogDescription>
-            </DialogHeader>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mt-6">
-              {TEMPLATES.map(template => (
-                <Card 
-                  key={template.id} 
-                  className={`relative cursor-pointer transition-all hover:shadow-lg ${
-                    selectedTemplate === template.id 
-                      ? 'ring-2 ring-blue-500 shadow-lg' 
-                      : 'hover:ring-1 hover:ring-gray-300'
-                  }`}
-                  onClick={() => setSelectedTemplate(template.id)}
-                >
-                  {/* Template Preview */}
-                  <div className={`h-32 ${template.colorScheme} rounded-t-lg relative overflow-hidden`}>
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <template.icon className="h-12 w-12 text-black/20" />
-                    </div>
-                    
-                    {/* Badges */}
-                    <div className="absolute top-2 right-2 flex space-x-1">
-                      {template.new && (
-                        <Badge className="text-xs bg-blue-500 text-white">
-                          Nuevo
-                        </Badge>
-                      )}
-                      {template.recommended && (
-                        <Badge className="text-xs bg-green-500 text-white">
-                          ⭐ Recomendado
-                        </Badge>
-                      )}
-                    </div>
-
-                    {/* Selected indicator */}
-                    {selectedTemplate === template.id && (
-                      <div className="absolute top-2 left-2">
-                        <div className="w-6 h-6 bg-blue-500 rounded-full flex items-center justify-center">
-                          <Eye className="h-3 w-3 text-white" />
-                        </div>
-                      </div>
-                    )}
-                  </div>
-
-                  <CardContent className="p-4">
-                    <div className="flex items-start justify-between mb-2">
-                      <h3 className="font-semibold text-gray-900 flex items-center space-x-2">
-                        <template.icon className="h-4 w-4" />
-                        <span>{template.name}</span>
-                      </h3>
-                      {template.style && (
-                        <Badge variant="outline" className="text-xs capitalize">
-                          {template.style}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <p className="text-sm text-gray-600 mb-3 leading-relaxed">
-                      {template.description}
-                    </p>
-
-                    <div className="space-y-2">
-                      <p className="text-xs font-medium text-gray-700 mb-1">
-                        Características:
-                      </p>
-                      <ul className="space-y-1">
-                        {template.features.slice(0, 3).map((feature, index) => (
-                          <li key={index} className="text-xs text-gray-600 flex items-center">
-                            <div className="w-1 h-1 bg-gray-400 rounded-full mr-2"></div>
-                            {feature}
-                          </li>
-                        ))}
-                      </ul>
-                      
-                      {template.features.length > 3 && (
-                        <p className="text-xs text-gray-500 italic">
-                          +{template.features.length - 3} características más
-                        </p>
-                      )}
-                    </div>
-
-                    <div className="mt-4 flex items-center justify-between">
-                      <div className="flex space-x-1">
-                        {/* Style indicators */}
-                        {template.style === 'minimal' && (
-                          <div className="flex items-center space-x-1">
-                            <Monitor className="h-3 w-3 text-gray-500" />
-                            <span className="text-xs text-gray-500">Minimal</span>
-                          </div>
-                        )}
-                        {template.style === 'vibrant' && (
-                          <div className="flex items-center space-x-1">
-                            <Sparkles className="h-3 w-3 text-purple-500" />
-                            <span className="text-xs text-purple-500">Vibrante</span>
-                          </div>
-                        )}
-                        {template.style === 'premium' && (
-                          <div className="flex items-center space-x-1">
-                            <Award className="h-3 w-3 text-amber-500" />
-                            <span className="text-xs text-amber-500">Premium</span>
-                          </div>
-                        )}
-                        {template.style === 'classic' && (
-                          <div className="flex items-center space-x-1">
-                            <Camera className="h-3 w-3 text-blue-500" />
-                            <span className="text-xs text-blue-500">Clásico</span>
-                          </div>
-                        )}
-                      </div>
-
-                      <Button 
-                        size="sm" 
-                        variant={selectedTemplate === template.id ? "default" : "outline"}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleTemplateSelect(template.id);
-                        }}
-                      >
-                        {selectedTemplate === template.id ? 'Seleccionado' : 'Seleccionar'}
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-
-            {/* Selected template details */}
-            {selectedTemplate && (
-              <div className="mt-8 p-4 bg-gray-50 rounded-lg border">
-                <div className="flex items-center space-x-2 mb-3">
-                  <Settings className="h-5 w-5 text-gray-600" />
-                  <h4 className="font-semibold text-gray-900">
-                    Template Seleccionado: {TEMPLATES.find(t => t.id === selectedTemplate)?.name}
-                  </h4>
-                </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <p className="text-sm text-gray-600 mb-2">
-                      <strong>Descripción:</strong> {TEMPLATES.find(t => t.id === selectedTemplate)?.description}
-                    </p>
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm font-medium text-gray-700 mb-2">Todas las características:</p>
-                    <ul className="space-y-1">
-                      {TEMPLATES.find(t => t.id === selectedTemplate)?.features.map((feature, index) => (
-                        <li key={index} className="text-sm text-gray-600 flex items-center">
-                          <div className="w-1.5 h-1.5 bg-green-500 rounded-full mr-2"></div>
-                          {feature}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="mt-4 flex items-center justify-between">
-                  <div className="flex items-center space-x-4">
-                    <div className="flex items-center space-x-1">
-                      <Monitor className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">Responsive</span>
-                    </div>
-                    <div className="flex items-center space-x-1">
-                      <Smartphone className="h-4 w-4 text-gray-500" />
-                      <span className="text-sm text-gray-600">Mobile First</span>
-                    </div>
-                  </div>
-                  
-                  <Button 
-                    onClick={() => {
-                      onTemplateChange(selectedTemplate);
-                      setShowPreview(false);
-                    }}
-                    className="bg-blue-600 hover:bg-blue-700 text-white"
-                  >
-                    <Eye className="h-4 w-4 mr-2" />
-                    Aplicar Template
-                  </Button>
-                </div>
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
       </div>
 
-      {/* Current template info */}
-      {currentTemplateInfo && (
-        <Card className="bg-gray-50">
-          <CardContent className="p-4">
-            <div className="flex items-start space-x-3">
-              <div className={`w-12 h-12 ${currentTemplateInfo.colorScheme} rounded-lg flex items-center justify-center`}>
-                <currentTemplateInfo.icon className="h-6 w-6 text-black/40" />
+      {/* Cover Style Grid - Pixieset Style */}
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
+        {COVER_STYLES.map((style) => {
+          const isSelected = selectedCover === style.id;
+
+          return (
+            <button
+              key={style.id}
+              type="button"
+              onClick={() => handleCoverSelect(style.id)}
+              className={cn(
+                'group relative flex flex-col overflow-hidden rounded-lg transition-all duration-200',
+                'focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2',
+                isSelected
+                  ? 'ring-2 ring-emerald-500 ring-offset-1'
+                  : 'hover:ring-2 hover:ring-gray-300 hover:ring-offset-1'
+              )}
+            >
+              {/* Preview Container */}
+              <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
+                {style.preview}
+
+                {/* Selection indicator */}
+                {isSelected && (
+                  <div className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm">
+                    <Check className="h-3 w-3" strokeWidth={3} />
+                  </div>
+                )}
+
+                {/* Hover overlay */}
+                <div
+                  className={cn(
+                    'absolute inset-0 bg-black/0 transition-all duration-200',
+                    !isSelected && 'group-hover:bg-black/5'
+                  )}
+                />
               </div>
-              <div className="flex-1">
-                <div className="flex items-center space-x-2 mb-1">
-                  <h3 className="font-medium text-gray-900">{currentTemplateInfo.name}</h3>
-                  {currentTemplateInfo.new && (
-                    <Badge className="text-xs bg-blue-100 dark:bg-blue-950/30 text-blue-700">Nuevo</Badge>
+
+              {/* Label */}
+              <div className="py-2 text-center">
+                <span
+                  className={cn(
+                    'text-sm font-medium transition-colors',
+                    isSelected ? 'text-emerald-600' : 'text-gray-700'
                   )}
-                  {currentTemplateInfo.recommended && (
-                    <Badge className="text-xs bg-green-100 text-green-700">⭐ Recomendado</Badge>
-                  )}
+                >
+                  {style.name}
+                </span>
+              </div>
+            </button>
+          );
+        })}
+
+        {/* None option */}
+        <button
+          type="button"
+          onClick={() => handleCoverSelect('none')}
+          className={cn(
+            'group relative flex flex-col overflow-hidden rounded-lg transition-all duration-200',
+            'focus:outline-none focus:ring-2 focus:ring-emerald-500 focus:ring-offset-2',
+            selectedCover === 'none'
+              ? 'ring-2 ring-emerald-500 ring-offset-1'
+              : 'hover:ring-2 hover:ring-gray-300 hover:ring-offset-1'
+          )}
+        >
+          <div className="relative aspect-[4/3] w-full overflow-hidden bg-gray-100">
+            <NonePreview />
+            {selectedCover === 'none' && (
+              <div className="absolute right-1.5 top-1.5 flex h-5 w-5 items-center justify-center rounded-full bg-emerald-500 text-white shadow-sm">
+                <Check className="h-3 w-3" strokeWidth={3} />
+              </div>
+            )}
+          </div>
+          <div className="py-2 text-center">
+            <span
+              className={cn(
+                'text-sm font-medium transition-colors',
+                selectedCover === 'none' ? 'text-emerald-600' : 'text-gray-700'
+              )}
+            >
+              None
+            </span>
+          </div>
+        </button>
+
+        {/* More option */}
+        <button
+          type="button"
+          disabled
+          className="group relative flex cursor-not-allowed flex-col overflow-hidden rounded-lg opacity-60"
+        >
+          <div className="relative aspect-[4/3] w-full overflow-hidden">
+            <MorePreview />
+          </div>
+          <div className="py-2 text-center">
+            <span className="text-sm font-medium text-gray-500">More</span>
+          </div>
+        </button>
+      </div>
+
+      {/* Live Preview Panel */}
+      {showPreview && selectedStyleInfo && (
+        <div className="mt-8 overflow-hidden rounded-xl border border-gray-200 bg-[#f8f7f4] shadow-sm">
+          {/* Preview Header */}
+          <div className="flex items-center justify-between border-b border-gray-200 bg-white px-4 py-3">
+            <div className="flex items-center gap-3">
+              <span className="text-sm font-medium text-gray-900">Mi Coleccion</span>
+              <span className="rounded border border-gray-300 px-2 py-0.5 text-[10px] font-medium text-gray-500">
+                BORRADOR
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-xs text-gray-400">Vista previa</span>
+              <span className="rounded-full bg-emerald-500 px-3 py-1 text-xs font-medium text-white">
+                Publicar
+              </span>
+            </div>
+          </div>
+
+          {/* Preview Content */}
+          <div className="p-6">
+            <div className="mx-auto max-w-md overflow-hidden rounded-xl bg-white shadow-sm">
+              {/* Cover Preview */}
+              <div className="relative aspect-[16/10] w-full overflow-hidden">
+                <img
+                  src={PLACEHOLDER_IMAGES.heroes.groupPrimary}
+                  alt="Cover preview"
+                  className="h-full w-full object-cover"
+                />
+
+                {/* Render cover style overlay based on selection */}
+                {selectedCover === 'stripe' && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="bg-white/95 px-8 py-3 shadow-sm">
+                      <span className="text-lg font-semibold tracking-[0.2em] text-gray-800">
+                        MY COLLECTION
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {selectedCover === 'divider' && (
+                  <div className="absolute inset-0 flex flex-col items-center justify-center">
+                    <div className="h-px w-16 bg-white/80" />
+                    <span className="my-3 text-xl font-semibold tracking-[0.25em] text-white drop-shadow-lg">
+                      MY COLLECTION
+                    </span>
+                    <div className="h-px w-16 bg-white/80" />
+                    <p className="mt-2 text-xs tracking-[0.15em] text-white/70">
+                      Diciembre 2025
+                    </p>
+                  </div>
+                )}
+
+                {selectedCover === 'journal' && (
+                  <>
+                    <div className="absolute inset-y-0 left-0 flex w-2/5 items-center justify-center bg-[#f5f3ef]">
+                      <div className="text-center">
+                        <span className="text-lg font-medium tracking-[0.15em] text-gray-700">
+                          MY COLLECTION
+                        </span>
+                        <p className="mt-1 text-xs text-gray-500">Diciembre 2025</p>
+                      </div>
+                    </div>
+                    <div className="absolute inset-y-0 right-0 w-3/5">
+                      <img
+                        src={PLACEHOLDER_IMAGES.heroes.groupPrimary}
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {selectedCover === 'stamp' && (
+                  <div className="absolute inset-0 flex items-center justify-center">
+                    <div className="flex h-24 w-24 flex-col items-center justify-center rounded-full border-4 border-white/90 bg-black/20 backdrop-blur-sm">
+                      <span className="text-[10px] tracking-[0.2em] text-white/80">COLLECTION</span>
+                      <span className="mt-1 text-sm font-bold tracking-wider text-white">2025</span>
+                    </div>
+                  </div>
+                )}
+
+                {selectedCover === 'outline' && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-[#f5f3ef]/90">
+                    <div className="border-2 border-gray-400 px-6 py-3">
+                      <span className="text-lg font-medium tracking-[0.2em] text-gray-600">
+                        MY COLLECTION
+                      </span>
+                    </div>
+                  </div>
+                )}
+
+                {selectedCover === 'classic' && (
+                  <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent p-6">
+                    <span className="text-xl font-semibold tracking-[0.15em] text-white">
+                      MY COLLECTION
+                    </span>
+                    <p className="mt-1 text-sm text-white/70">Diciembre 2025</p>
+                  </div>
+                )}
+
+                {selectedCover === 'none' && (
+                  <div className="absolute inset-0 flex items-center justify-center bg-white">
+                    <div className="text-center">
+                      <span className="text-lg font-medium text-gray-800">MY COLLECTION</span>
+                      <p className="mt-1 text-sm text-gray-500">Sin portada de imagen</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+
+              {/* Gallery Preview */}
+              <div className="border-t border-gray-100 p-4">
+                <div className="mb-3 flex items-center justify-between">
+                  <span className="text-xs font-medium uppercase tracking-wider text-gray-500">
+                    Galeria
+                  </span>
+                  <span className="text-xs text-gray-400">24 fotos</span>
                 </div>
-                <p className="text-sm text-gray-600 mb-2">{currentTemplateInfo.description}</p>
-                <div className="flex flex-wrap gap-1">
-                  {currentTemplateInfo.features.slice(0, 3).map((feature, index) => (
-                    <Badge key={index} variant="outline" className="text-xs">
-                      {feature}
-                    </Badge>
+                <div className="grid grid-cols-4 gap-1.5">
+                  {[...Array(8)].map((_, i) => (
+                    <div
+                      key={i}
+                      className="aspect-square overflow-hidden rounded bg-gray-100"
+                    >
+                      <img
+                        src={
+                          i % 2 === 0
+                            ? PLACEHOLDER_IMAGES.gallery.portraitGirl
+                            : PLACEHOLDER_IMAGES.gallery.portraitBoy
+                        }
+                        alt=""
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
                   ))}
-                  {currentTemplateInfo.features.length > 3 && (
-                    <Badge variant="outline" className="text-xs">
-                      +{currentTemplateInfo.features.length - 3} más
-                    </Badge>
-                  )}
                 </div>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Device Toggle */}
+          <div className="flex items-center justify-center gap-2 border-t border-gray-200 bg-white px-4 py-2">
+            <button className="rounded p-1.5 text-gray-600 hover:bg-gray-100">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <rect x="2" y="3" width="20" height="14" rx="2" strokeWidth="1.5" />
+                <path d="M8 21h8M12 17v4" strokeWidth="1.5" />
+              </svg>
+            </button>
+            <button className="rounded p-1.5 text-gray-400 hover:bg-gray-100 hover:text-gray-600">
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <rect x="5" y="2" width="14" height="20" rx="2" strokeWidth="1.5" />
+                <path d="M12 18h.01" strokeWidth="2" strokeLinecap="round" />
+              </svg>
+            </button>
+          </div>
+        </div>
       )}
     </div>
   );

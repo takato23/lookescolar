@@ -147,14 +147,14 @@ export default function ShareManagerPage({
       if (!res.ok) {
         const payload = await res.json().catch(() => ({}));
         throw new Error(
-          payload?.error || 'No se pudieron cargar los alias familiares'
+          payload?.error || 'No se pudieron cargar los alias de clientes'
         );
       }
       const data = await res.json();
       setFamilyTokens(data.tokens || []);
     } catch (error: any) {
       console.error('[ShareManager] Error fetching aliases', error);
-      toast.error(error?.message || 'Error al cargar alias familiares');
+      toast.error(error?.message || 'Error al cargar alias de clientes');
     } finally {
       setLoadingFamilyTokens(false);
     }
@@ -179,7 +179,7 @@ export default function ShareManagerPage({
       fetchFamilyTokens();
     } catch (error: any) {
       console.error('[ShareManager] Error ensuring aliases', error);
-      toast.error(error?.message || 'Error al generar alias familiares');
+      toast.error(error?.message || 'Error al generar alias de clientes');
     } finally {
       setEnsuringAliases(false);
     }
@@ -210,7 +210,7 @@ export default function ShareManagerPage({
         <html lang="es">
           <head>
             <meta charset="utf-8" />
-            <title>Flyer familiar - ${item.alias}</title>
+            <title>Flyer de clientes - ${item.alias}</title>
             <style>
               body { font-family: 'Helvetica Neue', Arial, sans-serif; margin: 0; padding: 40px; background: #f5f5f5; }
               .flyer { max-width: 720px; margin: 0 auto; background: white; border: 3px solid #111; border-radius: 18px; padding: 36px; text-align: center; }
@@ -224,10 +224,10 @@ export default function ShareManagerPage({
           <body>
             <div class="flyer">
               <h1>LOOKESCOLAR</h1>
-              <p>Accedé a tu galería familiar</p>
+              <p>Accedé a tu galería de clientes</p>
               <div class="alias">Alias: ${item.alias.toUpperCase()}<br/>Código corto: ${item.short_code}</div>
               <div>
-                <img src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrUrl)}" alt="QR acceso familiar" />
+                <img src="https://api.qrserver.com/v1/create-qr-code/?size=260x260&data=${encodeURIComponent(qrUrl)}" alt="QR acceso clientes" />
               </div>
               <div class="instructions">
                 <strong>Cómo acceder:</strong>
@@ -415,7 +415,7 @@ export default function ShareManagerPage({
         <div>
           <h1 className="text-2xl font-bold">Compartir</h1>
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            Crear enlaces para familias de este evento
+            Crear enlaces para clientes de este evento
           </p>
         </div>
       </div>
@@ -598,15 +598,15 @@ export default function ShareManagerPage({
         </div>
       </Card>
 
-      {/* Alias familiares automáticos */}
+      {/* Alias de clientes automáticos */}
       <Card className="space-y-4 p-4">
         <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
           <div className="flex items-center gap-3">
             <User className="h-5 w-5 text-pink-600" />
             <div>
-              <div className="font-medium">Alias familiares</div>
+              <div className="font-medium">Alias de clientes</div>
               <div className="text-xs text-gray-500 dark:text-gray-400">
-                Compartí alias cortos y QR con cada familia sin salir de esta
+                Compartí alias cortos y QR con cada cliente sin salir de esta
                 pantalla
               </div>
             </div>
@@ -641,12 +641,12 @@ export default function ShareManagerPage({
 
         {loadingFamilyTokens ? (
           <div className="text-sm text-gray-500 dark:text-gray-400">
-            Cargando alias familiares…
+            Cargando alias de clientes…
           </div>
         ) : familyTokens.length === 0 ? (
           <div className="rounded-lg border border-dashed border-gray-300 p-6 text-sm text-gray-500 dark:text-gray-400">
-            Todavía no hay tokens familiares registrados. Generá accesos desde
-            el módulo de estudiantes/familias y presioná “Generar alias”.
+            Todavía no hay tokens de clientes registrados. Generá accesos desde
+            el módulo de clientes/invitados y presioná “Generar alias”.
           </div>
         ) : (
           <div className="grid gap-3 md:grid-cols-2">
@@ -659,11 +659,11 @@ export default function ShareManagerPage({
                   <div className="flex items-center justify-between">
                     <Badge variant="outline">
                       {token.type === 'family_access'
-                        ? 'Familia'
-                        : 'Estudiante'}
+                        ? 'Cliente'
+                        : 'Invitado'}
                     </Badge>
                     <span className="text-xs text-gray-500 dark:text-gray-400">
-                      {token.student_ids.length} estudiantes
+                      {token.student_ids.length} invitados
                     </span>
                   </div>
                   <div className="text-lg font-semibold tracking-wide">

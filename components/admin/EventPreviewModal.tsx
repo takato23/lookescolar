@@ -23,7 +23,6 @@ import {
   Star,
   Clock,
   Image as ImageIcon,
-  BarChart3,
   Activity,
   ArrowLeft,
   ArrowRight,
@@ -60,7 +59,7 @@ export function EventPreviewModal({
   hasPrevious = false,
 }: EventPreviewModalProps) {
   const [activeTab, setActiveTab] = useState<
-    'overview' | 'photos' | 'analytics' | 'orders'
+    'overview' | 'photos' | 'orders'
   >('overview');
   const [isLoading, setIsLoading] = useState(false);
   const [photoIndex, setPhotoIndex] = useState(0);
@@ -280,7 +279,6 @@ export function EventPreviewModal({
             {[
               { id: 'overview', label: 'Resumen', icon: Eye },
               { id: 'photos', label: 'Fotos', icon: Camera },
-              { id: 'analytics', label: 'Analytics', icon: BarChart3 },
               { id: 'orders', label: 'Pedidos', icon: ShoppingCart },
             ].map((tab) => {
               const Icon = tab.icon;
@@ -326,7 +324,7 @@ export function EventPreviewModal({
                   <div className="text-2xl font-bold text-foreground">
                     {event.stats?.totalSubjects || 0}
                   </div>
-                  <div className="text-sm text-gray-500 dark:text-gray-400">Familias</div>
+                  <div className="text-sm text-gray-500 dark:text-gray-400">Clientes</div>
                 </div>
 
                 <div className="neural-glass-card p-4 text-center">
@@ -475,20 +473,6 @@ export function EventPreviewModal({
                   <Camera className="mr-2 h-4 w-4" />
                   Administrar Fotos
                 </Button>
-              </div>
-            </div>
-          )}
-
-          {activeTab === 'analytics' && (
-            <div className="space-y-4">
-              <div className="text-center text-gray-500">
-                <BarChart3 className="mx-auto mb-4 h-12 w-12 opacity-50" />
-                <h3 className="mb-2 text-lg font-medium">
-                  Analytics Avanzados
-                </h3>
-                <p className="text-sm">
-                  Los gráficos y métricas detalladas se mostrarán aquí
-                </p>
               </div>
             </div>
           )}

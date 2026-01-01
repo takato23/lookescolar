@@ -39,18 +39,18 @@ export const GET = withAuth(async function (request: NextRequest, context) {
       : '[FECHA]';
 
     // Generate example link
-    const exampleToken = sampleSubject?.token || '[TOKEN_DEL_ALUMNO]';
-    const exampleLink = `${baseUrl}/f/${exampleToken}`;
-    const exampleStudentName = sampleSubject?.name || '[NOMBRE_DEL_ALUMNO]';
+    const exampleToken = sampleSubject?.token || '[TOKEN_DEL_INVITADO]';
+    const exampleLink = `${baseUrl}/store-unified/${exampleToken}`;
+    const exampleStudentName = sampleSubject?.name || '[NOMBRE_DEL_INVITADO]';
 
     // Generate email template
     const emailTemplate = `Asunto: Fotos de ${eventName} - ${schoolName}
 
-Estimada familia,
+Estimada/o cliente,
 
 Esperamos que se encuentren bien. Les escribimos para informarles que ya están disponibles las fotos de ${eventName} realizada el ${eventDate}.
 
-🔗 LINK PERSONALIZADO PARA SU HIJO/A:
+🔗 LINK PERSONALIZADO PARA SU INVITADO/A:
 ${exampleLink}
 
 📋 INSTRUCCIONES:
@@ -60,7 +60,7 @@ ${exampleLink}
 4. Complete el proceso de pago de forma segura
 
 ⏰ IMPORTANTE:
-- Este link es exclusivo para su familia
+- Este link es exclusivo para su cliente
 - Las fotos estarán disponibles por 30 días
 - Los precios y formas de pago están detallados en la galería
 
@@ -71,10 +71,10 @@ ${schoolName}
 
 ---
 INSTRUCCIONES PARA LA ESCUELA:
-- Reemplace [NOMBRE_DEL_ALUMNO] con el nombre real del estudiante
-- Reemplace el link con el token específico de cada alumno
+- Reemplace [NOMBRE_DEL_INVITADO] con el nombre real del invitado
+- Reemplace el link con el token específico de cada invitado
 - Use la lista CSV exportada para obtener todos los tokens
-- Cada familia debe recibir SOLO su link personalizado`;
+- Cada cliente debe recibir SOLO su link personalizado`;
 
     logger.info('Email template generated', {
       requestId,
@@ -98,9 +98,9 @@ INSTRUCCIONES PARA LA ESCUELA:
       },
       instructions: [
         'Copie esta plantilla en su sistema de email masivo',
-        'Para cada familia, reemplace [NOMBRE_DEL_ALUMNO] y el link',
+        'Para cada cliente, reemplace [NOMBRE_DEL_INVITADO] y el link',
         'Use el CSV exportado para obtener todos los datos',
-        'Envíe un email personalizado a cada familia',
+        'Envíe un email personalizado a cada cliente',
       ],
       metadata: {
         requestId,

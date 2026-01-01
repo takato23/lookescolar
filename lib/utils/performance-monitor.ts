@@ -9,14 +9,13 @@ import { logger } from './logger';
 // Core Web Vitals thresholds (Google recommendations)
 const THRESHOLDS = {
   LCP: { good: 2500, needsImprovement: 4000 }, // Largest Contentful Paint
-  FID: { good: 100, needsImprovement: 300 }, // First Input Delay
   CLS: { good: 0.1, needsImprovement: 0.25 }, // Cumulative Layout Shift
   TTFB: { good: 800, needsImprovement: 1800 }, // Time to First Byte
   FCP: { good: 1800, needsImprovement: 3000 }, // First Contentful Paint
 };
 
 interface WebVital {
-  name: 'CLS' | 'FCP' | 'FID' | 'LCP' | 'TTFB';
+  name: 'CLS' | 'FCP' | 'LCP' | 'TTFB';
   value: number;
   rating: 'good' | 'needs-improvement' | 'poor';
   id: string;
@@ -27,7 +26,6 @@ interface WebVital {
 interface PerformanceMetrics {
   // Core Web Vitals
   lcp?: number;
-  fid?: number;
   cls?: number;
   ttfb?: number;
   fcp?: number;
@@ -92,12 +90,10 @@ class PerformanceMonitor {
       .then((mod) => {
         const onCLS = (mod as any).onCLS ?? (mod as any).getCLS;
         const onFCP = (mod as any).onFCP ?? (mod as any).getFCP;
-        const onFID = (mod as any).onFID ?? (mod as any).getFID;
         const onLCP = (mod as any).onLCP ?? (mod as any).getLCP;
         const onTTFB = (mod as any).onTTFB ?? (mod as any).getTTFB;
         onCLS(this.handleWebVital.bind(this));
         onFCP(this.handleWebVital.bind(this));
-        onFID(this.handleWebVital.bind(this));
         onLCP(this.handleWebVital.bind(this));
         onTTFB(this.handleWebVital.bind(this));
       })
@@ -493,7 +489,6 @@ class PerformanceMonitor {
   generateReport(): {
     summary: {
       averageLCP: number;
-      averageFID: number;
       averageCLS: number;
       totalPages: number;
     };
@@ -511,9 +506,6 @@ class PerformanceMonitor {
       if (metrics.lcp && metrics.lcp > THRESHOLDS.LCP.good) {
         score -= 20;
       }
-      if (metrics.fid && metrics.fid > THRESHOLDS.FID.good) {
-        score -= 20;
-      }
       if (metrics.cls && metrics.cls > THRESHOLDS.CLS.good) {
         score -= 20;
       }
@@ -529,7 +521,6 @@ class PerformanceMonitor {
 
     // Calculate averages
     const lcpValues = pages.map(([, m]) => m.lcp).filter(Boolean) as number[];
-    const fidValues = pages.map(([, m]) => m.fid).filter(Boolean) as number[];
     const clsValues = pages.map(([, m]) => m.cls).filter(Boolean) as number[];
 
     return {
@@ -537,10 +528,6 @@ class PerformanceMonitor {
         averageLCP:
           lcpValues.length > 0
             ? lcpValues.reduce((a, b) => a + b) / lcpValues.length
-            : 0,
-        averageFID:
-          fidValues.length > 0
-            ? fidValues.reduce((a, b) => a + b) / fidValues.length
             : 0,
         averageCLS:
           clsValues.length > 0

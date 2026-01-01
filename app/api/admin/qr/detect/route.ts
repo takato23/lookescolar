@@ -3,6 +3,10 @@ import { qrDetectionService } from '@/lib/services/qr-detection.service';
 import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { logger } from '@/lib/utils/logger';
 import { z } from 'zod';
+import { getQrTaggingStatus } from '@/lib/qr/feature';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
+import { getAppSettings } from '@/lib/settings';
+import { buildQrDetectionOptions } from '@/lib/qr/settings';
 
 const detectQRSchema = z.object({
   eventId: z.string().uuid('Invalid event ID').optional(),
@@ -48,6 +52,42 @@ export const POST = withAdminAuth(async (request: NextRequest) => {
 
     const { eventId, images, options } = validation.data;
 
+    if (eventId) {
+      const { tenantId } = resolveTenantFromHeaders(request.headers);
+      const featureStatus = await getQrTaggingStatus({
+        tenantId,
+        eventId,
+      });
+
+      if (!featureStatus.enabled) {
+        return NextResponse.json({
+          success: true,
+          qr_detection_disabled: true,
+          reason: 'qr_tagging_disabled',
+          data: {
+            results: [],
+            summary: {
+              totalImages: images.length,
+              successfulImages: 0,
+              failedImages: 0,
+              totalQRsDetected: 0,
+            },
+          },
+        });
+      }
+    }
+
+    const appSettings = await getAppSettings();
+    const baseOptions = buildQrDetectionOptions({
+      sensitivity: appSettings.qrDetectionSensitivity,
+      maxWidth: options?.maxWidth,
+      maxHeight: options?.maxHeight,
+    });
+    const detectionOptions = {
+      ...baseOptions,
+      ...options,
+    };
+
     // Convert base64 images to buffers
     const imageBuffers = images.map((img) => ({
       filename: img.filename,
@@ -58,7 +98,7 @@ export const POST = withAdminAuth(async (request: NextRequest) => {
     // Detect QR codes in batch
     const results = await qrDetectionService.batchDetectQRCodes(
       imageBuffers,
-      options
+      detectionOptions
     );
 
     const totalQRs = results.reduce((sum, r) => sum + r.qrCodes.length, 0);

@@ -81,13 +81,13 @@ const AGENDA_STATUS_TOKENS: Record<NonNullable<AgendaItem['status']>, { label: s
 
 const filters: FilterChipToken[] = [
   { label: 'Modo galería', icon: Camera, active: true },
-  { label: 'Familias', icon: HeartHandshake },
+  { label: 'Clientes', icon: HeartHandshake },
   { label: 'Docentes', icon: GraduationCap },
 ];
 
 const heroHighlights: HeroHighlight[] = [
   { label: 'Salas en vivo', value: '12', icon: Camera },
-  { label: 'Familias conectadas', value: '268', icon: Users },
+  { label: 'Clientes conectados', value: '268', icon: Users },
   { label: 'Nivel de alegría', value: '96%', icon: Sparkles },
 ];
 
@@ -98,7 +98,7 @@ const heroMeta: HeroMeta[] = [
 
 const summaryStats: SummaryStat[] = [
   { label: 'Aulas activas', value: '18', helper: '+3 esta semana', icon: GraduationCap },
-  { label: 'Participación familiar', value: '92%', helper: 'Promedio últimos 7 días', icon: HeartHandshake },
+  { label: 'Participación de clientes', value: '92%', helper: 'Promedio últimos 7 días', icon: HeartHandshake },
   { label: 'Eventos agendados', value: '14', helper: 'Octubre 2025', icon: CalendarClock },
 ];
 
@@ -139,7 +139,7 @@ const quickMetrics: QuickMetric[] = [
     status: { label: 'Estable', tone: 'neutral' },
   },
   {
-    title: 'Familias en vivo',
+    title: 'Clientes en vivo',
     value: '42',
     helper: '8 en espera',
     icon: HeartHandshake,
@@ -245,7 +245,7 @@ export function LookEscolarConcept() {
             </h1>
             <p className={`max-w-2xl text-sm sm:text-base leading-relaxed ${textMutedClass}`}>
               Diseñamos una atmósfera relajada y sofisticada para seguir el pulso de cada aula:
-              vidrio esmerilado, luz filtrada y detalles cobre que hacen sentir acogida a cada familia.
+              vidrio esmerilado, luz filtrada y detalles cobre que hacen sentir acogida a cada cliente.
             </p>
             <nav aria-label="Filtros de visualización" className="mt-6 flex flex-wrap items-center justify-between gap-3 sm:gap-4">
               <div className="flex flex-wrap gap-3 sm:gap-4">
@@ -289,7 +289,7 @@ export function LookEscolarConcept() {
                     Mirada LookEscolar en vivo
                   </h2>
                   <p className="max-w-xl text-sm sm:text-base text-white/80">
-                    Sigue las aulas, calidez de las galerías y la emoción de las familias desde un único tablero.
+                    Sigue las aulas, calidez de las galerías y la emoción de los clientes desde un único tablero.
                     Todo se actualiza cada minuto para que la magia suceda sin fricción.
                   </p>
                 </div>
@@ -433,7 +433,7 @@ export function LookEscolarConcept() {
               <div className="absolute inset-0 overflow-hidden rounded-[60px]">
                 <img
                   src="https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?auto=format&fit=crop&w=1600&q=85&fm=webp"
-                  alt="Familias compartiendo recuerdos escolares"
+                  alt="Clientes compartiendo recuerdos escolares"
                   className="h-full w-full object-cover"
                   style={{ filter: 'saturate(0.95)' }}
                   loading="lazy"
@@ -451,7 +451,7 @@ export function LookEscolarConcept() {
                     Recuerdos dorados de otoño
                   </h3>
                   <p className="max-w-md text-sm sm:text-base text-white/82">
-                    Historias audiovisuales listas para enviar a las familias, con música y texto sincronizado.
+                    Historias audiovisuales listas para enviar a los clientes, con música y texto sincronizado.
                   </p>
                 </div>
                 <div className="flex flex-wrap items-center gap-6">

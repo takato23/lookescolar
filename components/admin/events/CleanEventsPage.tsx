@@ -35,6 +35,7 @@ type AdminEvent = {
   price_per_photo: number | null;
   stats: AdminEventStats;
   cover_url?: string | null;
+  cover_urls?: string[];
 };
 
 type EventsError =
@@ -74,11 +75,15 @@ const normalizeCoverUrl = (url?: string | null): string | null => {
   const trimmed = url.trim();
   if (!trimmed) return null;
   if (trimmed.startsWith('http')) return trimmed;
-  // assume path inside previews/ bucket
-  const cleaned = trimmed.startsWith('previews/')
-    ? trimmed.slice('previews/'.length)
-    : trimmed.replace(/^\/+/, '');
-  return `/admin/previews/${cleaned}`;
+  // Build Supabase public URL for photos bucket
+  // url is like "previews/filename_preview.webp"
+  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+  return `${supabaseUrl}/storage/v1/object/public/photos/${trimmed}`;
+};
+
+const normalizeCoverUrls = (urls?: string[] | null): string[] => {
+  if (!urls || urls.length === 0) return [];
+  return urls.map(url => normalizeCoverUrl(url)).filter((url): url is string => url !== null);
 };
 
 // Transform API events to display format
@@ -113,10 +118,7 @@ function transformEvents(apiEvents: AdminEvent[] | null | undefined): DisplayEve
       date: formattedDate,
       status,
       photoCount: event.stats?.totalPhotos || 0,
-      coverPhotos: (() => {
-        const normalized = normalizeCoverUrl(event.cover_url);
-        return normalized ? [normalized] : [];
-      })(),
+      coverPhotos: normalizeCoverUrls(event.cover_urls),
       hasPassword: false,
     };
   });
@@ -263,39 +265,42 @@ function EventCard({ event }: { event: DisplayEvent }) {
 
   const { class: statusClass, label: statusLabel } = statusConfig[event.status];
 
+  // Build 4 slots: photos first, then placeholders
+  const coverSlots = Array.from({ length: 4 }, (_, index) => {
+    const photo = event.coverPhotos[index];
+    return { hasPhoto: !!photo, url: photo || null, index };
+  });
+
   return (
-    <Link href={`/admin/events/${event.id}`} className="clean-event-card">
+    <Link href={`/admin/events/${event.id}`} className="clean-event-card group">
       {/* Cover Grid - 4 photos like Pixieset */}
-      <div className="clean-event-cover">
-        {event.coverPhotos.length > 0 ? (
-          event.coverPhotos.slice(0, 4).map((photo, index) => (
-            <div key={index} className="relative">
+      <div className="clean-event-cover relative">
+        {coverSlots.map((slot) => (
+          slot.hasPhoto ? (
+            <div key={slot.index} className="relative">
               <Image
-                src={photo}
-                alt=""
+                src={slot.url!}
+                alt={`${event.name} - foto ${slot.index + 1}`}
                 fill
-                className="clean-event-cover-img"
+                className="clean-event-cover-img object-cover"
                 sizes="(max-width: 768px) 50vw, 25vw"
               />
             </div>
-          ))
-        ) : (
-          // Empty placeholders with gradient
-          <>
-            <CoverPlaceholder index={0} />
-            <CoverPlaceholder index={1} />
-            <CoverPlaceholder index={2} />
-            <CoverPlaceholder index={3} />
-          </>
-        )}
+          ) : (
+            <CoverPlaceholder key={slot.index} index={slot.index} />
+          )
+        ))}
+
+        {/* Event name overlay on cover */}
+        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-transparent to-transparent flex items-end justify-center pointer-events-none">
+          <h3 className="text-white font-semibold text-lg px-3 pb-3 text-center drop-shadow-lg line-clamp-2">
+            {event.name}
+          </h3>
+        </div>
       </div>
 
       {/* Card Body */}
       <div className="clean-event-body">
-        <h3 className="clean-event-name">
-          {event.hasPassword && <Lock className="clean-event-lock" />}
-          {event.name}
-        </h3>
         <div className="clean-event-meta">
           <span className={cn('clean-status', statusClass)}>
             <span className="clean-status-dot" />

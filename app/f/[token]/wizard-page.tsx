@@ -1,18 +1,35 @@
-/**
- * Redirección automática del wizard de /f/[token]/wizard a /store/[token]
- * El wizard ahora está integrado en UnifiedStore
- */
-
 import { redirect } from 'next/navigation';
 
-interface PageProps {
-  params: { token: string };
+type SearchParams = Record<string, string | string[] | undefined>;
+
+function buildRedirectUrl(token: string, searchParams: SearchParams) {
+  const queryString = new URLSearchParams();
+
+  Object.entries(searchParams).forEach(([key, value]) => {
+    if (value === undefined) return;
+    if (Array.isArray(value)) {
+      value.forEach((v) => queryString.append(key, v));
+    } else {
+      queryString.append(key, value);
+    }
+  });
+
+  const qs = queryString.toString();
+  return qs ? `/store-unified/${token}?${qs}` : `/store-unified/${token}`;
 }
 
-export default async function LegacyWizardPage({ params }: PageProps) {
-  const { token } = params;
+export default async function WizardPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams?: Promise<SearchParams> | SearchParams;
+}) {
+  const { token } = await params;
+  const resolvedSearchParams =
+    searchParams && typeof (searchParams as any).then === 'function'
+      ? await (searchParams as Promise<SearchParams>)
+      : (searchParams ?? {});
 
-  // Redirigir automáticamente a la nueva ruta unificada
-  // El wizard está integrado en UnifiedStore
-  redirect(`/store/${token}`);
+  redirect(buildRedirectUrl(token, resolvedSearchParams));
 }

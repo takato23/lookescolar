@@ -50,7 +50,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const supabase = createServerSupabaseServiceClient();
+    const supabase = await createServerSupabaseServiceClient();
 
     // Usar la nueva vista con información de pagos
     let query = supabase.from('order_status_with_payments').select(`

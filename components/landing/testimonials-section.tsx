@@ -4,6 +4,7 @@ import { Card } from '@/components/ui/card';
 import { Star } from 'lucide-react';
 import Image from 'next/image';
 import { motion } from 'framer-motion';
+import { PLACEHOLDER_IMAGES, getAvatarByIndex } from '@/lib/config/placeholder-images';
 
 export function TestimonialsSection() {
   const testimonials = [
@@ -13,7 +14,7 @@ export function TestimonialsSection() {
       author: 'Sofía M.',
       role: 'Fotógrafa Escolar',
       company: 'Independiente',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?auto=format&fit=crop&w=150&q=80',
+      image: PLACEHOLDER_IMAGES.avatars.warm,
     },
     {
       content:
@@ -21,15 +22,15 @@ export function TestimonialsSection() {
       author: 'Martín G.',
       role: 'Director',
       company: 'Estudio Enfoque',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?auto=format&fit=crop&w=150&q=80',
+      image: PLACEHOLDER_IMAGES.avatars.cool,
     },
     {
       content:
-        'Lo que más valoro es la privacidad. Cada familia ve solo sus fotos. Eso me dio mucha confianza con los colegios nuevos.',
+        'Lo que más valoro es la privacidad. Cada cliente ve solo sus fotos. Eso me dio mucha confianza con los colegios nuevos.',
       author: 'Laura R.',
       role: 'Fotógrafa',
       company: 'Click Escolar',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?auto=format&fit=crop&w=150&q=80',
+      image: PLACEHOLDER_IMAGES.avatars.sage,
     },
     {
       content:
@@ -37,7 +38,7 @@ export function TestimonialsSection() {
       author: 'Pablo D.',
       role: 'Fotógrafo de Eventos',
       company: 'PD Fotografía',
-      image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?auto=format&fit=crop&w=150&q=80',
+      image: PLACEHOLDER_IMAGES.avatars.rose,
     },
   ];
 
@@ -105,11 +106,11 @@ export function TestimonialsSection() {
 
                   <div className="flex items-center gap-4">
                     <div className="relative h-12 w-12 overflow-hidden rounded-full border-2 border-white/10">
-                      <Image
+                      {/* eslint-disable-next-line @next/next/no-img-element */}
+                      <img
                         src={testimonial.image}
                         alt={testimonial.author}
-                        fill
-                        className="object-cover"
+                        className="h-full w-full object-cover"
                       />
                     </div>
                     <div>

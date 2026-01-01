@@ -587,7 +587,7 @@ export function ProductManagementPanel({
                   name: e.target.value,
                 })
               }
-              placeholder="Ej: Combo Familiar"
+              placeholder="Ej: Combo para clientes"
             />
           </div>
 

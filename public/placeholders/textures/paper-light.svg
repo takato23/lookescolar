@@ -1,0 +1,67 @@
+<svg width="400" height="400" viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Textura de ruido sutil para simular papel -->
+    <filter id="paperNoise" x="0%" y="0%" width="100%" height="100%">
+      <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="4" result="noise"/>
+      <feDiffuseLighting in="noise" lighting-color="#faf9f7" surfaceScale="1.5" result="light">
+        <feDistantLight azimuth="45" elevation="60"/>
+      </feDiffuseLighting>
+      <feBlend in="SourceGraphic" in2="light" mode="multiply"/>
+    </filter>
+
+    <!-- Patrón de fibras de papel -->
+    <pattern id="fibers" x="0" y="0" width="100" height="100" patternUnits="userSpaceOnUse">
+      <line x1="0" y1="23" x2="100" y2="25" stroke="rgba(0,0,0,0.015)" stroke-width="0.5"/>
+      <line x1="0" y1="47" x2="100" y2="48" stroke="rgba(0,0,0,0.01)" stroke-width="0.3"/>
+      <line x1="0" y1="71" x2="100" y2="73" stroke="rgba(0,0,0,0.015)" stroke-width="0.5"/>
+      <line x1="0" y1="94" x2="100" y2="95" stroke="rgba(0,0,0,0.008)" stroke-width="0.4"/>
+      <line x1="15" y1="0" x2="17" y2="100" stroke="rgba(0,0,0,0.01)" stroke-width="0.3"/>
+      <line x1="38" y1="0" x2="40" y2="100" stroke="rgba(0,0,0,0.012)" stroke-width="0.4"/>
+      <line x1="62" y1="0" x2="63" y2="100" stroke="rgba(0,0,0,0.008)" stroke-width="0.3"/>
+      <line x1="85" y1="0" x2="87" y2="100" stroke="rgba(0,0,0,0.015)" stroke-width="0.5"/>
+    </pattern>
+
+    <!-- Gradiente muy sutil -->
+    <linearGradient id="paperGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fdfcfb"/>
+      <stop offset="50%" style="stop-color:#faf9f7"/>
+      <stop offset="100%" style="stop-color:#f7f6f4"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Base del papel -->
+  <rect width="400" height="400" fill="url(#paperGrad)"/>
+
+  <!-- Capa de fibras -->
+  <rect width="400" height="400" fill="url(#fibers)"/>
+
+  <!-- Puntos sutiles de textura -->
+  <g opacity="0.03">
+    <circle cx="23" cy="45" r="0.8" fill="#8b8680"/>
+    <circle cx="67" cy="12" r="0.6" fill="#8b8680"/>
+    <circle cx="134" cy="78" r="0.7" fill="#8b8680"/>
+    <circle cx="189" cy="34" r="0.5" fill="#8b8680"/>
+    <circle cx="256" cy="89" r="0.8" fill="#8b8680"/>
+    <circle cx="312" cy="23" r="0.6" fill="#8b8680"/>
+    <circle cx="378" cy="67" r="0.7" fill="#8b8680"/>
+    <circle cx="45" cy="123" r="0.6" fill="#8b8680"/>
+    <circle cx="98" cy="178" r="0.8" fill="#8b8680"/>
+    <circle cx="156" cy="145" r="0.5" fill="#8b8680"/>
+    <circle cx="223" cy="189" r="0.7" fill="#8b8680"/>
+    <circle cx="289" cy="134" r="0.6" fill="#8b8680"/>
+    <circle cx="345" cy="167" r="0.8" fill="#8b8680"/>
+    <circle cx="34" cy="234" r="0.7" fill="#8b8680"/>
+    <circle cx="78" cy="289" r="0.6" fill="#8b8680"/>
+    <circle cx="145" cy="256" r="0.8" fill="#8b8680"/>
+    <circle cx="201" cy="312" r="0.5" fill="#8b8680"/>
+    <circle cx="267" cy="278" r="0.7" fill="#8b8680"/>
+    <circle cx="323" cy="323" r="0.6" fill="#8b8680"/>
+    <circle cx="389" cy="267" r="0.8" fill="#8b8680"/>
+    <circle cx="56" cy="356" r="0.6" fill="#8b8680"/>
+    <circle cx="112" cy="378" r="0.7" fill="#8b8680"/>
+    <circle cx="178" cy="345" r="0.5" fill="#8b8680"/>
+    <circle cx="234" cy="389" r="0.8" fill="#8b8680"/>
+    <circle cx="301" cy="356" r="0.6" fill="#8b8680"/>
+    <circle cx="367" cy="378" r="0.7" fill="#8b8680"/>
+  </g>
+</svg>

@@ -115,13 +115,10 @@ const QRTaggingDemo: React.FC = () => {
             </h2>
             <ul className="list-inside list-disc space-y-1 text-sm text-yellow-800">
               <li>
-                <code>STUDENT:12345:JUAN_PEREZ:event-1</code> - Formato completo
+                <code>LKSTUDENT_Abc123Token</code> - Formato canonico
               </li>
               <li>
-                <code>STUDENT:12345:MARIA_LOPEZ</code> - Formato básico
-              </li>
-              <li>
-                <code>98765</code> - Solo ID (se generará "Estudiante 98765")
+                <code>STUDENT:uuid:nombre:eventId</code> - Legacy (compatibilidad temporal)
               </li>
             </ul>
           </div>

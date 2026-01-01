@@ -145,7 +145,7 @@ export default function StoreManager({
             Gestión de Tiendas
           </h2>
           <p className="mt-1 text-muted-foreground0 dark:text-muted-foreground">
-            Administra las tiendas públicas para compartir fotos con familias
+            Administra las tiendas públicas para compartir fotos con clientes
           </p>
         </div>
 
@@ -232,7 +232,7 @@ export default function StoreManager({
               No hay tiendas publicadas
             </h3>
             <p className="mb-4 text-muted-foreground0">
-              Crea tu primera tienda para compartir fotos con las familias
+              Crea tu primera tienda para compartir fotos con los clientes
             </p>
             <CreateStoreDialog
               eventId={eventId}

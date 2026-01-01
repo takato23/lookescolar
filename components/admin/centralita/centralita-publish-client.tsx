@@ -8,9 +8,7 @@ import CentralitaTabs, { CentralitaTabsContent } from './centralita-tabs';
 import CentralitaOverview from './overview/centralita-overview';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { HierarchicalFolderManager } from '@/components/admin/HierarchicalFolderManager';
-import { BulkOperationsDebugPanel } from '@/components/admin/BulkOperationsDebugPanel';
 import { useFolderPublishData, folderPublishQueryKeys } from '@/hooks/useFolderPublishData';
 import { usePublishSuccessToast } from '@/components/admin/PublishSuccessToast';
 import { useEventManagement } from '@/lib/stores/event-workflow-store';
@@ -19,11 +17,7 @@ import { useSearchParams } from 'next/navigation';
 import {
   Users,
   RefreshCw,
-  Settings,
-  BarChart3,
   AlertTriangle,
-  CheckCircle,
-  Clock,
   Copy,
   ExternalLink,
 } from 'lucide-react';
@@ -406,15 +400,11 @@ export default function CentralitaPublishClient(props?: {
             {effectiveIsRefetching ? 'Actualizando...' : 'Actualizar'}
           </Button>
 
-          <Button variant="outline" className="flex-shrink-0">
-            <Settings className="mr-2 h-4 w-4" />
-            Configuración
-          </Button>
         </div>
       </div>
 
       {/* Tabs */}
-      <CentralitaTabs defaultTab={selectedEventId ? 'overview' : 'folders'} showAdvanced={false}>
+      <CentralitaTabs defaultTab={selectedEventId ? 'overview' : 'folders'}>
         <CentralitaTabsContent value="overview">
           <CentralitaOverview stats={performanceMetrics} getPublicUrl={getPublicUrl} hasEvent={!!effectiveEvent} />
         </CentralitaTabsContent>
@@ -476,30 +466,6 @@ export default function CentralitaPublishClient(props?: {
                 </div>
               </div>
             </div>
-          </Card>
-        </CentralitaTabsContent>
-
-        <CentralitaTabsContent value="analytics">
-          <div className="space-y-6">
-            <BulkOperationsDebugPanel />
-            <Card className="p-6">
-              <h3 className="mb-4 flex items-center gap-2 text-lg font-semibold">
-                <BarChart3 className="h-5 w-5 text-yellow-600" /> Métricas de Rendimiento
-              </h3>
-              <div className="space-y-4">
-                <div className="flex items-center justify-between"><span className="text-sm text-gray-500 dark:text-gray-400">Total de carpetas</span><Badge variant="outline">{performanceMetrics.total}</Badge></div>
-                <div className="flex items-center justify-between"><span className="text-sm text-gray-500 dark:text-gray-400">Publicadas</span><Badge className="bg-green-100 text-green-800">{performanceMetrics.published}</Badge></div>
-                <div className="flex items-center justify-between"><span className="text-sm text-gray-500 dark:text-gray-400">Privadas</span><Badge variant="outline">{performanceMetrics.unpublished}</Badge></div>
-                <div className="flex items-center justify-between"><span className="text-sm text-gray-500 dark:text-gray-400">Fotos totales</span><Badge variant="outline">{performanceMetrics.totalPhotos}</Badge></div>
-              </div>
-            </Card>
-          </div>
-        </CentralitaTabsContent>
-
-        <CentralitaTabsContent value="settings">
-          <Card className="p-6">
-            <h3 className="mb-2 text-lg font-semibold">Configuración</h3>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Ajustes avanzados próximamente.</p>
           </Card>
         </CentralitaTabsContent>
       </CentralitaTabs>

@@ -49,6 +49,7 @@
     "__tests__/**/*",
     "tests/**/*",
     "scripts/**/*",
+    "backups/**/*",
     "*.test.ts",
     "*.test.tsx",
     "vitest.setup.ts",

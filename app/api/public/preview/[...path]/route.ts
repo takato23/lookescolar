@@ -14,8 +14,13 @@ export async function GET(
   try {
     const path = params.path.join('/');
 
-    // Security: Only allow preview paths
-    if (!path.startsWith('previews/')) {
+    // Security: Only allow preview/watermark/originals paths
+    const allowedPrefixes = ['previews/', 'watermarks/', 'watermarked/', 'originals/'];
+    const nestedPrefixes = /^(events\/[^/]+|shared)\/(previews|watermarks|watermarked|originals)\//;
+    if (
+      !allowedPrefixes.some((prefix) => path.startsWith(prefix)) &&
+      !nestedPrefixes.test(path)
+    ) {
       return NextResponse.json({ error: 'Invalid path' }, { status: 400 });
     }
 
@@ -27,8 +32,11 @@ export async function GET(
     if (error) {
       console.error('Error downloading preview:', error);
 
-      // Try fallback to watermark path if preview fails
-      const watermarkPath = path.replace('previews/', 'watermarks/');
+      // Try fallback between preview and watermark paths
+      const fallbackPath = path.startsWith('previews/')
+        ? path.replace('previews/', 'watermarks/')
+        : path.replace(/^watermarks\//, 'previews/').replace(/^watermarked\//, 'previews/');
+      const watermarkPath = fallbackPath;
       const { data: watermarkData, error: watermarkError } = await supabase.storage
         .from('photos')
         .download(watermarkPath);

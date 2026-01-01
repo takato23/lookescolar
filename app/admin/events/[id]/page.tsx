@@ -12,7 +12,10 @@ import {
 import { Input } from '@/components/ui/input';
 import { SectionHeader } from '@/components/layout/SectionHeader';
 import { absoluteUrl } from '@/lib/absoluteUrl';
-import { createServerSupabaseClient } from '@/lib/supabase/server';
+import {
+  createServerSupabaseClient,
+  createServerSupabaseServiceClient,
+} from '@/lib/supabase/server';
 import type { Database, Json } from '@/types/database';
 import CleanEventDetailPage from '@/components/admin/events/CleanEventDetailPage';
 
@@ -102,7 +105,7 @@ function formatNumber(value: number): string {
   return new Intl.NumberFormat('es-ES').format(value);
 }
 
-function parsePricingTiers(raw: EventRow['photo_prices']): PricingTier[] {
+function parsePricingTiers(raw: unknown): PricingTier[] {
   if (!raw) return [];
 
   const tiers: PricingTier[] = [];
@@ -179,35 +182,103 @@ async function fetchEventContext(eventId: string): Promise<{
   pricing: PricingTier[];
   currency: string;
 }> {
-  // Use service role to bypass RLS for admin page
-  console.log('[fetchEventContext] Creating service role client for event:', eventId);
-  const supabase = await createServerSupabaseClient({ serviceRole: true });
-  console.log('[fetchEventContext] Service role client created successfully');
+  try {
+    console.log('[fetchEventContext] Creating service client for event:', eventId);
+    const supabase =
+      (await createServerSupabaseServiceClient({ bypassTenant: true })) ??
+      (await createServerSupabaseClient());
+    console.log('[fetchEventContext] Supabase client ready');
 
-  const { data: event, error } = await supabase
-    .from('events')
-    .select(
-      'id, name, location, date, status, price_per_photo, photo_prices, photographer_name, photographer_email, photographer_phone'
-    )
-    .eq('id', eventId)
-    .maybeSingle();
+    const { data: event, error } = await supabase
+      .from('events')
+      .select('*')
+      .eq('id', eventId)
+      .maybeSingle();
 
-  if (error) {
-    console.error('Error al cargar el evento', {
-      eventId,
-      errorMessage: error.message,
-      errorCode: error.code,
-      errorHint: error.hint,
-      errorDetails: error.details,
-      fullError: error,
+    if (error) {
+      console.error('Error al cargar el evento', {
+        eventId,
+        errorMessage: error.message,
+        errorCode: error.code,
+        errorHint: error.hint,
+        errorDetails: error.details,
+        table: 'events',
+      });
+      return {
+        event: null,
+        stats: { photos: 0, subjects: 0, orders: 0, revenue: 0 },
+        pricing: [],
+        currency: 'USD',
+      };
+    }
+
+    if (!event) {
+      console.warn('[fetchEventContext] Event not found or query returned null', {
+        eventId,
+      });
+      return {
+        event: null,
+        stats: { photos: 0, subjects: 0, orders: 0, revenue: 0 },
+        pricing: [],
+        currency: 'USD',
+      };
+    }
+
+    console.log('[fetchEventContext] Event loaded successfully:', {
+      eventId: event.id,
+      eventName: event.name,
     });
-  }
 
-  if (!event) {
-    console.warn('[fetchEventContext] Event not found or query failed', {
+    const [subjectsRes, photosRes, ordersRes] = await Promise.all([
+      supabase
+        .from('subjects')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', eventId),
+      supabase
+        .from('photos')
+        .select('id', { count: 'exact', head: true })
+        .eq('event_id', eventId),
+      supabase
+        .from('orders')
+        .select('total_amount', { count: 'exact' })
+        .eq('event_id', eventId),
+    ]);
+
+    const subjects = subjectsRes?.count ?? 0;
+    const photos = photosRes?.count ?? 0;
+    const orders = ordersRes?.count ?? (ordersRes?.data?.length ?? 0);
+    const ordersData = ordersRes?.data ?? [];
+
+    const revenue = ordersData.reduce((acc, order: Record<string, unknown>) => {
+      // Handle both total_amount (in cents) and legacy formats
+      if (typeof order.total_amount === 'number') {
+        // If total_amount is less than 1000, assume it's in pesos, otherwise cents
+        return acc + (order.total_amount < 1000 ? order.total_amount : order.total_amount / 100);
+      }
+      return acc;
+    }, 0);
+
+    // photo_prices column or from settings
+    const eventData = event as unknown as Record<string, unknown>;
+    const settings = (eventData.settings as Record<string, unknown>) || {};
+    const photoPrices = (eventData.photo_prices || settings.photo_prices) as EventRow['photo_prices'] | undefined;
+    const pricing = parsePricingTiers(photoPrices);
+    // Get currency from settings or default
+    const currency = (settings.currency as string) || 'USD';
+
+    return {
+      event,
+      stats: { photos, subjects, orders, revenue },
+      pricing,
+      currency,
+    };
+  } catch (err) {
+    const fallbackMessage =
+      err instanceof Error ? err.message : 'Error desconocido al obtener el evento';
+    console.error('Error al cargar el evento (excepción)', {
       eventId,
-      hadError: !!error,
-      errorMessage: error?.message,
+      errorMessage: fallbackMessage,
+      stack: err instanceof Error ? err.stack : undefined,
     });
     return {
       event: null,
@@ -216,54 +287,6 @@ async function fetchEventContext(eventId: string): Promise<{
       currency: 'USD',
     };
   }
-
-  console.log('[fetchEventContext] Event loaded successfully:', {
-    eventId: event.id,
-    eventName: event.name,
-  });
-
-  const [subjectsRes, photosRes, ordersRes] = await Promise.all([
-    supabase
-      .from('subjects')
-      .select('id', { count: 'exact', head: true })
-      .eq('event_id', eventId),
-    supabase
-      .from('photos')
-      .select('id', { count: 'exact', head: true })
-      .eq('event_id', eventId),
-    supabase
-      .from('orders')
-      .select('total_amount,total_cents', { count: 'exact' })
-      .eq('event_id', eventId),
-  ]);
-
-  const subjects = subjectsRes?.count ?? 0;
-  const photos = photosRes?.count ?? 0;
-  const orders = ordersRes?.count ?? (ordersRes?.data?.length ?? 0);
-  const ordersData = ordersRes?.data ?? [];
-
-  const revenue = ordersData.reduce((acc, order: Record<string, unknown>) => {
-    if (typeof order.total_amount === 'number') {
-      return acc + order.total_amount;
-    }
-    if (typeof order.total_cents === 'number') {
-      return acc + order.total_cents / 100;
-    }
-    return acc;
-  }, 0);
-
-  // photo_prices is a direct column on events table
-  const eventData = event as unknown as Record<string, unknown>;
-  const pricing = parsePricingTiers(eventData.photo_prices as EventRow['photo_prices']);
-  // Settings column doesn't exist in the database, use default currency
-  const currency = 'USD';
-
-  return {
-    event,
-    stats: { photos, subjects, orders, revenue },
-    pricing,
-    currency,
-  };
 }
 
 export default async function EventDetailPage({
@@ -388,7 +411,7 @@ export default async function EventDetailPage({
     },
     {
       title: 'Experiencia guiada',
-      detail: `${formatNumber(stats.subjects)} familias conectadas`,
+      detail: `${formatNumber(stats.subjects)} clientes conectados`,
       description:
         'Filtrado por carpetas y códigos QR listos para compartir en cualquier tipo de evento.',
     },

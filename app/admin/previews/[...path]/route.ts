@@ -46,7 +46,8 @@ export const GET = withAdminAuth(async (req: NextRequest, { params }: { params: 
       return makePlaceholder(600);
     }
 
-    const key = POSITIVE_CACHE.get(rel) || `previews/${rel}`;
+    const isPreviewKey = /(^|\/)(previews|watermarks|watermarked|originals)\//i.test(rel);
+    const key = POSITIVE_CACHE.get(rel) || (isPreviewKey ? rel : `previews/${rel}`);
     const etag = `W/"${key}"`;
     const noneMatch = req.headers.get('if-none-match');
     if (noneMatch && noneMatch === etag) {

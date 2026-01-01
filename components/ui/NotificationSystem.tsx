@@ -472,7 +472,7 @@ export const showRevenueNotification = (
     category: 'event',
     eventId,
     action: {
-      label: 'Ver analytics',
+      label: 'Ver evento',
       onClick: () => window.open(`/admin/events/${eventId}`, '_blank'),
     },
   });

@@ -32,7 +32,7 @@ export function StoreAccessButton({
     const queryParams =
       selectedPhotos.length > 0 ? `?selected=${selectedPhotos.join(',')}` : '';
 
-    router.push(`/f/${token}/store${queryParams}`);
+    router.push(`/store-unified/${token}${queryParams}`);
   };
 
   if (variant === 'banner') {

@@ -323,7 +323,7 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
   };
 
   const handleDelete = async (subjectId: string) => {
-    if (!confirm('¿Estás seguro de eliminar este alumno?')) {
+    if (!confirm('¿Estás seguro de eliminar este invitado?')) {
       return;
     }
 
@@ -345,19 +345,19 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
     // Podrías agregar un toast notification aquí
   };
 
-  const getFamilyUrl = (token: string) => {
-    return `${window.location.origin}/s/${token}`;
+  const getClientUrl = (token: string) => {
+    return `${window.location.origin}/store-unified/${token}`;
   };
 
   return (
     <div className="rounded-2xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl">
       <div className="mb-6 flex items-center justify-between">
-        <h2 className="text-xl font-semibold text-white">Alumnos y Familias</h2>
+        <h2 className="text-xl font-semibold text-white">Invitados y Clientes</h2>
         <button
           onClick={() => setShowAddForm(true)}
           className="transform rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 px-4 py-2 font-medium text-white shadow-lg transition-all duration-200 hover:scale-[1.02] hover:shadow-xl"
         >
-          ➕ Agregar Alumnos
+          ➕ Agregar Invitados
         </button>
       </div>
 
@@ -372,7 +372,7 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
           <div className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/20 bg-gray-900/95 p-6 backdrop-blur-xl">
             <h3 className="mb-4 text-xl font-semibold text-white">
-              Agregar Alumnos
+              Agregar Invitados
             </h3>
 
             <div className="mb-4 flex space-x-2">
@@ -402,7 +402,7 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
               <form onSubmit={handleAddSingle} className="space-y-4">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-white/90">
-                    Nombre del Alumno *
+                    Nombre del Invitado *
                   </label>
                   <input
                     type="text"
@@ -454,7 +454,7 @@ export default function SubjectsSection({ eventId }: { eventId: string }) {
               <form onSubmit={handleAddBulk} className="space-y-4">
                 <div>
                   <label className="mb-2 block text-sm font-medium text-white/90">
-                    Lista de Alumnos (uno por línea)
+                    Lista de Invitados (uno por línea)
                   </label>
                   <p className="mb-2 text-sm text-white/50">
                     Formato: Nombre, Grado
@@ -503,7 +503,7 @@ Carlos López, 6to A"
         <div className="py-8 text-center text-white/50">Cargando...</div>
       ) : subjects.length === 0 ? (
         <div className="py-8 text-center text-white/50">
-          No hay alumnos registrados. Agrega el primero para comenzar.
+          No hay invitados registrados. Agregá el primero para comenzar.
         </div>
       ) : (
         <div className="overflow-x-auto">
@@ -554,7 +554,7 @@ Carlos López, 6to A"
                       <button
                         onClick={() =>
                           subject.token &&
-                          copyToken(getFamilyUrl(subject.token))
+                          copyToken(getClientUrl(subject.token))
                         }
                         className="text-xs text-white/50 hover:text-white"
                         title="Copiar URL"

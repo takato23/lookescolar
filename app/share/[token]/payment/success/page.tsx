@@ -1,20 +1,35 @@
-import Link from 'next/link';
+import { redirect } from 'next/navigation';
 
-export default async function SharePaymentSuccess({ params }: { params: Promise<{ token: string }> }) {
+type SearchParams = Record<string, string | string[] | undefined>;
+
+function buildRedirectUrl(token: string, searchParams: SearchParams) {
+  const queryString = new URLSearchParams();
+
+  Object.entries(searchParams).forEach(([key, value]) => {
+    if (value === undefined) return;
+    if (Array.isArray(value)) {
+      value.forEach((v) => queryString.append(key, v));
+    } else {
+      queryString.append(key, value);
+    }
+  });
+
+  const qs = queryString.toString();
+  return qs ? `/store-unified/${token}?${qs}` : `/store-unified/${token}`;
+}
+
+export default async function SharePaymentSuccess({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams?: Promise<SearchParams> | SearchParams;
+}) {
   const { token } = await params;
-  return (
-    <div className="mx-auto max-w-xl p-6">
-      <div className="rounded-lg border border-green-200 bg-green-50 p-6">
-        <h1 className="text-xl font-semibold text-green-800">¡Pago aprobado!</h1>
-        <p className="mt-2 text-sm text-green-700">
-          Gracias por tu compra. Estamos procesando tu pedido.
-        </p>
-        <div className="mt-4">
-          <Link href={`/share/${token}`} className="text-green-800 underline">
-            Volver a la galería
-          </Link>
-        </div>
-      </div>
-    </div>
-  );
+  const resolvedSearchParams =
+    searchParams && typeof (searchParams as any).then === 'function'
+      ? await (searchParams as Promise<SearchParams>)
+      : (searchParams ?? {});
+
+  redirect(buildRedirectUrl(token, resolvedSearchParams));
 }

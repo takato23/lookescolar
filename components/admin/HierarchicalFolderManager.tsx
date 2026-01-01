@@ -493,7 +493,7 @@ export function HierarchicalFolderManager({
                           size="sm"
                           onClick={() => copyToClipboard(folder.family_url)}
                           className="h-8 w-8 p-0"
-                          title="Copiar enlace familiar"
+                          title="Copiar enlace para clientes"
                         >
                           <Copy className="h-4 w-4" />
                         </Button>

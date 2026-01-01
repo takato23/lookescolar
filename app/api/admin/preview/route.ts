@@ -84,12 +84,15 @@ export const POST = RateLimitMiddleware.withRateLimit(
       // Get user ID from authContext
       const userId = authContext.user?.id || 'system';
 
-      // Create temporary preview token in the family_tokens table
+      // Create temporary preview token in the share_tokens table
+      const shareType = folder_id ? 'folder' : 'event';
       const insertData = {
+        token: previewToken,
         tenant_id: tenantId,
         folder_id: folder_id || null,
         event_id: event_id || null,
-        token: previewToken,
+        share_type: shareType,
+        photo_ids: [],
         expires_at: expiresAt.toISOString(),
         is_active: true,
         metadata: {
@@ -98,11 +101,12 @@ export const POST = RateLimitMiddleware.withRateLimit(
           purpose: 'admin_preview',
           is_preview: true,
         },
+        scope_config: {}
       };
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const { error: tokenError } = await supabase
-        .from('family_tokens')
+        .from('share_tokens')
         .insert(insertData as any);
 
       if (tokenError) {
@@ -149,7 +153,7 @@ export const DELETE = RateLimitMiddleware.withRateLimit(
 
       // Delete expired preview tokens
       const { error } = await supabase
-        .from('family_tokens')
+        .from('share_tokens')
         .delete()
         .eq('tenant_id', tenantId)
         .lt('expires_at', new Date().toISOString())

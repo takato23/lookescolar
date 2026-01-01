@@ -64,6 +64,28 @@ export async function middleware(request: NextRequest) {
     host:
       request.headers.get('x-forwarded-host') ?? request.headers.get('host'),
   });
+
+  const LEGACY_ADMIN_PATHS = [
+    '/admin/analytics',
+    '/admin/subjects',
+    '/admin/tagging',
+    '/admin/storage',
+    '/admin/dashboard-pro',
+    '/admin/lab',
+    '/admin/quick-flow',
+    '/admin/photos-optimized',
+    '/admin/photos-simple',
+    '/admin/mobile-dashboard',
+    '/admin/optimization',
+    '/admin/photo-migration',
+    '/admin/mockups',
+  ];
+
+  if (LEGACY_ADMIN_PATHS.some((path) => pathname.startsWith(path))) {
+    const redirectUrl = request.nextUrl.clone();
+    redirectUrl.pathname = '/admin';
+    return NextResponse.redirect(redirectUrl, 307);
+  }
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-tenant-id', tenantResolution.tenantId);
   requestHeaders.set('x-tenant-source', tenantResolution.source);
@@ -163,6 +185,48 @@ export async function middleware(request: NextRequest) {
     Object.entries(securityHeaders).forEach(([key, value]) => {
       response.headers.set(key, value);
     });
+
+    // Allow iframe embedding for admin store previews only
+    if (
+      pathname.startsWith('/store-unified/') &&
+      request.nextUrl.searchParams.get('preview') === 'true'
+    ) {
+      const frameAncestors = new Set<string>(["'self'"]);
+      const candidateOrigins = [
+        process.env.NEXT_PUBLIC_APP_URL,
+        process.env.NEXT_PUBLIC_SITE_URL,
+        'https://admin.lookescolar.com',
+        'http://localhost:3000',
+        'http://127.0.0.1:3000',
+      ].filter(Boolean) as string[];
+
+      for (const origin of candidateOrigins) {
+        if (origin.includes('*')) {
+          frameAncestors.add(origin);
+          continue;
+        }
+        try {
+          frameAncestors.add(new URL(origin).origin);
+        } catch {
+          // Ignore invalid origins
+        }
+      }
+
+      const referer = request.headers.get('referer');
+      if (referer) {
+        try {
+          frameAncestors.add(new URL(referer).origin);
+        } catch {
+          // Ignore malformed referer
+        }
+      }
+
+      response.headers.delete('X-Frame-Options');
+      response.headers.set(
+        'Content-Security-Policy',
+        `frame-ancestors ${Array.from(frameAncestors).join(' ')};`
+      );
+    }
 
     // 3b. Robots - Prevent indexing of tokenized gallery/store
     if (

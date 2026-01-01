@@ -16,10 +16,13 @@ export interface Database {
           updated_at: string | null;
           storage_path: string | null;
           event_id: string | null;
+          subject_id: string | null;
           approved: boolean | null;
           photo_type: string | null;
           original_filename: string | null;
+          filename: string | null;
           folder_id: string | null;
+          course_id: string | null;
           watermark_path: string | null;
           preview_path: string | null;
           file_size: number | null;
@@ -29,6 +32,9 @@ export interface Database {
           detected_qr_codes: Json | null;
           width: number | null;
           height: number | null;
+          exif_taken_at: string | null;
+          taken_at: string | null;
+          dimensions: Json | null;
           tenant_id: string;
         };
         Insert: {
@@ -37,10 +43,13 @@ export interface Database {
           updated_at?: string;
           storage_path?: string | null;
           event_id?: string | null;
+          subject_id?: string | null;
           approved?: boolean | null;
           photo_type?: string | null;
           original_filename?: string | null;
+          filename?: string | null;
           folder_id?: string | null;
+          course_id?: string | null;
           watermark_path?: string | null;
           preview_path?: string | null;
           file_size?: number | null;
@@ -50,6 +59,9 @@ export interface Database {
           detected_qr_codes?: Json | null;
           width?: number | null;
           height?: number | null;
+          exif_taken_at?: string | null;
+          taken_at?: string | null;
+          dimensions?: Json | null;
           tenant_id?: string;
         };
         Update: {
@@ -58,10 +70,13 @@ export interface Database {
           updated_at?: string;
           storage_path?: string | null;
           event_id?: string | null;
+          subject_id?: string | null;
           approved?: boolean | null;
           photo_type?: string | null;
           original_filename?: string | null;
+          filename?: string | null;
           folder_id?: string | null;
+          course_id?: string | null;
           watermark_path?: string | null;
           preview_path?: string | null;
           file_size?: number | null;
@@ -71,6 +86,9 @@ export interface Database {
           detected_qr_codes?: Json | null;
           width?: number | null;
           height?: number | null;
+          exif_taken_at?: string | null;
+          taken_at?: string | null;
+          dimensions?: Json | null;
           tenant_id?: string;
         };
         Relationships: [
@@ -97,6 +115,7 @@ export interface Database {
           school_name: string | null;
           location: string | null;
           date: string | null;
+          event_date: string | null;
           start_date: string | null;
           end_date: string | null;
           status: string | null;
@@ -109,6 +128,7 @@ export interface Database {
           photographer_name: string | null;
           photographer_email: string | null;
           photographer_phone: string | null;
+          token: string | null;
           tenant_id: string;
         };
         Insert: {
@@ -119,6 +139,7 @@ export interface Database {
           school_name?: string | null;
           location?: string | null;
           date?: string | null;
+          event_date?: string | null;
           start_date?: string | null;
           end_date?: string | null;
           status?: string | null;
@@ -131,6 +152,7 @@ export interface Database {
           photographer_name?: string | null;
           photographer_email?: string | null;
           photographer_phone?: string | null;
+          token?: string | null;
           tenant_id?: string;
         };
         Update: {
@@ -141,6 +163,7 @@ export interface Database {
           school_name?: string | null;
           location?: string | null;
           date?: string | null;
+          event_date?: string | null;
           start_date?: string | null;
           end_date?: string | null;
           status?: string | null;
@@ -153,6 +176,7 @@ export interface Database {
           photographer_name?: string | null;
           photographer_email?: string | null;
           photographer_phone?: string | null;
+          token?: string | null;
           tenant_id?: string;
         };
         Relationships: [
@@ -170,8 +194,20 @@ export interface Database {
           created_at: string;
           updated_at: string;
           name: string;
+          first_name: string | null;
+          last_name: string | null;
+          email: string | null;
+          type: string | null;
           event_id: string;
           qr_code: string;
+          grade: string | null;
+          section: string | null;
+          token: string | null;
+          access_token: string | null;
+          parent_name: string | null;
+          parent_email: string | null;
+          token_expires_at: string | null;
+          metadata: Json | null;
           tenant_id: string;
         };
         Insert: {
@@ -179,8 +215,20 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           name: string;
+          first_name?: string | null;
+          last_name?: string | null;
+          email?: string | null;
+          type?: string | null;
           event_id: string;
           qr_code: string;
+          grade?: string | null;
+          section?: string | null;
+          token?: string | null;
+          access_token?: string | null;
+          parent_name?: string | null;
+          parent_email?: string | null;
+          token_expires_at?: string | null;
+          metadata?: Json | null;
           tenant_id?: string;
         };
         Update: {
@@ -188,8 +236,20 @@ export interface Database {
           created_at?: string;
           updated_at?: string;
           name?: string;
+          first_name?: string | null;
+          last_name?: string | null;
+          email?: string | null;
+          type?: string | null;
           event_id?: string;
           qr_code?: string;
+          grade?: string | null;
+          section?: string | null;
+          token?: string | null;
+          access_token?: string | null;
+          parent_name?: string | null;
+          parent_email?: string | null;
+          token_expires_at?: string | null;
+          metadata?: Json | null;
           tenant_id?: string;
         };
         Relationships: [
@@ -224,6 +284,7 @@ export interface Database {
           child_folder_count: number | null;
           share_token: string | null;
           is_published: boolean | null;
+          published_at: string | null;
           store_settings: Json | null;
           cover_asset_id: string | null;
           tenant_id: string;
@@ -244,6 +305,7 @@ export interface Database {
           child_folder_count?: number | null;
           share_token?: string | null;
           is_published?: boolean | null;
+          published_at?: string | null;
           store_settings?: Json | null;
           cover_asset_id?: string | null;
           tenant_id?: string;
@@ -264,6 +326,7 @@ export interface Database {
           child_folder_count?: number | null;
           share_token?: string | null;
           is_published?: boolean | null;
+          published_at?: string | null;
           store_settings?: Json | null;
           cover_asset_id?: string | null;
           tenant_id?: string;
@@ -344,6 +407,7 @@ export interface Database {
       orders: {
         Row: {
           id: string;
+          order_id: string | null;
           created_at: string;
           updated_at: string | null;
           event_id: string | null;
@@ -355,6 +419,7 @@ export interface Database {
           items: Json | null;
           metadata: Json | null;
           contact_name: string | null;
+          customer_name: string | null;
           contact_email: string | null;
           contact_phone: string | null;
           contact_info: Json | null;
@@ -374,6 +439,7 @@ export interface Database {
         };
         Insert: {
           id?: string;
+          order_id?: string | null;
           created_at?: string;
           updated_at?: string | null;
           event_id?: string | null;
@@ -385,6 +451,7 @@ export interface Database {
           items?: Json | null;
           metadata?: Json | null;
           contact_name?: string | null;
+          customer_name?: string | null;
           contact_email?: string | null;
           contact_phone?: string | null;
           contact_info?: Json | null;
@@ -404,6 +471,7 @@ export interface Database {
         };
         Update: {
           id?: string;
+          order_id?: string | null;
           created_at?: string;
           updated_at?: string | null;
           event_id?: string | null;
@@ -415,6 +483,7 @@ export interface Database {
           items?: Json | null;
           metadata?: Json | null;
           contact_name?: string | null;
+          customer_name?: string | null;
           contact_email?: string | null;
           contact_phone?: string | null;
           contact_info?: Json | null;
@@ -1416,19 +1485,29 @@ export interface Database {
       unified_orders: {
         Row: {
           id: string;
+          order_id: string | null;
           tenant_id: string;
           event_id: string | null;
           folder_id: string | null;
           token_id: string | null;
+          token: string | null;
+          share_token_id: string | null;
           status: string;
+          currency: string | null;
           total_cents: number | null;
           total_amount: number | null;
+          total_price: number | null;
           items: Json | null;
           metadata: Json | null;
+          base_package: Json | null;
+          selected_photos: Json | null;
+          additional_copies: Json | null;
+          contact_info: Json | null;
           contact_name: string | null;
           contact_email: string | null;
           contact_phone: string | null;
           mp_preference_id: string | null;
+          mercadopago_preference_id: string | null;
           mp_payment_id: string | null;
           mp_status: string | null;
           created_at: string;
@@ -1436,19 +1515,28 @@ export interface Database {
         };
         Insert: {
           id?: string;
-          tenant_id: string;
+          order_id?: string | null;
+          tenant_id?: string;
           event_id?: string | null;
           folder_id?: string | null;
           token_id?: string | null;
+          token?: string | null;
+          share_token_id?: string | null;
           status?: string;
           total_cents?: number | null;
           total_amount?: number | null;
+          total_price?: number | null;
           items?: Json | null;
           metadata?: Json | null;
+          base_package?: Json | null;
+          selected_photos?: Json | null;
+          additional_copies?: Json | null;
+          contact_info?: Json | null;
           contact_name?: string | null;
           contact_email?: string | null;
           contact_phone?: string | null;
           mp_preference_id?: string | null;
+          mercadopago_preference_id?: string | null;
           mp_payment_id?: string | null;
           mp_status?: string | null;
           created_at?: string;
@@ -1456,19 +1544,28 @@ export interface Database {
         };
         Update: {
           id?: string;
+          order_id?: string | null;
           tenant_id?: string;
           event_id?: string | null;
           folder_id?: string | null;
           token_id?: string | null;
+          token?: string | null;
+          share_token_id?: string | null;
           status?: string;
           total_cents?: number | null;
           total_amount?: number | null;
+          total_price?: number | null;
           items?: Json | null;
           metadata?: Json | null;
+          base_package?: Json | null;
+          selected_photos?: Json | null;
+          additional_copies?: Json | null;
+          contact_info?: Json | null;
           contact_name?: string | null;
           contact_email?: string | null;
           contact_phone?: string | null;
           mp_preference_id?: string | null;
+          mercadopago_preference_id?: string | null;
           mp_payment_id?: string | null;
           mp_status?: string | null;
           created_at?: string;
@@ -1554,6 +1651,663 @@ export interface Database {
           event_id?: string;
           folder_id?: string;
           created_at?: string;
+        };
+        Relationships: [];
+      };
+      // Additional tables needed by the codebase
+      courses: {
+        Row: {
+          id: string;
+          name: string;
+          grade: string | null;
+          section: string | null;
+          event_id: string | null;
+          tenant_id: string;
+          created_at: string;
+          updated_at: string | null;
+          metadata: Json | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          grade?: string | null;
+          section?: string | null;
+          event_id?: string | null;
+          tenant_id?: string;
+          created_at?: string;
+          updated_at?: string | null;
+          metadata?: Json | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          grade?: string | null;
+          section?: string | null;
+          event_id?: string | null;
+          tenant_id?: string;
+          created_at?: string;
+          updated_at?: string | null;
+          metadata?: Json | null;
+        };
+        Relationships: [];
+      };
+      products: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          price: number;
+          type: string | null;
+          enabled: boolean;
+          tenant_id: string;
+          event_id: string | null;
+          created_at: string;
+          updated_at: string | null;
+          metadata: Json | null;
+          options: Json | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          price: number;
+          type?: string | null;
+          enabled?: boolean;
+          tenant_id?: string;
+          event_id?: string | null;
+          created_at?: string;
+          updated_at?: string | null;
+          metadata?: Json | null;
+          options?: Json | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          price?: number;
+          type?: string | null;
+          enabled?: boolean;
+          tenant_id?: string;
+          event_id?: string | null;
+          created_at?: string;
+          updated_at?: string | null;
+          metadata?: Json | null;
+          options?: Json | null;
+        };
+        Relationships: [];
+      };
+      order_items: {
+        Row: {
+          id: string;
+          order_id: string;
+          photo_id: string | null;
+          product_id: string | null;
+          quantity: number;
+          unit_price: number;
+          total_price: number;
+          metadata: Json | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          photo_id?: string | null;
+          product_id?: string | null;
+          quantity?: number;
+          unit_price?: number;
+          total_price?: number;
+          metadata?: Json | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          photo_id?: string | null;
+          product_id?: string | null;
+          quantity?: number;
+          unit_price?: number;
+          total_price?: number;
+          metadata?: Json | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      photo_students: {
+        Row: {
+          id: string;
+          photo_id: string;
+          student_id: string;
+          created_at: string;
+          detection_metadata: Json | null;
+        };
+        Insert: {
+          id?: string;
+          photo_id: string;
+          student_id: string;
+          created_at?: string;
+          detection_metadata?: Json | null;
+        };
+        Update: {
+          id?: string;
+          photo_id?: string;
+          student_id?: string;
+          created_at?: string;
+          detection_metadata?: Json | null;
+        };
+        Relationships: [];
+      };
+      photo_courses: {
+        Row: {
+          id: string;
+          photo_id: string;
+          course_id: string;
+          photo_type: string | null;
+          tagged_at: string | null;
+          tagged_by: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          photo_id: string;
+          course_id: string;
+          photo_type?: string | null;
+          tagged_at?: string | null;
+          tagged_by?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          photo_id?: string;
+          course_id?: string;
+          photo_type?: string | null;
+          tagged_at?: string | null;
+          tagged_by?: string | null;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      photo_products: {
+        Row: {
+          id: string;
+          photo_id: string;
+          product_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          photo_id: string;
+          product_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          photo_id?: string;
+          product_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      share_access_log: {
+        Row: {
+          id: string;
+          share_token_id: string | null;
+          token: string | null;
+          ip_address: string | null;
+          user_agent: string | null;
+          accessed_at: string;
+          action: string | null;
+          metadata: Json | null;
+        };
+        Insert: {
+          id?: string;
+          share_token_id?: string | null;
+          token?: string | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          accessed_at?: string;
+          action?: string | null;
+          metadata?: Json | null;
+        };
+        Update: {
+          id?: string;
+          share_token_id?: string | null;
+          token?: string | null;
+          ip_address?: string | null;
+          user_agent?: string | null;
+          accessed_at?: string;
+          action?: string | null;
+          metadata?: Json | null;
+        };
+        Relationships: [];
+      };
+      share_favorites: {
+        Row: {
+          id: string;
+          share_token_id: string;
+          photo_id: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          share_token_id: string;
+          photo_id: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          share_token_id?: string;
+          photo_id?: string;
+          created_at?: string;
+        };
+        Relationships: [];
+      };
+      combo_packages: {
+        Row: {
+          id: string;
+          name: string;
+          description: string | null;
+          price: number;
+          contents: Json | null;
+          enabled: boolean;
+          tenant_id: string;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          name: string;
+          description?: string | null;
+          price?: number;
+          contents?: Json | null;
+          enabled?: boolean;
+          tenant_id?: string;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          name?: string;
+          description?: string | null;
+          price?: number;
+          contents?: Json | null;
+          enabled?: boolean;
+          tenant_id?: string;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      egress_metrics: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          bytes_transferred: number;
+          request_count: number;
+          recorded_at: string;
+          metadata: Json | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          bytes_transferred?: number;
+          request_count?: number;
+          recorded_at?: string;
+          metadata?: Json | null;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          bytes_transferred?: number;
+          request_count?: number;
+          recorded_at?: string;
+          metadata?: Json | null;
+        };
+        Relationships: [];
+      };
+      temp_photo_tags: {
+        Row: {
+          id: string;
+          photo_id: string;
+          tag_type: string | null;
+          tag_value: string | null;
+          created_at: string;
+          expires_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          photo_id: string;
+          tag_type?: string | null;
+          tag_value?: string | null;
+          created_at?: string;
+          expires_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          photo_id?: string;
+          tag_type?: string | null;
+          tag_value?: string | null;
+          created_at?: string;
+          expires_at?: string | null;
+        };
+        Relationships: [];
+      };
+      payments: {
+        Row: {
+          id: string;
+          order_id: string;
+          amount: number;
+          status: string;
+          payment_method: string | null;
+          external_id: string | null;
+          metadata: Json | null;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          order_id: string;
+          amount?: number;
+          status?: string;
+          payment_method?: string | null;
+          external_id?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          order_id?: string;
+          amount?: number;
+          status?: string;
+          payment_method?: string | null;
+          external_id?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      payment_settings: {
+        Row: {
+          id: string;
+          tenant_id: string;
+          provider: string;
+          enabled: boolean;
+          credentials: Json | null;
+          settings: Json | null;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id: string;
+          provider?: string;
+          enabled?: boolean;
+          credentials?: Json | null;
+          settings?: Json | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string;
+          provider?: string;
+          enabled?: boolean;
+          credentials?: Json | null;
+          settings?: Json | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      performance_metrics: {
+        Row: {
+          id: string;
+          tenant_id: string | null;
+          metric_type: string;
+          value: number;
+          recorded_at: string;
+          metadata: Json | null;
+        };
+        Insert: {
+          id?: string;
+          tenant_id?: string | null;
+          metric_type: string;
+          value?: number;
+          recorded_at?: string;
+          metadata?: Json | null;
+        };
+        Update: {
+          id?: string;
+          tenant_id?: string | null;
+          metric_type?: string;
+          value?: number;
+          recorded_at?: string;
+          metadata?: Json | null;
+        };
+        Relationships: [];
+      };
+      event_product_pricing: {
+        Row: {
+          id: string;
+          event_id: string;
+          product_id: string;
+          price: number;
+          enabled: boolean;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          event_id: string;
+          product_id: string;
+          price?: number;
+          enabled?: boolean;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          event_id?: string;
+          product_id?: string;
+          price?: number;
+          enabled?: boolean;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Relationships: [];
+      };
+      app_settings: {
+        Row: {
+          id: number;
+          business_name: string;
+          business_email: string | null;
+          business_phone: string | null;
+          business_address: string | null;
+          business_website: string | null;
+          watermark_text: string;
+          watermark_position: string;
+          watermark_opacity: number;
+          watermark_size: string;
+          upload_max_size_mb: number;
+          upload_max_concurrent: number;
+          upload_quality: number;
+          upload_max_resolution: number;
+          default_photo_price_ars: number;
+          bulk_discount_percentage: number;
+          bulk_discount_minimum: number;
+          pack_price_ars: number;
+          notify_new_orders: boolean;
+          notify_payments: boolean;
+          notify_weekly_report: boolean;
+          notify_storage_alerts: boolean;
+          timezone: string;
+          date_format: string;
+          currency: string;
+          language: string;
+          auto_cleanup_previews: boolean;
+          cleanup_preview_days: number;
+          qr_default_size: string;
+          qr_detection_sensitivity: string;
+          qr_auto_tag_on_upload: boolean;
+          qr_show_in_gallery: boolean;
+          created_at: string;
+          updated_at: string;
+          updated_by: string | null;
+        };
+        Insert: {
+          id?: number;
+          business_name?: string;
+          business_email?: string | null;
+          business_phone?: string | null;
+          business_address?: string | null;
+          business_website?: string | null;
+          watermark_text?: string;
+          watermark_position?: string;
+          watermark_opacity?: number;
+          watermark_size?: string;
+          upload_max_size_mb?: number;
+          upload_max_concurrent?: number;
+          upload_quality?: number;
+          upload_max_resolution?: number;
+          default_photo_price_ars?: number;
+          bulk_discount_percentage?: number;
+          bulk_discount_minimum?: number;
+          pack_price_ars?: number;
+          notify_new_orders?: boolean;
+          notify_payments?: boolean;
+          notify_weekly_report?: boolean;
+          notify_storage_alerts?: boolean;
+          timezone?: string;
+          date_format?: string;
+          currency?: string;
+          language?: string;
+          auto_cleanup_previews?: boolean;
+          cleanup_preview_days?: number;
+          qr_default_size?: string;
+          qr_detection_sensitivity?: string;
+          qr_auto_tag_on_upload?: boolean;
+          qr_show_in_gallery?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Update: {
+          id?: number;
+          business_name?: string;
+          business_email?: string | null;
+          business_phone?: string | null;
+          business_address?: string | null;
+          business_website?: string | null;
+          watermark_text?: string;
+          watermark_position?: string;
+          watermark_opacity?: number;
+          watermark_size?: string;
+          upload_max_size_mb?: number;
+          upload_max_concurrent?: number;
+          upload_quality?: number;
+          upload_max_resolution?: number;
+          default_photo_price_ars?: number;
+          bulk_discount_percentage?: number;
+          bulk_discount_minimum?: number;
+          pack_price_ars?: number;
+          notify_new_orders?: boolean;
+          notify_payments?: boolean;
+          notify_weekly_report?: boolean;
+          notify_storage_alerts?: boolean;
+          timezone?: string;
+          date_format?: string;
+          currency?: string;
+          language?: string;
+          auto_cleanup_previews?: boolean;
+          cleanup_preview_days?: number;
+          qr_default_size?: string;
+          qr_detection_sensitivity?: string;
+          qr_auto_tag_on_upload?: boolean;
+          qr_show_in_gallery?: boolean;
+          created_at?: string;
+          updated_at?: string;
+          updated_by?: string | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'app_settings_updated_by_fkey';
+            columns: ['updated_by'];
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      app_settings_audit: {
+        Row: {
+          id: number;
+          changed_at: string | null;
+          changed_by: string | null;
+          operation: string | null;
+          before_data: Json | null;
+          after_data: Json | null;
+        };
+        Insert: {
+          id?: number;
+          changed_at?: string | null;
+          changed_by?: string | null;
+          operation?: string | null;
+          before_data?: Json | null;
+          after_data?: Json | null;
+        };
+        Update: {
+          id?: number;
+          changed_at?: string | null;
+          changed_by?: string | null;
+          operation?: string | null;
+          before_data?: Json | null;
+          after_data?: Json | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: 'app_settings_audit_changed_by_fkey';
+            columns: ['changed_by'];
+            referencedRelation: 'users';
+            referencedColumns: ['id'];
+          },
+        ];
+      };
+      assets: {
+        Row: {
+          id: string;
+          photo_id: string | null;
+          folder_id: string | null;
+          photo_type: string | null;
+          dimensions: Json | null;
+          taken_at: string | null;
+          storage_path: string | null;
+          metadata: Json | null;
+          created_at: string;
+          updated_at: string | null;
+        };
+        Insert: {
+          id?: string;
+          photo_id?: string | null;
+          folder_id?: string | null;
+          photo_type?: string | null;
+          dimensions?: Json | null;
+          taken_at?: string | null;
+          storage_path?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string | null;
+        };
+        Update: {
+          id?: string;
+          photo_id?: string | null;
+          folder_id?: string | null;
+          photo_type?: string | null;
+          dimensions?: Json | null;
+          taken_at?: string | null;
+          storage_path?: string | null;
+          metadata?: Json | null;
+          created_at?: string;
+          updated_at?: string | null;
         };
         Relationships: [];
       };

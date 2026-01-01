@@ -11,7 +11,6 @@ import {
     Upload,
     FolderOpen,
     Users,
-    BarChart3,
     Settings
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -42,7 +41,7 @@ export function PublishCommandCenter({ eventId, onQuickAction }: PublishCommandC
         {
             id: 'generate-qr',
             title: 'Generar QR Codes',
-            description: 'Crear códigos QR para familias',
+            description: 'Crear códigos QR para clientes',
             icon: QrCode,
             color: 'from-purple-500 to-pink-600',
             iconBg: 'bg-purple-100 dark:bg-purple-950/30',
@@ -57,7 +56,7 @@ export function PublishCommandCenter({ eventId, onQuickAction }: PublishCommandC
         },
         {
             id: 'notify-families',
-            title: 'Notificar Familias',
+            title: 'Notificar Clientes',
             description: 'Enviar notificaciones por WhatsApp',
             icon: Send,
             color: 'from-blue-500 to-cyan-600',
@@ -170,15 +169,6 @@ export function PublishCommandCenter({ eventId, onQuickAction }: PublishCommandC
                         >
                             <Users className="mr-1.5 h-3.5 w-3.5" />
                             Galería Pública
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => router.push(`/admin/publish?tab=analytics${eventId ? `&event_id=${eventId}` : ''}`)}
-                            className="text-xs"
-                        >
-                            <BarChart3 className="mr-1.5 h-3.5 w-3.5" />
-                            Analytics
                         </Button>
                         <Button
                             variant="outline"

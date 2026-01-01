@@ -1,0 +1,34 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Bolsa de compras -->
+  <path
+    d="M12 24H52L48 54H16L12 24Z"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linejoin="round"
+    fill="none"
+  />
+  <!-- Asas de la bolsa -->
+  <path
+    d="M22 24V18C22 12.4772 26.4772 8 32 8C37.5228 8 42 12.4772 42 18V24"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    fill="none"
+  />
+  <!-- Check/tick dentro -->
+  <path
+    d="M24 38L30 44L42 32"
+    stroke="currentColor"
+    stroke-width="3"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Estrellita decorativa -->
+  <path
+    d="M48 12L50 16L54 14L52 18L56 20L52 22L54 26L50 24L48 28L46 24L42 26L44 22L40 20L44 18L42 14L46 16L48 12Z"
+    stroke="currentColor"
+    stroke-width="1.5"
+    fill="none"
+    opacity="0.5"
+  />
+</svg>

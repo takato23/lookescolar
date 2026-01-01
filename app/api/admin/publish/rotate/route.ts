@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const url = absoluteUrl(`/f/${token}`);
+    const url = absoluteUrl(`/store-unified/${token}`);
     return NextResponse.json({ token, url });
   } catch (error) {
     console.error('[Service] Admin rotate token error:', error);

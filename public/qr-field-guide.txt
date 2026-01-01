@@ -1,0 +1,44 @@
+LOOKESCOLAR - GUIA QR (TAGGING)
+================================
+
+Objetivo
+--------
+Identificar a la persona en la primera foto para auto-etiquetar el lote.
+
+Paso a paso (en campo)
+----------------------
+1) Preparar QRs:
+   - Imprimir tarjetas o mostrar el QR en un celular/tablet.
+2) Primera foto:
+   - QR visible a la altura del pecho, plano y sin reflejos.
+3) Subir fotos:
+   - El sistema detecta el QR y etiqueta automaticamente.
+4) Si falla:
+   - Reintentar con mejor luz o re-escanear desde el admin.
+
+Quien sostiene el QR
+--------------------
+- El invitado/estudiante lo sostiene.
+- Para ninos, un docente/ayudante puede sostenerlo cerca del rostro.
+- En fiestas/eventos sociales, staff o anfitrion puede sostenerlo.
+
+Checklist visual
+----------------
+- QR plano y nitido
+- Margen blanco visible
+- Sin reflejos o sombras fuertes
+- Una sola foto clara por persona es suficiente
+
+Importante
+----------
+El QR de tagging NO es el acceso del cliente.
+El acceso del cliente es por link/token de la galeria (QR de acceso opcional).
+
+Enfoque recomendado
+-------------------
++-------------------+
+|       FACE        |
+|                   |
+|       QR          |
+| (flat + margin)   |
++-------------------+

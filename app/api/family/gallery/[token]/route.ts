@@ -48,21 +48,21 @@ function mapLegacyFamilyResponse(result: GalleryResult) {
   return {
     subject: result.subject
       ? {
-          id: result.subject.id,
-          name: result.subject.name,
-          grade: (result.subject as any).grade ?? null,
-          section: (result.subject as any).section ?? null,
-          parent_name: result.subject.parent_name ?? null,
-          parent_email: result.subject.parent_email ?? null,
-          event: result.event
-            ? {
-                id: result.event.id,
-                name: result.event.name,
-                date: (result.event as any).date ?? null,
-                school_name: result.event.school_name ?? null,
-              }
-            : null,
-        }
+        id: result.subject.id,
+        name: result.subject.name,
+        grade: (result.subject as any).grade ?? null,
+        section: (result.subject as any).section ?? null,
+        parent_name: result.subject.parent_name ?? null,
+        parent_email: result.subject.parent_email ?? null,
+        event: result.event
+          ? {
+            id: result.event.id,
+            name: result.event.name,
+            date: (result.event as any).date ?? null,
+            school_name: result.event.school_name ?? null,
+          }
+          : null,
+      }
       : null,
     photos: result.items.map((item) => ({
       id: item.id,
@@ -85,12 +85,12 @@ function mapLegacyFamilyResponse(result: GalleryResult) {
     },
     active_order: result.activeOrder
       ? {
-          id: result.activeOrder.id,
-          status: result.activeOrder.status,
-          total_amount: result.activeOrder.totalAmount,
-          created_at: result.activeOrder.createdAt,
-          items_count: result.activeOrder.itemsCount,
-        }
+        id: result.activeOrder.id,
+        status: result.activeOrder.status,
+        total_amount: result.activeOrder.totalAmount,
+        created_at: result.activeOrder.createdAt,
+        items_count: result.activeOrder.itemsCount,
+      }
       : null,
   };
 }
@@ -100,87 +100,31 @@ export const GET = RateLimitMiddleware.withRateLimit(
     async (
       request: NextRequest,
       authContext, context: RouteContext<{ token: string }>) => {
-  const params = await context.params;
-  const requestId =
+      const params = await context.params;
+      const requestId =
         globalThis.crypto && 'randomUUID' in globalThis.crypto
           ? (globalThis.crypto as Crypto).randomUUID()
           : `req_${Date.now()}_${Math.random().toString(36).slice(2)}`;
-      const startedAt = Date.now();
 
       try {
-        if (!authContext.isAdmin && !authContext.user) {
-          return createErrorResponse(
-            'Invalid token or access denied',
-            'Authentication required',
-            401,
-            requestId
-          );
-        }
-
-        SecurityLogger.logResourceAccess('family_gallery', authContext, request);
-
         const { token } = tokenParamsSchema.parse(params);
-        const query = queryParamsSchema.parse(
-          Object.fromEntries(new URL(request.url).searchParams.entries())
-        );
-
-        const ipAddress = getClientIp(request);
-        const userAgent = request.headers.get('user-agent') ?? undefined;
-
-        const result = await galleryService.getGallery({
-          token,
-          page: query.page,
-          limit: query.limit,
-          photoId: query.photo_id,
-          ipAddress,
-          userAgent,
-        });
-
-        const duration = Date.now() - startedAt;
-
-        SecurityLogger.logSecurityEvent('family_gallery_success', {
-          requestId,
-          subjectId: result.subject?.id ?? null,
-          photoCount: result.items.length,
-          duration,
-        });
-
-        logDevRequest(
-          requestId,
-          'GET',
-          `/api/family/gallery/${token}`,
-          duration,
-          200
-        );
-
-        return createSuccessResponse(
-          {
-            gallery: result,
-            legacy: mapLegacyFamilyResponse(result),
-          },
-          200,
-          requestId
-        );
+        const canonicalUrl = new URL(`/api/store/${token}`, request.url);
+        const existingParams = new URL(request.url).searchParams;
+        canonicalUrl.search = existingParams.toString();
+        if (!canonicalUrl.searchParams.has('include_assets')) {
+          canonicalUrl.searchParams.set('include_assets', 'true');
+        }
+        return NextResponse.redirect(canonicalUrl, 307);
       } catch (error) {
-        const duration = Date.now() - startedAt;
-
         SecurityLogger.logSecurityEvent(
           'family_gallery_error',
           {
             requestId,
             subjectId: authContext.subject?.id,
             error: error instanceof Error ? error.message : 'unknown error',
-            duration,
           },
           'error'
         );
-
-        if (error instanceof GalleryServiceError) {
-          return NextResponse.json(
-            { error: error.message, code: error.code },
-            { status: error.status }
-          );
-        }
 
         if (error instanceof z.ZodError) {
           return NextResponse.json(
@@ -203,3 +147,4 @@ export const GET = RateLimitMiddleware.withRateLimit(
     'family'
   )
 );
+

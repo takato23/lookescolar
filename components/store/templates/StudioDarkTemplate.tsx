@@ -1,14 +1,14 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { StoreSettings } from '@/lib/hooks/useStoreSettings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { LazyImage } from '@/components/ui/lazy-image';
-import { 
-  Heart, 
-  _Eye, 
+import {
+  Heart,
+  _Eye,
   Plus,
   Minus,
   X,
@@ -27,6 +27,15 @@ import { cn } from '@/lib/utils';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useTemplateFavorites } from '@/hooks/useTemplateFavorites';
+import { StoreCheckoutDialog } from '@/components/store/StoreCheckoutDialog';
+import { ProductOptionsSelector, type StoreProduct } from '@/components/store/ProductOptionsSelector';
+import { useUnifiedCartStore, type ProductOptions } from '@/lib/stores/unified-cart-store';
+import {
+  getGridClasses,
+  getPaletteTokens,
+  getTypographyPreset,
+  resolveStoreDesign
+} from '@/lib/store/store-design';
 
 interface Photo {
   id: string;
@@ -47,6 +56,9 @@ interface StudioDarkTemplateProps {
   };
   totalPhotos?: number;
   isPreselected?: boolean;
+  onLoadMorePhotos?: () => void;
+  hasMorePhotos?: boolean;
+  loadingMore?: boolean;
 }
 
 interface CartItem {
@@ -56,6 +68,7 @@ interface CartItem {
   price: number;
   quantity: number;
   photoUrl?: string;
+  options?: ProductOptions;
 }
 
 export function StudioDarkTemplate({ 
@@ -64,22 +77,65 @@ export function StudioDarkTemplate({
   token, 
   subject,
   totalPhotos: _totalPhotos,
-  isPreselected = false 
+  isPreselected = false,
+  onLoadMorePhotos,
+  hasMorePhotos = false,
+  loadingMore = false,
 }: StudioDarkTemplateProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
   const { favorites, toggleFavorite: toggleFavoriteApi } = useTemplateFavorites(photos, token);
   const [showCart, setShowCart] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+
+  // Product Options Selector State
+  const [optionsSelectorOpen, setOptionsSelectorOpen] = useState(false);
+  const [selectedPhotoForOptions, setSelectedPhotoForOptions] = useState<Photo | null>(null);
+
+  // Unified Cart Store
+  const unifiedCart = useUnifiedCartStore();
+
+  const design = resolveStoreDesign(
+    settings.design ?? settings.theme_customization?.design ?? null
+  );
+  const palette = getPaletteTokens(design.color.palette);
+  const typography = getTypographyPreset(design.typography.preset);
+  const gridLayout = getGridClasses(design.grid);
+  const showNavText = design.grid.nav === 'icons_text';
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   const [viewMode, setViewMode] = useState<'grid' | 'masonry'>('grid');
   const [filter, setFilter] = useState<'all' | 'favorites'>('all');
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
 
-  const activeProducts = useMemo(() => 
+  // Brand colors from config with dark mode support
+  const brandColors = {
+    primary: (settings as any)?.brand_colors?.primary || '#f59e0b', // amber-500
+    secondary: (settings as any)?.brand_colors?.secondary || '#ea580c', // orange-600
+    accent: (settings as any)?.brand_colors?.accent || '#f59e0b',
+  };
+
+  const activeProducts = useMemo(() =>
     Object.entries(settings.products)
       .filter(([_, product]) => product.enabled)
       .map(([id, product]) => ({ id, ...product }))
   , [settings.products]);
+
+  // Convert activeProducts to StoreProduct format for ProductOptionsSelector
+  const storeProducts: StoreProduct[] = useMemo(() => {
+    return activeProducts.map(p => ({
+      id: p.id,
+      name: p.name,
+      type: (p as any).type === 'digital' ? 'digital' as const : 'physical' as const,
+      enabled: p.enabled,
+      price: p.price,
+      description: p.description,
+      options: {
+        sizes: (p as any).options?.sizes || ['10x15', '13x18', '15x21'],
+        formats: (p as any).options?.formats || ['Brillante', 'Mate'],
+        quality: (p as any).options?.quality || 'standard',
+      },
+    }));
+  }, [activeProducts]);
 
   const filteredPhotos = useMemo(() => {
     if (filter === 'favorites') {
@@ -88,38 +144,77 @@ export function StudioDarkTemplate({
     return photos;
   }, [photos, favorites, filter]);
 
-  const addToCart = (photoId: string, productId: string) => {
-    const product = activeProducts.find(p => p.id === productId);
-    const photo = photos.find(p => p.id === photoId);
-    if (!product) return;
+  // Handler to open the options selector
+  const handleOpenOptionsSelector = useCallback((photo: Photo) => {
+    setSelectedPhotoForOptions(photo);
+    setOptionsSelectorOpen(true);
+  }, []);
+
+  // Handler when options are confirmed
+  const handleOptionsConfirm = useCallback((options: ProductOptions, finalPrice: number) => {
+    if (!selectedPhotoForOptions) return;
+
+    const photo = selectedPhotoForOptions;
 
     setCart(prev => {
       const existingItem = prev.find(
-        item => item.photoId === photoId && item.productId === productId
+        item => item.photoId === photo.id &&
+                item.productId === options.productId &&
+                item.options?.size === options.size
       );
 
       if (existingItem) {
         return prev.map(item =>
-          item.photoId === photoId && item.productId === productId
+          item.photoId === photo.id &&
+          item.productId === options.productId &&
+          item.options?.size === options.size
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
 
       return [...prev, {
-        photoId,
-        productId,
-        productName: product.name,
-        price: product.price,
+        photoId: photo.id,
+        productId: options.productId || '',
+        productName: options.productName || '',
+        price: finalPrice,
         quantity: 1,
-        photoUrl: photo?.url
+        photoUrl: photo.url,
+        options,
       }];
     });
 
-    toast.success(`${product.name} added to cart`, {
+    // Sync with unified cart
+    unifiedCart.addItem({
+      photoId: photo.id,
+      filename: photo.alt || photo.id,
+      price: finalPrice,
+      watermarkUrl: photo.url,
+      options: {
+        productId: options.productId,
+        productName: options.productName,
+        size: options.size,
+        format: options.format,
+        quality: options.quality,
+      },
+      metadata: {
+        context: 'family',
+        token,
+      },
+    });
+
+    toast.success(`${options.productName} added to cart`, {
       style: { backgroundColor: '#1a1a1a', color: '#ffffff', border: '1px solid #333' }
     });
-  };
+    setSelectedPhotoForOptions(null);
+  }, [selectedPhotoForOptions, token, unifiedCart]);
+
+  // addToCart now opens the options selector
+  const addToCart = useCallback((photoId: string, _productId: string) => {
+    const photo = photos.find(p => p.id === photoId);
+    if (!photo) return;
+    handleOpenOptionsSelector(photo);
+  }, [photos, handleOpenOptionsSelector]);
 
   const updateQuantity = (photoId: string, productId: string, quantity: number) => {
     if (quantity <= 0) {
@@ -150,7 +245,7 @@ export function StudioDarkTemplate({
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('es-AR', {
       style: 'currency',
-      currency: 'ARS',
+      currency: settings.currency || 'ARS',
     }).format(price);
   };
 
@@ -175,22 +270,32 @@ export function StudioDarkTemplate({
   };
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div
+      className={cn('min-h-screen', typography.baseClass)}
+      style={{ backgroundColor: palette.background, color: palette.text }}
+    >
       {/* Dark Studio Header */}
-      <header className="bg-zinc-900 border-b border-zinc-800 sticky top-0 z-40 backdrop-blur-sm">
+      <header
+        className="border-b sticky top-0 z-40 backdrop-blur-sm"
+        style={{ backgroundColor: palette.surface, borderColor: palette.border }}
+      >
         <div className="max-w-7xl mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-br from-amber-500 to-orange-600 rounded-lg flex items-center justify-center">
-                  <Camera className="h-5 w-5 text-white" />
-                </div>
+                {settings.logo_url ? (
+                  <img src={settings.logo_url} alt="Logo" className="h-8 w-auto rounded-lg" />
+                ) : (
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}>
+                    <Camera className="h-5 w-5 text-white" />
+                  </div>
+                )}
                 <div>
                   <h1 className="text-xl font-bold text-white">
-                    {subject?.name || 'Studio Gallery'}
+                    {settings.texts?.hero_title || subject?.name || 'Studio Gallery'}
                   </h1>
                   <p className="text-xs text-zinc-400">
-                    Professional Photography Collection
+                    {settings.texts?.hero_subtitle || 'Professional Photography Collection'}
                   </p>
                 </div>
               </div>
@@ -203,10 +308,11 @@ export function StudioDarkTemplate({
                   onClick={() => setFilter('all')}
                   className={cn(
                     "px-4 py-2 text-sm transition-colors",
-                    filter === 'all' 
-                      ? "bg-amber-600 text-white" 
+                    filter === 'all'
+                      ? "text-white"
                       : "text-zinc-400 hover:text-white hover:bg-zinc-800"
                   )}
+                  style={filter === 'all' ? { backgroundColor: brandColors.primary } : undefined}
                 >
                   All ({photos.length})
                 </button>
@@ -214,10 +320,11 @@ export function StudioDarkTemplate({
                   onClick={() => setFilter('favorites')}
                   className={cn(
                     "px-4 py-2 text-sm border-l border-zinc-700 transition-colors",
-                    filter === 'favorites' 
-                      ? "bg-amber-600 text-white" 
+                    filter === 'favorites'
+                      ? "text-white"
                       : "text-zinc-400 hover:text-white hover:bg-zinc-800"
                   )}
+                  style={filter === 'favorites' ? { backgroundColor: brandColors.primary } : undefined}
                 >
                   Favorites ({favorites.length})
                 </button>
@@ -229,37 +336,45 @@ export function StudioDarkTemplate({
                   onClick={() => setViewMode('grid')}
                   className={cn(
                     "px-3 py-2 transition-colors",
-                    viewMode === 'grid' 
-                      ? "bg-amber-600 text-white" 
+                    showNavText && "flex items-center gap-2 px-4 text-xs",
+                    viewMode === 'grid'
+                      ? "text-white"
                       : "text-zinc-400 hover:text-white hover:bg-zinc-800"
                   )}
+                  style={viewMode === 'grid' ? { backgroundColor: brandColors.primary } : undefined}
                 >
                   <Grid className="h-4 w-4" />
+                  {showNavText && <span>Grilla</span>}
                 </button>
                 <button
                   onClick={() => setViewMode('masonry')}
                   className={cn(
                     "px-3 py-2 border-l border-zinc-700 transition-colors",
-                    viewMode === 'masonry' 
-                      ? "bg-amber-600 text-white" 
+                    showNavText && "flex items-center gap-2 px-4 text-xs",
+                    viewMode === 'masonry'
+                      ? "text-white"
                       : "text-zinc-400 hover:text-white hover:bg-zinc-800"
                   )}
+                  style={viewMode === 'masonry' ? { backgroundColor: brandColors.primary } : undefined}
                 >
                   <List className="h-4 w-4" />
+                  {showNavText && <span>Mosaico</span>}
                 </button>
               </div>
 
               {/* Cart */}
               <Button
                 variant="outline"
+                size={showNavText ? 'sm' : 'icon'}
                 onClick={() => setShowCart(true)}
-                className="relative border-zinc-700 bg-transparent hover:bg-zinc-800 text-white"
+                className={cn('relative border-zinc-700 bg-transparent hover:bg-zinc-800 text-white', showNavText && 'gap-2')}
               >
-                <ShoppingCart className="h-5 w-5 mr-2" />
-                Cart
+                <ShoppingCart className="h-5 w-5" />
+                {showNavText && <span className="text-xs">Cart</span>}
                 {cart.length > 0 && (
-                  <Badge 
-                    className="absolute -top-2 -right-2 min-w-[20px] h-5 text-xs bg-amber-600 hover:bg-amber-700 text-white border-none"
+                  <Badge
+                    className="absolute -top-2 -right-2 min-w-[20px] h-5 text-xs text-white border-none"
+                    style={{ backgroundColor: brandColors.primary }}
                   >
                     {cart.reduce((sum, item) => sum + item.quantity, 0)}
                   </Badge>
@@ -279,24 +394,24 @@ export function StudioDarkTemplate({
               <h2 className="text-2xl font-bold text-white">Premium Studio Collection</h2>
             </div>
             <p className="text-zinc-400 max-w-2xl mx-auto">
-              {isPreselected 
+              {settings.texts?.welcome_message || (isPreselected
                 ? `${photos.length} handpicked professional photographs, carefully curated for excellence.`
-                : `${photos.length} stunning photographs captured with precision and artistry.`}
+                : `${photos.length} stunning photographs captured with precision and artistry.`)}
             </p>
           </div>
 
           {/* Stats */}
           <div className="grid grid-cols-3 gap-6 max-w-2xl mx-auto mb-12">
             <div className="text-center">
-              <div className="text-2xl font-bold text-amber-500">{photos.length}</div>
+              <div className="text-2xl font-bold" style={{ color: brandColors.primary }}>{photos.length}</div>
               <div className="text-sm text-zinc-400">Total Photos</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-amber-500">{activeProducts.length}</div>
+              <div className="text-2xl font-bold" style={{ color: brandColors.primary }}>{activeProducts.length}</div>
               <div className="text-sm text-zinc-400">Print Options</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-amber-500">{favorites.length}</div>
+              <div className="text-2xl font-bold" style={{ color: brandColors.primary }}>{favorites.length}</div>
               <div className="text-sm text-zinc-400">Favorites</div>
             </div>
           </div>
@@ -367,11 +482,14 @@ export function StudioDarkTemplate({
           ) : (
             <>
               {viewMode === 'grid' ? (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-3">
+                <div className={cn('grid', gridLayout.colsClass, gridLayout.gapClass)}>
                   {filteredPhotos.map((photo, index) => (
                     <div 
                       key={photo.id}
-                      className="group relative aspect-square cursor-pointer overflow-hidden rounded-lg bg-zinc-900 hover:ring-2 hover:ring-amber-500/50 transition-all duration-300"
+                      className={cn(
+                        'group relative cursor-pointer overflow-hidden rounded-lg bg-zinc-900 hover:ring-2 hover:ring-amber-500/50 transition-all duration-300',
+                        gridLayout.aspectClass
+                      )}
                       onClick={() => openLightbox(photo, index)}
                     >
                       <LazyImage
@@ -504,6 +622,17 @@ export function StudioDarkTemplate({
                 </div>
               )}
             </>
+          )}
+          {hasMorePhotos && onLoadMorePhotos && (
+            <div className="mt-10 flex justify-center">
+              <Button
+                onClick={onLoadMorePhotos}
+                disabled={loadingMore}
+                className="bg-amber-600 hover:bg-amber-700 text-white"
+              >
+                {loadingMore ? 'Cargando...' : 'Cargar mas fotos'}
+              </Button>
+            </div>
           )}
         </div>
       </section>
@@ -697,8 +826,15 @@ export function StudioDarkTemplate({
                         {formatPrice(getTotalPrice())}
                       </span>
                     </div>
-                    <Button className="w-full bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-700 hover:to-orange-700 text-white py-3 text-lg font-medium">
-                      Secure Checkout
+                    <Button
+                      className="w-full text-white py-3 text-lg font-medium"
+                      style={{ background: `linear-gradient(135deg, ${brandColors.primary}, ${brandColors.secondary})` }}
+                      onClick={() => {
+                        setShowCart(false);
+                        setCheckoutOpen(true);
+                      }}
+                    >
+                      Continuar al checkout
                     </Button>
                     <div className="flex items-center justify-center space-x-4 mt-4 text-xs text-zinc-500">
                       <span>• Secure payment</span>
@@ -712,6 +848,30 @@ export function StudioDarkTemplate({
           </div>
         </>
       )}
+
+      <StoreCheckoutDialog
+        open={checkoutOpen}
+        onOpenChange={setCheckoutOpen}
+        token={token}
+        settings={settings}
+        cartItems={cart}
+        photos={photos}
+        onOrderComplete={() => setCart([])}
+      />
+
+      {/* Product Options Selector Modal */}
+      <ProductOptionsSelector
+        open={optionsSelectorOpen}
+        onClose={() => {
+          setOptionsSelectorOpen(false);
+          setSelectedPhotoForOptions(null);
+        }}
+        onConfirm={handleOptionsConfirm}
+        products={storeProducts}
+        photoUrl={selectedPhotoForOptions?.url || ''}
+        photoName={selectedPhotoForOptions?.alt}
+        defaultProductId={storeProducts[0]?.id}
+      />
     </div>
   );
 }

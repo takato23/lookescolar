@@ -50,7 +50,7 @@ export default function TaggingPage() {
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold text-white">Tagging</h1>
           <p className="text-white/70">
-            Asignar fotos a alumnos de manera intuitiva
+            Asignar fotos a invitados de manera intuitiva
           </p>
         </div>
 
@@ -82,7 +82,7 @@ export default function TaggingPage() {
       <div className="mb-8">
         <h1 className="mb-2 text-3xl font-bold text-white">Tagging</h1>
         <p className="text-white/70">
-          Asignar fotos a alumnos de manera intuitiva y eficiente
+          Asignar fotos a invitados de manera intuitiva y eficiente
         </p>
       </div>
 

@@ -52,6 +52,25 @@
 
 **Action**: Review and consolidate into main components
 
+## 2025-02 - Store Config Endpoints
+
+### `/api/public/store/config` and `/api/store/settings`
+**Status**: ⚠️ DEPRECATED (wrapper only)
+
+**Reason**: Consolidated public store access into `/api/store/[token]` (settings + availability + assets).
+
+**Migration Path**:
+- Use `GET /api/store/[token]?include_assets=false` for settings/availability.
+- Use `GET /api/store/[token]` for full public store payload.
+
+**Backward Compatibility**:
+- Both endpoints return a warning header and proxy to `/api/store/[token]`.
+- Removal planned after external integrations migrate.
+
+**Files Affected**:
+- `app/api/public/store/config/route.ts` - **Wrapper only**
+- `app/api/store/settings/route.ts` - **Deprecated endpoint**
+
 ## Notes
 
 - Prefer documenting over deleting to avoid breaking changes

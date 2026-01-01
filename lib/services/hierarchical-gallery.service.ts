@@ -500,9 +500,10 @@ export class HierarchicalGalleryService {
   }
 
   /**
-   * Private helper: Log access for auditing
+   * Public helper: Log access for auditing
+   * Called from API routes for access logging and monitoring
    */
-  private async logAccess(
+  async logAccess(
     token: string,
     action: 'list_folders' | 'list_assets' | 'download' | 'view',
     details: {

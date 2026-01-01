@@ -255,7 +255,7 @@ export const GET = withAuth(async (req: NextRequest) => {
         created_at: row.published_at,
         expires_at: null, // Folders don't have expiration in the current schema
         password_hash: null,
-        links: { store: `${siteUrl}/f/${row.share_token}` },
+        links: { store: `${siteUrl}/store-unified/${row.share_token}` },
         token: row.share_token,
       }));
       shares.push(...folderShares);
@@ -334,4 +334,3 @@ export const DELETE = withAuth(async (req: NextRequest) => {
     return NextResponse.json({ success: true });
   }
 });
-

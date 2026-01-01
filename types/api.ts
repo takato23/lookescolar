@@ -231,3 +231,160 @@ export interface ValidationError {
   message: string;
   code: string;
 }
+
+// ============================================================================
+// STORE CONFIGURATION API TYPES
+// ============================================================================
+
+import type { StoreConfig } from './store-config';
+import type {
+  PhotoProduct,
+  ComboPackage,
+  ProductCategory,
+  EventProductPricing,
+  ProductCatalog,
+  PriceCalculation,
+} from './product';
+
+/**
+ * Store configuration response
+ */
+export type StoreConfigResponse = ApiResponse<StoreConfig>;
+
+/**
+ * Store configuration list response
+ */
+export interface StoreConfigListResponse {
+  data: StoreConfig[];
+  pagination: {
+    page: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+    has_more: boolean;
+  };
+}
+
+// ============================================================================
+// PRODUCT API TYPES
+// ============================================================================
+
+/**
+ * Product response
+ */
+export type ProductResponse = ApiResponse<PhotoProduct>;
+
+/**
+ * Products list response
+ */
+export type ProductsResponse = ApiResponse<PhotoProduct[]>;
+
+/**
+ * Create product request
+ */
+export interface CreateProductRequest {
+  category_id: string;
+  name: string;
+  description?: string;
+  type: 'print' | 'digital' | 'package' | 'combo';
+  width_cm?: number;
+  height_cm?: number;
+  finish?: string;
+  paper_quality?: string;
+  base_price: number;
+  cost_price?: number;
+  image_url?: string;
+  sort_order?: number;
+  is_featured?: boolean;
+  metadata?: Record<string, any>;
+}
+
+/**
+ * Update product request
+ */
+export interface UpdateProductRequest {
+  id: string;
+  updates: Partial<Omit<PhotoProduct, 'id' | 'created_at' | 'updated_at' | 'category'>>;
+}
+
+// ============================================================================
+// COMBO PACKAGE API TYPES
+// ============================================================================
+
+/**
+ * Combo package response
+ */
+export type ComboPackageResponse = ApiResponse<ComboPackage>;
+
+/**
+ * Combo packages list response
+ */
+export type ComboPackagesResponse = ApiResponse<ComboPackage[]>;
+
+/**
+ * Create combo request
+ */
+export interface CreateComboRequest {
+  name: string;
+  description?: string;
+  min_photos: number;
+  max_photos?: number | null;
+  allows_duplicates?: boolean;
+  pricing_type: 'fixed' | 'per_photo' | 'tiered';
+  base_price: number;
+  price_per_photo?: number;
+  image_url?: string;
+  badge_text?: string;
+  badge_color?: string;
+  is_featured?: boolean;
+  items?: Array<{
+    product_id: string;
+    quantity: number;
+    is_required?: boolean;
+    additional_price?: number;
+  }>;
+}
+
+// ============================================================================
+// CATEGORY API TYPES
+// ============================================================================
+
+/**
+ * Category response
+ */
+export type CategoryResponse = ApiResponse<ProductCategory>;
+
+/**
+ * Categories list response
+ */
+export type CategoriesResponse = ApiResponse<ProductCategory[]>;
+
+// ============================================================================
+// PRICING API TYPES
+// ============================================================================
+
+/**
+ * Calculate price request
+ */
+export interface CalculatePriceRequest {
+  event_id: string;
+  selections: Array<{
+    photo_id: string;
+    product_id?: string;
+    combo_id?: string;
+    quantity: number;
+    options?: Record<string, any>;
+  }>;
+  applyDiscounts?: boolean;
+  promoCode?: string;
+}
+
+/**
+ * Price calculation response
+ */
+export type PriceCalculationResponse = ApiResponse<PriceCalculation>;
+
+/**
+ * Product catalog response
+ */
+export type ProductCatalogResponse = ApiResponse<ProductCatalog>;

@@ -36,7 +36,7 @@ const PhotoFilterSchema = z.object({
 
 export async function GET(request: NextRequest) {
   try {
-    const supabase = createClient(true); // Service role
+    const supabase = await createClient(true); // Service role
     const { searchParams } = new URL(request.url);
 
     // Parse query parameters
@@ -285,7 +285,7 @@ export async function GET(request: NextRequest) {
 // POST: Advanced photo search with complex criteria
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createClient(true);
+    const supabase = await createClient(true);
     const body = await request.json();
 
     const SearchCriteriaSchema = z.object({

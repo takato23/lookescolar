@@ -58,6 +58,12 @@ export async function fetchFallbackStoreConfig(
       custom_branding: row.custom_branding ?? jsonSettings.custom_branding ?? {},
       download_limits: row.download_limits ?? jsonSettings.download_limits ?? null,
       theme_customization: row.theme_customization ?? jsonSettings.theme_customization ?? {},
+      design:
+        row.theme_customization?.design ??
+        jsonSettings.theme_customization?.design ??
+        jsonSettings.design ??
+        row.design ??
+        null,
       seo_settings: row.seo_settings ?? jsonSettings.seo_settings ?? {},
       social_settings: row.social_settings ?? jsonSettings.social_settings ?? {},
       products: row.products ?? jsonSettings.products ?? {},
@@ -116,6 +122,11 @@ export function buildPublicConfig(storeConfig: any) {
         }
       : { enabled: false },
     theme_customization: storeConfig.theme_customization || {},
+    design:
+      storeConfig.theme_customization?.design ??
+      storeConfig.design ??
+      storeConfig.settings?.design ??
+      null,
     seo_settings: {
       meta_title: storeConfig.seo_settings?.meta_title,
       meta_description: storeConfig.seo_settings?.meta_description,

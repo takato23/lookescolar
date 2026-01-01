@@ -355,8 +355,8 @@ export function AssignFolderPhotos({
           <AlertCircle className="mt-0.5 h-4 w-4 flex-shrink-0" />
           <p>
             Esta acción creará las conexiones necesarias para que las fotos
-            aparezcan en las galerías familiares. Los estudiantes podrán ver
-            estas fotos cuando accedan con su token familiar.
+            aparezcan en las galerías para clientes. Los invitados podrán ver
+            estas fotos cuando accedan con su token de cliente.
           </p>
         </div>
       </CardContent>

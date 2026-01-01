@@ -27,7 +27,7 @@ export const checkoutSchema = z.object({
   studentName: z
     .string()
     .trim()
-    .min(2, 'Ingresá el nombre del alumno o la alumna.'),
+    .min(2, 'Ingresá el nombre del invitado o la invitada.'),
   studentGrade: z
     .string()
     .trim()
@@ -111,4 +111,3 @@ export function mapTouchedErrors(
     return acc;
   }, {});
 }
-

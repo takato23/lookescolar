@@ -8,7 +8,6 @@ import {
   ShoppingCart,
   Share2,
   Settings,
-  HardDrive,
   X,
   ChevronLeft,
   ChevronRight,
@@ -47,16 +46,16 @@ const navItems: NavItem[] = [
     description: 'Biblioteca de fotos',
   },
   {
+    href: '/admin/publish',
+    label: 'Publicar',
+    icon: Share2,
+    description: 'Compartir con clientes',
+  },
+  {
     href: '/admin/orders',
     label: 'Pedidos',
     icon: ShoppingCart,
     description: 'Seguimiento de ventas',
-  },
-  {
-    href: '/admin/publish',
-    label: 'Publicar',
-    icon: Share2,
-    description: 'Compartir con familias',
   },
   {
     href: '/admin/settings',
@@ -154,7 +153,7 @@ export default function CleanSidebar({ isOpen, onClose }: CleanSidebarProps) {
           {/* Mobile Close Button */}
           <button
             onClick={onClose}
-            className="sidebar-close-btn lg:hidden"
+            className="sidebar-close-btn flex lg:hidden"
             aria-label="Cerrar menu"
           >
             <X className="w-5 h-5" />
@@ -212,26 +211,6 @@ export default function CleanSidebar({ isOpen, onClose }: CleanSidebarProps) {
           </ul>
         </nav>
 
-        {/* Footer - Storage indicator */}
-        <div className={cn(
-          'sidebar-modern-footer',
-          isCollapsed && 'sidebar-modern-footer--collapsed'
-        )}>
-          <div className="sidebar-storage">
-            <div className="sidebar-storage-header">
-              <HardDrive className="w-4 h-4" />
-              {!isCollapsed && <span>Almacenamiento</span>}
-            </div>
-            {!isCollapsed && (
-              <>
-                <div className="sidebar-storage-bar">
-                  <div className="sidebar-storage-fill" style={{ width: '1%' }} />
-                </div>
-                <span className="sidebar-storage-text">0.02 GB de 3 GB</span>
-              </>
-            )}
-          </div>
-        </div>
       </aside>
     </>
   );

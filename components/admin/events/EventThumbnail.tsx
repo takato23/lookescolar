@@ -69,8 +69,16 @@ export const EventThumbnail = ({
           onLoadingComplete={() => setLoaded(true)}
         />
       ) : (
-        <div className="absolute inset-0 flex items-center justify-center bg-gradient-to-br from-primary/10 via-muted to-secondary/20 text-lg font-semibold uppercase tracking-wide">
-          {initials}
+        <div className="absolute inset-0">
+          <Image
+            src="/placeholders/school-1.png"
+            alt={`Portada genérica para ${displayName}`}
+            fill
+            className="object-cover"
+          />
+          <div className="absolute inset-0 flex items-center justify-center bg-black/20 text-lg font-bold uppercase tracking-wide text-white drop-shadow-md">
+            {initials}
+          </div>
         </div>
       )}
 

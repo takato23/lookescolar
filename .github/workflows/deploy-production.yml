@@ -1,0 +1,235 @@
+name: Deploy to Production
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:  # Allow manual triggering
+
+# Prevent concurrent deployments
+concurrency:
+  group: production-deployment
+  cancel-in-progress: false
+
+jobs:
+  # Pre-deployment validation
+  validate:
+    name: Pre-Deployment Validation
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run TypeScript type checking
+        run: npm run typecheck
+
+      - name: Run linter
+        run: npm run lint
+
+      - name: Run unit tests
+        run: npm run test:unit
+
+      - name: Run integration tests
+        run: npm run test:integration
+        env:
+          NODE_ENV: test
+
+      - name: Run security audit
+        run: npm run security:audit || true  # Don't fail on warnings
+
+      - name: Build application
+        run: npm run build
+        env:
+          SKIP_ENV_VALIDATION: 1
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: build
+          path: .next
+          retention-days: 1
+
+  # Database migration
+  migrate:
+    name: Database Migration
+    runs-on: ubuntu-latest
+    needs: validate
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: Install Supabase CLI
+        run: npm install -g supabase
+
+      - name: Link to Supabase project
+        run: supabase link --project-ref ${{ secrets.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Create database backup
+        run: |
+          mkdir -p backups
+          supabase db dump -f backups/pre_deploy_$(date +%Y%m%d_%H%M%S).sql
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Upload backup
+        uses: actions/upload-artifact@v4
+        with:
+          name: database-backup
+          path: backups/*.sql
+          retention-days: 30
+
+      - name: Apply database migrations
+        run: supabase db push
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Verify migration
+        run: |
+          supabase db remote query "SELECT COUNT(*) FROM tenants;" || exit 1
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+  # Deploy to Vercel
+  deploy:
+    name: Deploy to Vercel
+    runs-on: ubuntu-latest
+    needs: [validate, migrate]
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: production
+      url: ${{ steps.deploy.outputs.url }}
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Deploy to Vercel
+        id: deploy
+        uses: amondnet/vercel-action@v25
+        with:
+          vercel-token: ${{ secrets.VERCEL_TOKEN }}
+          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
+          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
+          vercel-args: '--prod'
+          github-comment: false
+
+      - name: Set deployment URL
+        run: echo "DEPLOYMENT_URL=${{ steps.deploy.outputs.preview-url }}" >> $GITHUB_ENV
+
+  # Post-deployment verification
+  verify:
+    name: Post-Deployment Verification
+    runs-on: ubuntu-latest
+    needs: deploy
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Wait for deployment
+        run: sleep 30
+
+      - name: Check health endpoint
+        run: |
+          HEALTH_URL="${{ secrets.PRODUCTION_URL }}/api/health"
+          echo "Checking health endpoint: $HEALTH_URL"
+
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" "$HEALTH_URL")
+
+          if [ "$RESPONSE" != "200" ]; then
+            echo "Health check failed with status code: $RESPONSE"
+            exit 1
+          fi
+
+          echo "Health check passed: $RESPONSE"
+
+      - name: Verify health status
+        run: |
+          HEALTH_URL="${{ secrets.PRODUCTION_URL }}/api/health"
+          HEALTH_DATA=$(curl -s "$HEALTH_URL")
+
+          echo "Health check response:"
+          echo "$HEALTH_DATA"
+
+          # Check if status is healthy
+          STATUS=$(echo "$HEALTH_DATA" | jq -r '.status')
+
+          if [ "$STATUS" != "healthy" ]; then
+            echo "Application is not healthy: $STATUS"
+            exit 1
+          fi
+
+          echo "Application is healthy"
+
+      - name: Check critical endpoints
+        run: |
+          BASE_URL="${{ secrets.PRODUCTION_URL }}"
+
+          # Check admin login page
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/admin")
+          echo "Admin page status: $STATUS"
+
+          # Check API availability
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" "$BASE_URL/api/admin/auth")
+          echo "API status: $STATUS"
+
+      - name: Run smoke tests (optional)
+        run: |
+          # Add your smoke tests here
+          echo "Smoke tests would run here"
+
+  # Notification
+  notify:
+    name: Deployment Notification
+    runs-on: ubuntu-latest
+    needs: [validate, migrate, deploy, verify]
+    if: always()
+    steps:
+      - name: Send success notification
+        if: needs.verify.result == 'success'
+        run: |
+          echo "Deployment successful!"
+          # Add Slack, Discord, or email notification here
+
+      - name: Send failure notification
+        if: needs.verify.result == 'failure' || needs.deploy.result == 'failure' || needs.migrate.result == 'failure'
+        run: |
+          echo "Deployment failed!"
+          # Add Slack, Discord, or email notification here
+
+      - name: Comment on PR (if applicable)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const status = '${{ needs.verify.result }}' === 'success' ? '✅ Success' : '❌ Failed';
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: `## Deployment ${status}\n\nDeployment to production has ${status.toLowerCase()}.`
+            });
+
+# Required secrets:
+# - VERCEL_TOKEN: Vercel authentication token
+# - VERCEL_ORG_ID: Vercel organization ID
+# - VERCEL_PROJECT_ID: Vercel project ID
+# - SUPABASE_PROJECT_REF: Supabase project reference
+# - SUPABASE_ACCESS_TOKEN: Supabase access token for CLI
+# - PRODUCTION_URL: Production application URL (e.g., https://lookescolar.com)

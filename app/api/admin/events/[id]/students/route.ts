@@ -3,6 +3,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { qrService } from '@/lib/services/qr.service';
+import { getQrTaggingStatus } from '@/lib/qr/feature';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
+import { STUDENT_QR_PREFIX } from '@/lib/qr/format';
 
 const subjectSchema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -151,10 +155,12 @@ export const POST = withAuth(
   try {
       const eventId = (params).id;
       const body = await req.json();
+      const { tenantId } = resolveTenantFromHeaders(req.headers);
+      const qrFeature = await getQrTaggingStatus({ tenantId, eventId });
 
       // Handle bulk import
       if (Array.isArray(body)) {
-        return await handleBulkStudentImport(eventId, body);
+        return await handleBulkStudentImport(eventId, body, qrFeature.enabled);
       }
 
       // Handle single subject creation
@@ -176,9 +182,6 @@ export const POST = withAuth(
         );
       }
 
-      // Generate QR code if not provided
-      const qrCode = await generateStudentQRCode(eventId, validatedData.name);
-
       // Generate access token
       const accessToken = generateSecureToken();
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000); // 30 days
@@ -191,7 +194,7 @@ export const POST = withAuth(
           name: validatedData.name,
           grade: validatedData.grade,
           section: validatedData.section,
-          qr_code: qrCode,
+          qr_code: null,
           email: validatedData.email,
           phone: validatedData.phone,
           metadata: validatedData.metadata || {},
@@ -209,10 +212,25 @@ export const POST = withAuth(
         );
       }
 
+      let qrCodeValue: string | null = null;
+      if (qrFeature.enabled) {
+        try {
+          const qrResult = await qrService.generateStudentIdentificationQR(
+            eventId,
+            subject.id,
+            validatedData.name
+          );
+          qrCodeValue = `${STUDENT_QR_PREFIX}${qrResult.token}`;
+        } catch (qrError) {
+          console.error('Failed to generate student QR:', qrError);
+        }
+      }
+
       return NextResponse.json(
         {
           student: {
             ...subject,
+            qr_code: qrCodeValue ?? subject.qr_code,
             photo_count: 0,
             last_photo_tagged: null,
             has_active_token: true,
@@ -240,7 +258,11 @@ export const POST = withAuth(
 );
 
 // Handle bulk subject import
-async function handleBulkStudentImport(eventId: string, subjects: any[]) {
+async function handleBulkStudentImport(
+  eventId: string,
+  subjects: any[],
+  qrTaggingEnabled: boolean
+) {
   const supabase = await createServerSupabaseServiceClient();
   const results = {
     success_count: 0,
@@ -271,8 +293,6 @@ async function handleBulkStudentImport(eventId: string, subjects: any[]) {
         continue;
       }
 
-      // Generate QR code and access token
-      const qrCode = await generateStudentQRCode(eventId, validatedData.name);
       const accessToken = generateSecureToken();
       const expiresAt = new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);
 
@@ -284,7 +304,7 @@ async function handleBulkStudentImport(eventId: string, subjects: any[]) {
           name: validatedData.name,
           grade: validatedData.grade,
           section: validatedData.section,
-          qr_code: qrCode,
+          qr_code: null,
           email: validatedData.email,
           phone: validatedData.phone,
           metadata: validatedData.metadata || {},
@@ -304,7 +324,24 @@ async function handleBulkStudentImport(eventId: string, subjects: any[]) {
         continue;
       }
 
-      results.students.push(subject);
+      let qrCodeValue: string | null = null;
+      if (qrTaggingEnabled) {
+        try {
+          const qrResult = await qrService.generateStudentIdentificationQR(
+            eventId,
+            subject.id,
+            validatedData.name
+          );
+          qrCodeValue = `${STUDENT_QR_PREFIX}${qrResult.token}`;
+        } catch (qrError) {
+          console.error('Failed to generate bulk student QR:', qrError);
+        }
+      }
+
+      results.students.push({
+        ...subject,
+        qr_code: qrCodeValue ?? subject.qr_code,
+      });
       results.success_count++;
     } catch (error) {
       results.errors.push({
@@ -317,20 +354,6 @@ async function handleBulkStudentImport(eventId: string, subjects: any[]) {
   }
 
   return NextResponse.json(results, { status: 201 });
-}
-
-// Generate unique QR code for student
-async function generateStudentQRCode(
-  eventId: string,
-  studentName: string
-): Promise<string> {
-  const prefix = 'STU';
-  const eventShort = eventId.substring(0, 8);
-  const nameShort = studentName.substring(0, 3).toUpperCase();
-  const random = Math.random().toString(36).substring(2, 8).toUpperCase();
-  const timestamp = Date.now().toString(36).toUpperCase();
-
-  return `${prefix}-${eventShort}-${nameShort}-${random}-${timestamp}`;
 }
 
 // Generate secure token

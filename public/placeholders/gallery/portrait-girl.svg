@@ -1,0 +1,93 @@
+<svg width="1000" height="1500" viewBox="0 0 1000 1500" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Fondo de estudio profesional -->
+    <radialGradient id="studioBackground" cx="50%" cy="30%" r="80%">
+      <stop offset="0%" style="stop-color:#e8e4e0"/>
+      <stop offset="60%" style="stop-color:#d4d0cc"/>
+      <stop offset="100%" style="stop-color:#c0bab5"/>
+    </radialGradient>
+
+    <!-- Luz principal -->
+    <radialGradient id="mainLight" cx="30%" cy="20%" r="60%">
+      <stop offset="0%" style="stop-color:rgba(255,250,240,0.4)"/>
+      <stop offset="100%" style="stop-color:rgba(255,250,240,0)"/>
+    </radialGradient>
+
+    <!-- Skin tone -->
+    <linearGradient id="skinTone" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8d0b8"/>
+      <stop offset="100%" style="stop-color:#d4b8a0"/>
+    </linearGradient>
+
+    <!-- Cabello -->
+    <linearGradient id="hairGradient" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#4a3528"/>
+      <stop offset="100%" style="stop-color:#2d1f15"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo de estudio -->
+  <rect width="1000" height="1500" fill="url(#studioBackground)"/>
+  <rect width="1000" height="1500" fill="url(#mainLight)"/>
+
+  <!-- Figura completa de la estudiante -->
+  <g transform="translate(500, 450)">
+    <!-- Cabello largo -->
+    <ellipse cx="0" cy="-80" rx="180" ry="200" fill="url(#hairGradient)"/>
+    <ellipse cx="-100" cy="100" rx="60" ry="250" fill="url(#hairGradient)"/>
+    <ellipse cx="100" cy="100" rx="60" ry="250" fill="url(#hairGradient)"/>
+
+    <!-- Cara -->
+    <ellipse cx="0" cy="0" rx="130" ry="160" fill="url(#skinTone)"/>
+
+    <!-- Ojos -->
+    <g transform="translate(-45, -20)">
+      <ellipse cx="0" cy="0" rx="25" ry="15" fill="white"/>
+      <circle cx="5" cy="0" r="12" fill="#4a3528"/>
+      <circle cx="8" cy="-3" r="4" fill="white"/>
+    </g>
+    <g transform="translate(45, -20)">
+      <ellipse cx="0" cy="0" rx="25" ry="15" fill="white"/>
+      <circle cx="-5" cy="0" r="12" fill="#4a3528"/>
+      <circle cx="-2" cy="-3" r="4" fill="white"/>
+    </g>
+
+    <!-- Cejas -->
+    <path d="M-70 -50 Q-45 -60 -20 -50" stroke="#3a2a1a" stroke-width="4" fill="none"/>
+    <path d="M70 -50 Q45 -60 20 -50" stroke="#3a2a1a" stroke-width="4" fill="none"/>
+
+    <!-- Nariz -->
+    <ellipse cx="0" cy="30" rx="15" ry="20" fill="#d4b098" opacity="0.5"/>
+
+    <!-- Sonrisa genuina -->
+    <path d="M-50 70 Q0 110 50 70" stroke="#c49080" stroke-width="8" fill="none" stroke-linecap="round"/>
+    <!-- Dientes -->
+    <path d="M-35 75 Q0 95 35 75" fill="white"/>
+
+    <!-- Mejillas sonrojadas -->
+    <ellipse cx="-80" cy="40" rx="30" ry="20" fill="#e8a090" opacity="0.3"/>
+    <ellipse cx="80" cy="40" rx="30" ry="20" fill="#e8a090" opacity="0.3"/>
+
+    <!-- Cuello -->
+    <rect x="-40" y="140" width="80" height="60" fill="url(#skinTone)"/>
+
+    <!-- Uniforme escolar -->
+    <ellipse cx="0" cy="350" rx="200" ry="180" fill="#2d4a6a"/>
+
+    <!-- Collar blanco del uniforme -->
+    <path d="M-60 180 L0 240 L60 180" stroke="white" stroke-width="15" fill="none"/>
+    <polygon points="-80,180 0,280 80,180 60,180 0,240 -60,180" fill="white"/>
+
+    <!-- Moño/corbatín -->
+    <g transform="translate(0, 250)">
+      <ellipse cx="-25" cy="0" rx="30" ry="15" fill="#c41e3a"/>
+      <ellipse cx="25" cy="0" rx="30" ry="15" fill="#c41e3a"/>
+      <circle cx="0" cy="0" r="12" fill="#a01830"/>
+    </g>
+  </g>
+
+  <!-- Watermark sutil -->
+  <g transform="translate(500, 1420)" opacity="0.3">
+    <text x="0" y="0" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" letter-spacing="4" fill="#6b7280">LOOKESCOLAR</text>
+  </g>
+</svg>

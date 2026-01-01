@@ -25,8 +25,8 @@ const navItems: NavItem[] = [
   { id: 'home', href: '/admin', icon: LayoutDashboard, label: 'Inicio' },
   { id: 'events', href: '/admin/events', icon: Calendar, label: 'Eventos' },
   { id: 'photos', href: '/admin/photos', icon: ImageIcon, label: 'Fotos' },
-  { id: 'orders', href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
   { id: 'publish', href: '/admin/publish', icon: Share2, label: 'Publicar' },
+  { id: 'orders', href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
   { id: 'settings', href: '/admin/settings', icon: Settings, label: 'Ajustes' },
 ];
 

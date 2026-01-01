@@ -211,38 +211,47 @@ export async function cleanupTestData(testIds: any) {
     await supabase.from('photos').delete().eq('event_id', testIds.eventId);
 
     // Delete orders and related items
-    await supabase
-      .from('order_items')
-      .delete()
-      .in(
-        'order_id',
-        supabase.from('orders').select('id').eq('event_id', testIds.eventId)
-      );
+    const { data: orderIds } = await supabase
+      .from('orders')
+      .select('id')
+      .eq('event_id', testIds.eventId);
+
+    if (orderIds && orderIds.length > 0) {
+      await supabase
+        .from('order_items')
+        .delete()
+        .in('order_id', orderIds.map(o => o.id));
+    }
     await supabase.from('orders').delete().eq('event_id', testIds.eventId);
 
     // Delete subject tokens
-    await supabase
-      .from('subject_tokens')
-      .delete()
-      .in(
-        'subject_id',
-        supabase.from('subjects').select('id').eq('event_id', testIds.eventId)
-      );
+    const { data: subjectIds } = await supabase
+      .from('subjects')
+      .select('id')
+      .eq('event_id', testIds.eventId);
+
+    if (subjectIds && subjectIds.length > 0) {
+      await supabase
+        .from('subject_tokens')
+        .delete()
+        .in('subject_id', subjectIds.map(s => s.id));
+    }
 
     // Delete subjects
     await supabase.from('subjects').delete().eq('event_id', testIds.eventId);
 
     // Delete price list items and price lists
-    await supabase
-      .from('price_list_items')
-      .delete()
-      .in(
-        'price_list_id',
-        supabase
-          .from('price_lists')
-          .select('id')
-          .eq('event_id', testIds.eventId)
-      );
+    const { data: priceLists } = await supabase
+      .from('price_lists')
+      .select('id')
+      .eq('event_id', testIds.eventId);
+
+    if (priceLists && priceLists.length > 0) {
+      await supabase
+        .from('price_list_items')
+        .delete()
+        .in('price_list_id', priceLists.map(p => p.id));
+    }
     await supabase.from('price_lists').delete().eq('event_id', testIds.eventId);
 
     // Delete event last
@@ -347,11 +356,19 @@ export function setupMocks() {
   }
 
   // Mock environment variables
-  process.env.MP_ACCESS_TOKEN = 'TEST-mock-access-token';
-  process.env.MP_WEBHOOK_SECRET = 'test-webhook-secret';
-  process.env.SUPABASE_URL = 'http://localhost:54321';
-  process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
-  process.env.NEXT_PUBLIC_BASE_URL = 'http://localhost:3000';
+  // Mock environment variables only if not present
+  if (!process.env.MP_ACCESS_TOKEN) process.env.MP_ACCESS_TOKEN = 'TEST-mock-access-token';
+  if (!process.env.MP_WEBHOOK_SECRET) process.env.MP_WEBHOOK_SECRET = 'test-webhook-secret';
+
+  // Use NEXT_PUBLIC_SUPABASE_URL as SUPABASE_URL if not set
+  if (!process.env.SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_URL) {
+    process.env.SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
+  }
+
+  if (!process.env.SUPABASE_URL) process.env.SUPABASE_URL = 'http://localhost:54321';
+  if (!process.env.SUPABASE_SERVICE_ROLE_KEY) process.env.SUPABASE_SERVICE_ROLE_KEY = 'test-service-role-key';
+
+  if (!process.env.NEXT_PUBLIC_BASE_URL) process.env.NEXT_PUBLIC_BASE_URL = 'http://localhost:3000';
 
   return {
     mockMP,

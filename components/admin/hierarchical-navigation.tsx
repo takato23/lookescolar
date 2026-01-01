@@ -437,7 +437,7 @@ export default function HierarchicalNavigation({
                 <div>
                   <p className="text-sm font-medium">Gestioná estudiantes del evento</p>
                   <p className="text-sm text-muted-foreground">
-                    Accedé al panel dedicado para sincronizar datos de cursos y familias.
+                    Accedé al panel dedicado para sincronizar datos de cursos y clientes.
                   </p>
                 </div>
                 <Link href={`/admin/events/${eventId}/students`}>

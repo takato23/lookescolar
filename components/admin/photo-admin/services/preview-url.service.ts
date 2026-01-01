@@ -10,39 +10,37 @@ export const getPreviewUrl = (
   previewPath: string | null | undefined,
   originalPath?: string | null
 ): string | null => {
-  // Try preview path first - ensure it's a string
+  const isImagePath = (value: string) =>
+    /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(value);
+  const normalizePath = (value: string) => value.replace(/^\/+/, '').trim();
+
   if (previewPath && typeof previewPath === 'string') {
     if (previewPath.startsWith('http')) return previewPath;
-
-    // Normalize to path relative to the previews/ folder
-    let relative = previewPath;
-    const idx = previewPath.indexOf('/previews/');
-    if (idx >= 0) {
-      relative = previewPath.slice(idx + '/previews/'.length);
-    } else if (previewPath.startsWith('previews/')) {
-      relative = previewPath.slice('previews/'.length);
+    const normalized = normalizePath(previewPath);
+    if (isImagePath(normalized)) {
+      return `/admin/previews/${normalized}`;
     }
-
-    // Basic guard: must look like an image path
-    if (/\.(png|jpg|jpeg|webp|gif|avif)$/i.test(relative)) {
-      // Use admin proxy URL which handles multiple storage paths internally
-      return `/admin/previews/${relative}`;
+    const filename = normalized.split('/').pop();
+    if (filename && isImagePath(filename)) {
+      return `/admin/previews/${filename}`;
     }
   }
 
-  // Fallback to original path if preview not available - ensure it's a string
   if (originalPath && typeof originalPath === 'string') {
     if (originalPath.startsWith('http')) return originalPath;
-
-    // Extract filename from original path for preview lookup
-    const filename = originalPath.split('/').pop();
-    if (filename && /\.(png|jpg|jpeg|webp|gif|avif)$/i.test(filename)) {
+    const normalized = normalizePath(originalPath);
+    if (isImagePath(normalized)) {
+      return `/admin/previews/${normalized}`;
+    }
+    const filename = normalized.split('/').pop();
+    if (filename && isImagePath(filename)) {
       return `/admin/previews/${filename}`;
     }
   }
 
   return null;
 };
+
 
 
 

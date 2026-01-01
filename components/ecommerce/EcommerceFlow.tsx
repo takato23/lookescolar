@@ -296,7 +296,7 @@ export function EcommerceFlow({ token, onComplete }: EcommerceFlowProps) {
                 Copias Adicionales
               </Typography>
               <Typography variant="body1" sx={{ color: '#6b7280', maxWidth: '600px', mx: 'auto' }}>
-                Agrega copias extras en diferentes tamaños para compartir con familiares y amigos.
+                Agrega copias extras en diferentes tamaños para compartir con invitados y amigos.
               </Typography>
             </Box>
             

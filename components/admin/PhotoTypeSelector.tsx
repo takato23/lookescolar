@@ -19,8 +19,8 @@ const photoTypes = [
   {
     type: 'private' as PhotoType,
     icon: Camera,
-    title: 'Fotos Familiares',
-    description: 'Fotos individuales o de familia',
+    title: 'Fotos de Clientes',
+    description: 'Fotos individuales o para clientes',
     badgeColor: 'bg-blue-50 text-blue-700 border-blue-200',
     buttonColor: 'hover:bg-blue-50 hover:border-blue-300',
     selectedColor: 'bg-blue-50 text-blue-900 border-blue-300',
@@ -139,7 +139,7 @@ export function PhotoTypeSelector({
             <div>
               {selectedType === 'private' && (
                 <>
-                  <strong>Fotos Familiares:</strong> Se asignan a familias
+                  <strong>Fotos para clientes:</strong> Se asignan a clientes
                   específicas y solo son visibles en sus galerías privadas con
                   token.
                 </>

@@ -10,8 +10,8 @@ export const GET = RateLimitMiddleware.withRateLimit(
   withAuth(
     async (
       req: NextRequest, context: RouteContext<{ id: string }>) => {
-  const params = await context.params;
-  const requestId = crypto.randomUUID();
+      const params = await context.params;
+      const requestId = crypto.randomUUID();
       let eventId: string | undefined;
 
       try {
@@ -135,7 +135,7 @@ export const GET = RateLimitMiddleware.withRateLimit(
 
         if (targetFolderIds.length === 0) {
           logger.info('No folders found for event, checking for orphaned photos', { requestId, eventId });
-          
+
           // Check for photos that might not be in folders (orphaned photos)
           let orphanedQuery = supabase
             .from('assets')
@@ -216,7 +216,52 @@ export const GET = RateLimitMiddleware.withRateLimit(
             });
           }
 
-          // No folders and no orphaned photos
+          // Fallback: Check legacy photos table for events that haven't migrated to assets/folders
+          logger.info('No orphaned assets found, checking legacy photos table', { requestId, eventId });
+
+          const offset = (page - 1) * limit;
+          const { data: legacyPhotos, error: legacyError, count: legacyCount } = await supabase
+            .from('photos')
+            .select('*', { count: 'exact' })
+            .eq('event_id', eventId)
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
+
+          if (!legacyError && legacyPhotos && legacyPhotos.length > 0) {
+            logger.info('Found photos in legacy photos table', {
+              requestId,
+              eventId,
+              legacyCount: legacyPhotos.length,
+              totalLegacy: legacyCount,
+            });
+
+            return NextResponse.json({
+              success: true,
+              photos: legacyPhotos.map(photo => ({
+                ...photo,
+                processing_status: photo.processing_status || 'completed',
+              })),
+              pagination: {
+                page,
+                limit,
+                total: legacyCount || 0,
+                totalPages: Math.ceil((legacyCount || 0) / limit),
+                hasMore: page < Math.ceil((legacyCount || 0) / limit),
+              },
+              folder: null,
+              note: 'Showing photos from legacy photos table',
+            });
+          }
+
+          if (legacyError) {
+            logger.warn('Failed to check legacy photos table', {
+              requestId,
+              eventId,
+              error: legacyError.message,
+            });
+          }
+
+          // No folders, no orphaned assets, and no legacy photos
           return NextResponse.json({
             success: true,
             photos: [],
@@ -390,9 +435,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
           },
           folder: folderId
             ? {
-                id: folderId,
-                // TODO: Add folder details if needed
-              }
+              id: folderId,
+              // TODO: Add folder details if needed
+            }
             : null,
         });
       } catch (error) {

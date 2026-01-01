@@ -51,13 +51,13 @@ const tips: Tip[] = [
   {
     title: 'Selección Eficiente',
     description:
-      'Usa Ctrl+Click para seleccionar múltiples fotos antes de asignarlas a un alumno.',
+      'Usa Ctrl+Click para seleccionar múltiples fotos antes de asignarlas a un invitado.',
     icon: '⚡',
   },
   {
     title: 'Workflow Recomendado',
     description:
-      'Organiza por grupos: selecciona todas las fotos de un alumno, asígnalas, y continúa con el siguiente.',
+      'Organiza por grupos: selecciona todas las fotos de un invitado, asígnalas, y continúa con el siguiente.',
     icon: '📋',
   },
   {

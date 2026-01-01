@@ -69,6 +69,7 @@ import TaggingModal from './TaggingModal';
 import { PhotoModal as GalleryPhotoModal } from '@/components/gallery/PhotoModal';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { useQrTagging } from '@/lib/hooks/useQrTagging';
 
 // Types adapted for LookEscolar
 interface PhotoItem {
@@ -305,7 +306,7 @@ const PhotoCard: React.FC<{
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onTag}>
               <TagIcon className="mr-2 h-4 w-4" />
-              Etiquetar alumno
+              Etiquetar invitado
             </DropdownMenuItem>
             <DropdownMenuItem onClick={onDownload}>
               <DownloadIcon className="mr-2 h-4 w-4" />
@@ -1369,6 +1370,17 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
     if (!effectiveSelectedEvent) return codes; // show all codes when no event is selected
     return codes.filter((c) => c.event_id === effectiveSelectedEvent);
   }, [codes, effectiveSelectedEvent]);
+  const qrTaggingStatus = useQrTagging(effectiveSelectedEvent);
+  const qrTaggingEnabled =
+    Boolean(effectiveSelectedEvent) && qrTaggingStatus.enabled;
+
+  useEffect(() => {
+    if (!qrTaggingEnabled && (isQRTagMode || showQRScanner)) {
+      setIsQRTagMode(false);
+      setShowQRScanner(false);
+      setCurrentStudent(null);
+    }
+  }, [qrTaggingEnabled, isQRTagMode, showQRScanner]);
 
   return (
     <div
@@ -1423,15 +1435,17 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
             {/* Mode Toggles */}
             {!isQRTagMode && !isSessionMode ? (
               <>
-                <Button
-                  variant="secondary"
-                  size="xs"
-                  onClick={handleStartQRTagging}
-                  className="bg-purple-100 text-purple-700 hover:bg-purple-200"
-                >
-                  <QrCode className="mr-2 h-4 w-4" />
-                  Modo QR
-                </Button>
+                {qrTaggingEnabled && (
+                  <Button
+                    variant="secondary"
+                    size="xs"
+                    onClick={handleStartQRTagging}
+                    className="bg-purple-100 text-purple-700 hover:bg-purple-200"
+                  >
+                    <QrCode className="mr-2 h-4 w-4" />
+                    Modo QR
+                  </Button>
+                )}
                 <Button
                   variant="secondary"
                   size="xs"
@@ -1499,7 +1513,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
             )}
 
             {/* QR Tagging Actions */}
-            {isQRTagMode && (
+            {isQRTagMode && qrTaggingEnabled && (
               <>
                 {!currentStudent && (
                   <Button
@@ -1584,7 +1598,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
       })()}
 
       {/* QR Tagging Status Panel */}
-      {isQRTagMode && (
+      {isQRTagMode && qrTaggingEnabled && (
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -2193,6 +2207,7 @@ const PhotoGalleryModern: React.FC<PhotoGalleryModernProps> = ({
         isOpen={showQRScanner}
         onClose={() => setShowQRScanner(false)}
         onStudentScanned={handleStudentScanned}
+        eventId={selectedEvent ?? undefined}
       />
 
       {/* Manual Tagging Modal */}

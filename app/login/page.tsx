@@ -66,17 +66,15 @@ export default function LoginPage() {
       </AnimatePresence>
 
       {/* Premium Background Gradient - mismo que landing */}
-      <div
-        className="absolute inset-0 pointer-events-none z-0"
-        style={{
-          background: `
-            radial-gradient(ellipse at 30% 20%, rgba(20, 40, 80, 0.4) 0%, transparent 50%),
-            radial-gradient(ellipse at 70% 80%, rgba(60, 20, 80, 0.3) 0%, transparent 50%),
-            radial-gradient(circle at 50% 50%, rgba(0, 20, 40, 0.8) 0%, transparent 70%),
-            linear-gradient(180deg, #000000 0%, #050510 50%, #000005 100%)
-          `
-        }}
-      />
+      {/* Hero Background Image with Overlay */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/placeholders/heroes/auth-hero.png"
+          alt="Background"
+          className="w-full h-full object-cover opacity-40"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black via-black/80 to-black/40" />
+      </div>
 
       {/* 3D Background Layer - optimizado */}
       <div className="absolute inset-0 z-[1]">

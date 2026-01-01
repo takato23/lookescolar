@@ -13,7 +13,7 @@ export async function GET(request: NextRequest) {
   });
 
   // Redirect to a success page with the payment information
-  const redirectUrl = new URL('/f/payment-success', request.url);
+  const redirectUrl = new URL('/store-unified/invalid-token', request.url);
   if (paymentId) redirectUrl.searchParams.set('payment_id', paymentId);
   if (status) redirectUrl.searchParams.set('status', status);
   if (externalReference)

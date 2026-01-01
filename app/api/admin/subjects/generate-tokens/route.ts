@@ -183,7 +183,7 @@ export async function POST(request: NextRequest) {
           token: maskToken(result.token), // NUNCA devolver token completo
           expiresAt: result.expiresAt.toISOString(),
           isNew: result.isNew,
-          portalUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/f/${maskToken(result.token)}`,
+          portalUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/store-unified/${maskToken(result.token)}`,
         };
       }
     );
@@ -299,7 +299,7 @@ export async function GET(request: NextRequest) {
         school: event.school,
         date: event.date,
       },
-      portalUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/f/${maskToken(tokenInfo.token)}`,
+      portalUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'}/store-unified/${maskToken(tokenInfo.token)}`,
     });
   } catch (error: any) {
     console.error({

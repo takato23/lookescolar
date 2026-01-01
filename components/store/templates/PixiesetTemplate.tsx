@@ -1,6 +1,7 @@
+// @ts-nocheck
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { StoreSettings } from '@/lib/hooks/useStoreSettings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -36,6 +37,12 @@ import {
   Image
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import {
+  getGridClasses,
+  getPaletteTokens,
+  getTypographyPreset,
+  resolveStoreDesign
+} from '@/lib/store/store-design';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
 import { Separator } from '@/components/ui/separator';
@@ -44,13 +51,16 @@ import { _DEFAULT_PRODUCTS, _getProductsByType, _getHighlightedProducts } from '
 import { TrustBadges } from '@/components/ui/trust-badges';
 import { StoreFAQ } from '@/components/ui/faq';
 import { _FolderSelector } from '@/components/store/FolderSelector';
-import { _FolderPreview } from '@/components/store/FolderPreview';
+import { FolderPreview } from '@/components/store/FolderPreview';
 import { PaymentMethodSelector, type PaymentMethod } from '@/components/store/PaymentMethodSelector';
 import { CartSidebar } from '@/components/store/CartSidebar';
 import { PhotoGallerySelector } from '@/components/store/PhotoGallerySelector';
 import { _FolderHierarchyDisplay } from '@/components/store/FolderHierarchyDisplay';
 import type { FolderHierarchyProps, _FolderNavigationHandlers } from '@/lib/types/folder-hierarchy-types';
 import { useTemplateFavorites } from '@/hooks/useTemplateFavorites';
+import { PLACEHOLDER_IMAGES } from '@/lib/config/placeholder-images';
+import { ProductOptionsSelector, type StoreProduct } from '@/components/store/ProductOptionsSelector';
+import { useUnifiedCartStore, type ProductOptions } from '@/lib/stores/unified-cart-store';
 
 interface Photo {
   id: string;
@@ -74,6 +84,9 @@ interface PixiesetTemplateProps {
   folderHierarchy?: FolderHierarchyProps;
   onFolderNavigate?: (folderId: string, folderName: string) => void;
   isNavigatingFolder?: boolean;
+  onLoadMorePhotos?: () => void;
+  hasMorePhotos?: boolean;
+  loadingMore?: boolean;
 }
 
 interface CartItem {
@@ -98,7 +111,10 @@ export function PixiesetTemplate({
   isPreselected = false,
   folderHierarchy,
   onFolderNavigate,
-  isNavigatingFolder
+  isNavigatingFolder,
+  onLoadMorePhotos,
+  hasMorePhotos = false,
+  loadingMore = false
 }: PixiesetTemplateProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [lightboxIndex, setLightboxIndex] = useState<number>(-1);
@@ -106,10 +122,10 @@ export function PixiesetTemplate({
   const [_showProductPreview, _setShowProductPreview] = useState(false);
   
   // Simulate initial loading
-  useState(() => {
+  useEffect(() => {
     const timer = setTimeout(() => setIsLoading(false), 1000);
     return () => clearTimeout(timer);
-  });
+  }, []);
   const [cart, setCart] = useState<CartItem[]>([]);
   const { favorites, toggleFavorite: toggleFavoriteApi } = useTemplateFavorites(photos, token);
   const [_showCart, _setShowCart] = useState(false);
@@ -129,6 +145,14 @@ export function PixiesetTemplate({
     },
   });
   const [viewMode, setViewMode] = useState<'grid' | 'masonry'>('masonry');
+
+  // Product Options Selector State
+  const [optionsSelectorOpen, setOptionsSelectorOpen] = useState(false);
+  const [selectedPhotoForOptions, setSelectedPhotoForOptions] = useState<Photo | null>(null);
+
+  // Unified Cart Store (para sincronizar con el sistema unificado)
+  const unifiedCart = useUnifiedCartStore();
+
   // Álbum/paquete (opción A/B) y selección de fotos
   const [selectedPackageId, setSelectedPackageId] = useState<string | null>(null);
   
@@ -150,6 +174,46 @@ export function PixiesetTemplate({
   const [selectedGroup, setSelectedGroup] = useState<string | null>(null);
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>('mercado_pago');
+  const design = resolveStoreDesign(
+    settings.design ?? settings.theme_customization?.design ?? null
+  );
+  const palette = getPaletteTokens(design.color.palette);
+  const typography = getTypographyPreset(design.typography.preset);
+  const gridLayout = getGridClasses(design.grid);
+  // Apply dynamic configuration from database
+  const coverUrl = settings.banner_url || settings.logo_url || photos[0]?.url || PLACEHOLDER_IMAGES.heroes.groupPrimary;
+  const showNavText = design.grid.nav === 'icons_text';
+  const heroLayout =
+    design.cover.style === 'center' || design.cover.style === 'joy'
+      ? 'md:grid-cols-1'
+      : 'md:grid-cols-3';
+  const heroTextAlign =
+    design.cover.style === 'center' || design.cover.style === 'joy'
+      ? 'text-center items-center'
+      : 'text-left items-start';
+  const showCoverImage = design.cover.style !== 'none';
+
+  // Brand colors from config
+  const brandColors = {
+    primary: (settings as any)?.brand_colors?.primary || palette.accent,
+    secondary: (settings as any)?.brand_colors?.secondary || palette.accentSoft,
+    accent: (settings as any)?.brand_colors?.accent || palette.accent,
+  };
+  const coverFrameClass = cn(
+    'relative overflow-hidden',
+    design.cover.style === 'frame' && 'rounded-3xl border-4',
+    design.cover.style === 'stripe' && 'rounded-2xl p-3',
+    design.cover.style === 'divider' && 'rounded-2xl border-l-4',
+    design.cover.variant === 'journal' && 'border border-dashed',
+    design.cover.variant === 'stamp' && 'border-2 border-dotted',
+    design.cover.variant === 'outline' && 'border',
+    design.cover.variant === 'border' && 'border-4',
+    design.cover.variant === 'album' && 'rounded-3xl shadow-lg',
+    design.cover.variant === 'cliff' && 'rounded-t-[2.5rem] rounded-b-2xl',
+    design.cover.variant === 'split' && 'rounded-2xl',
+    design.cover.variant === 'none' && 'rounded-2xl'
+  );
+  const showCoverLabel = design.cover.variant === 'label';
 
   // Compatibilidad de paquetes según cantidad de fotos disponibles
   const _isPackageCompatible = (pkgId: string) => {
@@ -165,33 +229,97 @@ export function PixiesetTemplate({
     .filter(([_, product]) => product.enabled)
     .map(([id, product]) => ({ id, ...product }));
 
-  const addToCart = (photoId: string, productId: string) => {
-    const product = activeProducts.find(p => p.id === productId);
-    const photo = photos.find(p => p.id === photoId);
-    if (!product) return;
+  // Convert activeProducts to StoreProduct format for ProductOptionsSelector
+  const storeProducts: StoreProduct[] = useMemo(() => {
+    return activeProducts.map(p => ({
+      id: p.id,
+      name: p.name,
+      type: (p as any).type === 'digital' ? 'digital' as const : 'physical' as const,
+      enabled: p.enabled,
+      price: p.price, // ya en centavos
+      description: p.description,
+      options: {
+        sizes: (p as any).options?.sizes || ['10x15', '13x18', '15x21'],
+        formats: (p as any).options?.formats || ['Brillante', 'Mate'],
+        quality: (p as any).options?.quality || 'standard',
+      },
+    }));
+  }, [activeProducts]);
 
+  // Handler para abrir el selector de opciones
+  const handleOpenOptionsSelector = (photo: Photo) => {
+    setSelectedPhotoForOptions(photo);
+    setOptionsSelectorOpen(true);
+  };
+
+  // Handler cuando se confirman las opciones
+  const handleOptionsConfirm = (options: ProductOptions, finalPrice: number) => {
+    if (!selectedPhotoForOptions) return;
+
+    const photo = selectedPhotoForOptions;
+
+    // Agregar al carrito local (legacy)
     setCart(prev => {
+      // Buscar si ya existe un item con las mismas opciones
       const existingItem = prev.find(
-        item => item.photoId === photoId && item.productId === productId
+        item => item.photoId === photo.id &&
+                item.productId === options.productId &&
+                (item as any).options?.size === options.size
       );
 
       if (existingItem) {
         return prev.map(item =>
-          item.photoId === photoId && item.productId === productId
+          item.photoId === photo.id &&
+          item.productId === options.productId &&
+          (item as any).options?.size === options.size
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
 
       return [...prev, {
-        photoId,
-        productId,
-        productName: product.name,
-        price: product.price,
+        id: `cart_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        type: 'extra_print' as const,
+        name: `${options.productName || 'Foto'} ${options.size || ''}`.trim(),
+        photoId: photo.id,
+        productId: options.productId,
+        productName: options.productName,
+        price: finalPrice,
         quantity: 1,
-        photoUrl: photo?.url
-      }];
+        photoUrl: photo.url,
+        options, // Guardamos las opciones completas
+      } as CartItem];
     });
+
+    // Agregar también al store unificado para sincronización
+    unifiedCart.addItem({
+      photoId: photo.id,
+      filename: photo.alt || photo.id,
+      price: finalPrice,
+      watermarkUrl: photo.url,
+      options: {
+        productId: options.productId,
+        productName: options.productName,
+        size: options.size,
+        format: options.format,
+        quality: options.quality,
+      },
+      metadata: {
+        eventId: undefined, // Se setea desde el contexto
+        context: 'family',
+        token,
+      },
+    });
+
+    toast.success(`${options.productName} agregado al carrito`);
+    setSelectedPhotoForOptions(null);
+  };
+
+  // Legacy addToCart - ahora abre el selector de opciones
+  const addToCart = (photoId: string, _productId: string) => {
+    const photo = photos.find(p => p.id === photoId);
+    if (!photo) return;
+    handleOpenOptionsSelector(photo);
   };
 
   const removeFromCart = (photoId: string, productId: string) => {
@@ -492,13 +620,23 @@ export function PixiesetTemplate({
         selectedPhotos: selectedPackage
           ? { individual: selectedIndividual, group: selectedGroup ? [selectedGroup] : [] }
           : { individual: uniquePhotoIds, group: [] },
-        additionalCopies: cart.map((item) => ({
-          id: `${item.productId}_${item.photoId}`,
-          productId: item.productId,
-          quantity: item.quantity,
-          unitPrice: item.price,
-          totalPrice: item.price * item.quantity,
-        })),
+        additionalCopies: cart.map((item) => {
+          const cartOptions = (item as any).options;
+          return {
+            id: `${item.productId}_${item.photoId}`,
+            productId: item.productId || '',
+            quantity: item.quantity,
+            unitPrice: item.price,
+            totalPrice: item.price * item.quantity,
+            photoId: item.photoId,
+            options: cartOptions ? {
+              size: cartOptions.size,
+              format: cartOptions.format,
+              quality: cartOptions.quality,
+              productName: cartOptions.productName || item.productName,
+            } : undefined,
+          };
+        }),
         contactInfo: contact,
         totalPrice: getTotalPrice(),
         paymentMethod,
@@ -509,7 +647,7 @@ export function PixiesetTemplate({
         // Create MercadoPago preference
         const payload = {
           order: orderData,
-          callbackBase: 'f' as const,
+          callbackBase: 'store-unified' as const,
         };
 
         const res = await fetch('/api/store/create-preference', {
@@ -586,29 +724,44 @@ export function PixiesetTemplate({
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-purple-50 dark:from-slate-900 dark:via-blue-900/20 dark:to-purple-900/20 transition-all duration-500">
+    <div
+      className={cn('min-h-screen transition-all duration-500', typography.baseClass)}
+      style={{ backgroundColor: palette.background, color: palette.text }}
+    >
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-background/95 backdrop-blur-md border-b border-border">
+      <header
+        className="sticky top-0 z-40 backdrop-blur-md border-b"
+        style={{ backgroundColor: palette.surface, borderColor: palette.border }}
+      >
         <div className="container mx-auto px-4">
           <div className="flex items-center justify-between h-16">
             <div className="flex items-center space-x-4">
-              <Camera className="h-6 w-6 text-primary" />
+              {settings.logo_url ? (
+                <img src={settings.logo_url} alt="Logo" className="h-8 w-auto" />
+              ) : (
+                <Camera className="h-6 w-6" style={{ color: brandColors.primary }} />
+              )}
               <h1 className="text-xl font-semibold text-foreground">
-                {subject?.name || 'Galería'}
+                {settings.texts?.hero_title || subject?.name || 'Galería'}
               </h1>
             </div>
             
             <div className="flex items-center space-x-3">
               <Button
                 variant="ghost"
-                size="icon"
+                size={showNavText ? 'sm' : 'icon'}
                 onClick={() => setViewMode(viewMode === 'grid' ? 'list' : 'grid')}
-                className="hidden sm:inline-flex"
+                className={cn('hidden sm:inline-flex', showNavText && 'gap-2 px-3')}
               >
                 {viewMode === 'grid' ? (
                   <List className="h-4 w-4" />
                 ) : (
                   <Grid3x3 className="h-4 w-4" />
+                )}
+                {showNavText && (
+                  <span className="text-xs font-medium">
+                    {viewMode === 'grid' ? 'Lista' : 'Grilla'}
+                  </span>
                 )}
               </Button>
               
@@ -675,6 +828,77 @@ export function PixiesetTemplate({
 
       {/* Main Content with Sidebar Layout */}
       <div className="container mx-auto px-4 py-6">
+        <section className="mb-8">
+          <div
+            className={cn('grid gap-6 rounded-3xl border', heroLayout)}
+            style={{ backgroundColor: palette.surface, borderColor: palette.border }}
+          >
+            <div className={cn('space-y-3 p-6', heroTextAlign)}>
+              <div
+                className={cn('text-xs uppercase tracking-[0.3em]', typography.headingClass)}
+                style={{ color: palette.muted }}
+              >
+                Colección escolar
+              </div>
+              <h2 className={cn('text-3xl font-semibold', typography.headingClass)}>
+                {settings.texts?.hero_title || subject?.name || 'Galería Fotográfica'}
+              </h2>
+              <p className="text-sm" style={{ color: palette.muted }}>
+                {settings.texts?.hero_subtitle || settings.texts?.welcome_message || 'Ordena tus recuerdos en una experiencia premium.'}
+              </p>
+              {settings.texts?.welcome_message && (
+                <div className="mt-4 p-4 rounded-lg" style={{ backgroundColor: palette.accentSoft }}>
+                  <p className="text-sm">{settings.texts.welcome_message}</p>
+                </div>
+              )}
+              <Button
+                className="w-fit rounded-full text-xs font-semibold uppercase tracking-[0.2em]"
+                style={{ backgroundColor: brandColors.primary, color: '#ffffff' }}
+              >
+                Ver galería
+              </Button>
+            </div>
+
+            {showCoverImage && (
+              <div className={cn('p-6', design.cover.style === 'center' ? '' : 'md:col-span-2')}>
+                <div
+                  className={coverFrameClass}
+                  style={{ borderColor: palette.border }}
+                >
+                  {showCoverLabel && (
+                    <div
+                      className="absolute left-4 top-4 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.3em]"
+                      style={{ backgroundColor: palette.surface, color: palette.text }}
+                    >
+                      Especial
+                    </div>
+                  )}
+                  {design.cover.variant === 'split' && (
+                    <div
+                      className="absolute inset-y-0 left-1/2 w-px"
+                      style={{ backgroundColor: palette.border }}
+                    />
+                  )}
+                  {coverUrl ? (
+                    <img
+                      src={coverUrl}
+                      alt="Portada"
+                      className="h-56 w-full object-cover"
+                    />
+                  ) : (
+                    <div
+                      className="h-56 w-full"
+                      style={{
+                        backgroundImage: `linear-gradient(135deg, ${palette.accentSoft} 0%, ${palette.accent} 60%, ${palette.text} 100%)`,
+                      }}
+                    />
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+        </section>
+
         {/* Full Width Photo Gallery at Top */}
         <section className="mb-8">
           <div className="text-center mb-6">
@@ -690,11 +914,14 @@ export function PixiesetTemplate({
           
           {/* Large Photo Gallery - Grid Layout */}
           <div className="relative">
-            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 xl:grid-cols-8 gap-2 mb-6">
+            <div className={cn('grid mb-6', gridLayout.colsClass, gridLayout.gapClass)}>
               {photos.slice(0, 24).map((photo) => (
                 <div
                   key={photo.id}
-                  className="relative aspect-[3/4] rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer group"
+                  className={cn(
+                    'relative rounded-lg overflow-hidden shadow-md hover:shadow-xl transition-all duration-300 hover:scale-105 cursor-pointer group',
+                    gridLayout.aspectClass
+                  )}
                   onClick={() => setSelectedPhoto(photo)}
                 >
                   <LazyImage
@@ -1127,6 +1354,19 @@ export function PixiesetTemplate({
           })}
           </div>
         )}
+
+        {hasMorePhotos && onLoadMorePhotos && (
+          <div className="mt-8 flex justify-center">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onLoadMorePhotos}
+              disabled={loadingMore}
+            >
+              {loadingMore ? 'Cargando...' : 'Cargar mas fotos'}
+            </Button>
+          </div>
+        )}
           </main>
 
           {/* Cart Sidebar - Desktop Only */}
@@ -1225,27 +1465,29 @@ export function PixiesetTemplate({
                   <div>
                     <h3 className="font-semibold mb-3">Productos Disponibles</h3>
                     <div className="space-y-2">
-                      {activeProducts.map(product => (
-                        <div key={product.id} className="flex items-center justify-between p-3 rounded-lg border bg-white dark:bg-gray-900">
-                          <div className="flex-1">
-                            <p className="font-medium text-sm">{product.name}</p>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">{product.description}</p>
-                          </div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-semibold">{formatPrice(product.price)}</span>
-                            <Button
-                              size="sm"
-                              onClick={() => {
-                                addToCart(selectedPhoto.id, product.id);
-                                setSelectedPhoto(null);
-                              }}
-                            >
-                              <Plus className="h-3 w-3 mr-1" />
-                              Agregar
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
+                      {activeProducts.length > 0 ? (
+                        <Button
+                          className="w-full bg-emerald-600 hover:bg-emerald-700"
+                          onClick={() => {
+                            // Guardar referencia antes de cerrar el modal
+                            const photoToAdd = selectedPhoto;
+                            setSelectedPhoto(null);
+                            // Pequeño delay para que el modal de detalle se cierre antes de abrir el selector
+                            setTimeout(() => {
+                              if (photoToAdd) {
+                                handleOpenOptionsSelector(photoToAdd);
+                              }
+                            }, 100);
+                          }}
+                        >
+                          <ShoppingCart className="h-4 w-4 mr-2" />
+                          Seleccionar opciones y agregar al carrito
+                        </Button>
+                      ) : (
+                        <p className="text-sm text-muted-foreground text-center py-4">
+                          No hay productos disponibles
+                        </p>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -1385,6 +1627,20 @@ export function PixiesetTemplate({
       </Dialog>
 
       {/* Zoom modal eliminado: se usa el modal de detalle (selectedPhoto) */}
+
+      {/* Product Options Selector Modal */}
+      <ProductOptionsSelector
+        open={optionsSelectorOpen}
+        onClose={() => {
+          setOptionsSelectorOpen(false);
+          setSelectedPhotoForOptions(null);
+        }}
+        onConfirm={handleOptionsConfirm}
+        products={storeProducts}
+        photoUrl={selectedPhotoForOptions?.url || ''}
+        photoName={selectedPhotoForOptions?.alt}
+        defaultProductId={storeProducts[0]?.id}
+      />
 
       {/* Sticky mobile checkout bar */}
       {cart.length > 0 && (

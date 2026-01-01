@@ -43,7 +43,7 @@ export async function GET(
     const studentId = studentIdValidation.data;
 
     // Verify family token and access to student
-    const supabase = createServerSupabaseServiceClient();
+    const supabase = await createServerSupabaseServiceClient();
 
     const { data: subject, error: subjectError } = await supabase
       .from('subjects')

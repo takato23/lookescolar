@@ -63,16 +63,16 @@ export function WorkflowIsland({
         break;
       case 'tag':
         if (eventId) {
-          router.push(`/admin/events/${eventId}/tagging`);
+          router.push(`/admin/events/${eventId}/photos`);
         } else {
-          router.push('/admin/tagging');
+          router.push('/admin/photos');
         }
         break;
       case 'organize':
         if (eventId) {
-          router.push(`/admin/events/${eventId}/students`);
+          router.push(`/admin/events/${eventId}/photos`);
         } else {
-          router.push('/admin/subjects');
+          router.push('/admin/photos');
         }
         break;
       case 'publish':
@@ -103,8 +103,6 @@ export function WorkflowIsland({
         // Fallback - try to navigate to a relevant page
         if (action.id === 'upload-photos') {
           router.push('/admin/photos');
-        } else if (action.id === 'setup-students') {
-          router.push('/admin/subjects');
         }
     }
   };
@@ -113,8 +111,8 @@ export function WorkflowIsland({
     setup: 'Configurando los fundamentos para un evento exitoso',
     content_upload: 'Organizando y procesando el contenido visual',
     organization: 'Estructurando accesos y preparando distribución',
-    publishing: 'Activando la experiencia para las familias',
-    active_sales: 'Impulsando participación y optimizando conversiones',
+    publishing: 'Activando la experiencia para los clientes',
+    active_sales: 'Impulsando participación de clientes y optimizando conversiones',
     fulfillment: 'Procesando pedidos y completando entregas',
     completed: 'Evento completado exitosamente',
   };

@@ -1,14 +1,13 @@
 import sharp from 'sharp';
 import * as exifr from 'exifr';
+import { normalizeStudentQRCodeValue } from './format';
 
 type QRResult = { text: string } | null;
 
 export function normalizeCode(input: string | null | undefined): string | null {
   if (!input) return null;
-  const raw = input.trim().toUpperCase();
-  // Normalización simple V1: quitar espacios
-  const normalized = raw.replace(/\s+/g, '');
-  return normalized.length > 0 ? normalized : null;
+  const normalized = normalizeStudentQRCodeValue(input.trim());
+  return normalized ?? null;
 }
 
 export async function extractEXIFDate(buffer: Buffer): Promise<Date | null> {

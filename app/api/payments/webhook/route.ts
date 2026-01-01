@@ -161,7 +161,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ received: true });
     }
 
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check if payment already processed (idempotency)
     const { data: existingPayment } = await supabase

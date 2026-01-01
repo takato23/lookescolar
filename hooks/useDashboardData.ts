@@ -16,6 +16,8 @@ interface DashboardStats {
   conversionRate: number;
   recentActivity?: Activity[];
   systemStatus: 'healthy' | 'warning' | 'critical';
+  revenueHistory: { date: string; revenue: number }[];
+  activityHistory: { date: string; uploads: number; orders: number }[];
 }
 
 interface Event {
@@ -52,11 +54,11 @@ interface Order {
 interface Activity {
   id: string;
   type:
-    | 'event_created'
-    | 'photos_uploaded'
-    | 'order_created'
-    | 'order_completed'
-    | 'subject_created';
+  | 'event_created'
+  | 'photos_uploaded'
+  | 'order_created'
+  | 'order_completed'
+  | 'subject_created';
   message: string;
   timestamp: string;
   event_id?: string;
@@ -131,18 +133,20 @@ const transformStatsResponse = (apiResponse: any): DashboardStats => {
         ? (data.orders.approved / data.orders.total) * 100
         : 0,
     systemStatus: data.system?.health_status || 'healthy',
+    revenueHistory: data.revenue_history || [],
+    activityHistory: data.activity_history || [],
   };
 
   // Map recent activity list if provided by API
   const rawActivities = data.recent_activity as
     | Array<{
-        id: string;
-        type: Activity['type'];
-        message: string;
-        timestamp: string;
-        event_name?: string;
-        count?: number;
-      }>
+      id: string;
+      type: Activity['type'];
+      message: string;
+      timestamp: string;
+      event_name?: string;
+      count?: number;
+    }>
     | undefined;
   if (rawActivities && Array.isArray(rawActivities)) {
     base.recentActivity = rawActivities.map((a) => ({
@@ -218,30 +222,30 @@ export function useDashboardData(refreshInterval: number = 5 * 60 * 1000) {
     activity: statsQuery.data?.recentActivity || [],
     performance: statsQuery.data
       ? {
-          storage: {
-            used: statsQuery.data.storageUsed,
-            limit: statsQuery.data.storageLimit,
-            percentage:
-              statsQuery.data.storageLimit > 0
-                ? (statsQuery.data.storageUsed / statsQuery.data.storageLimit) *
-                  100
-                : 0,
-          },
-          system: {
-            status: statsQuery.data.systemStatus,
-            alerts: [],
-          },
-          conversions: {
-            viewToCart: 0,
-            cartToPayment: statsQuery.data.conversionRate,
-            overall: statsQuery.data.conversionRate,
-          },
-          apiMetrics: {
-            responseTime: 0,
-            errorRate: 0,
-            throughput: 0,
-          },
-        }
+        storage: {
+          used: statsQuery.data.storageUsed,
+          limit: statsQuery.data.storageLimit,
+          percentage:
+            statsQuery.data.storageLimit > 0
+              ? (statsQuery.data.storageUsed / statsQuery.data.storageLimit) *
+              100
+              : 0,
+        },
+        system: {
+          status: statsQuery.data.systemStatus,
+          alerts: [],
+        },
+        conversions: {
+          viewToCart: 0,
+          cartToPayment: statsQuery.data.conversionRate,
+          overall: statsQuery.data.conversionRate,
+        },
+        apiMetrics: {
+          responseTime: 0,
+          errorRate: 0,
+          throughput: 0,
+        },
+      }
       : null,
 
     // Estados de carga

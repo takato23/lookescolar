@@ -92,7 +92,7 @@ export function GuideModal({
           <li className="bg-muted/40 rounded-lg p-3">
             <div className="font-medium">Compartir enlaces/QR</div>
             <div className="text-gray-500 dark:text-gray-400 text-sm">
-              Enviá el acceso a las familias
+              Enviá el acceso a los clientes
             </div>
           </li>
           <li className="bg-muted/40 rounded-lg p-3">

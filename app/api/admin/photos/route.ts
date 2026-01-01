@@ -19,6 +19,21 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
   const startTime = Date.now();
 
   try {
+    const buildPreviewProxyUrl = (path?: string | null) => {
+      if (!path || typeof path !== 'string') return null;
+      if (path.startsWith('http')) return path;
+      const normalized = path.replace(/^\/+/, '').trim();
+      if (!normalized) return null;
+      if (!/\.(png|jpg|jpeg|webp|gif|avif)$/i.test(normalized)) return null;
+      if (
+        normalized.includes('/') &&
+        !/(^|\/)(previews|watermarks|watermarked|originals)\//i.test(normalized)
+      ) {
+        return null;
+      }
+      return `/admin/previews/${normalized}`;
+    };
+
     if (process.env.NODE_ENV === 'development') {
       console.debug(`[${requestId}] Photos API request started with robust auth`);
     }
@@ -221,6 +236,12 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
           preview_url = null;
         }
       }
+
+      const proxyPreview =
+        preview_url ??
+        buildPreviewProxyUrl(
+          asset.preview_path ?? asset.watermark_path ?? asset.original_path ?? null
+        );
       
       // Map assets table fields to photos API response format
       return {
@@ -233,7 +254,7 @@ async function handleGETRobust(request: NextRequest, context: { user: any; reque
         original_path: asset.original_path ?? null,
         preview_path: asset.preview_path ?? null,
         watermark_path: asset.watermark_path ?? null, // Include watermark_path for fallback
-        preview_url,
+        preview_url: proxyPreview,
         approved:
           asset.metadata && typeof asset.metadata?.approved === 'boolean'
             ? asset.metadata.approved

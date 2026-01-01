@@ -188,15 +188,6 @@ export function ClassicGalleryTemplate({
     ));
   };
 
-  const handleToggleFavorite = useCallback(
-    (photoId: string) => {
-      toggleFavoriteApi(photoId).catch(() => {
-        toast.error('No pudimos actualizar tus favoritos. Intentalo nuevamente.');
-      });
-    },
-    [toggleFavoriteApi]
-  );
-
   const getTotalPrice = () => {
     return cart.reduce((total, item) => total + (item.price * item.quantity), 0);
   };

@@ -221,7 +221,7 @@ export function SelectionScopePanel({ eventId, folders }: SelectionScopePanelPro
         const response = await fetch(`/api/admin/events/${eventId}/students?${params.toString()}`);
         if (!response.ok) {
           const payload = await response.json().catch(() => ({}));
-          throw new Error(payload?.error || 'No se pudieron cargar los alumnos');
+          throw new Error(payload?.error || 'No se pudieron cargar los invitados');
         }
         const payload = await response.json();
         if (!cancelled) {
@@ -237,7 +237,7 @@ export function SelectionScopePanel({ eventId, folders }: SelectionScopePanelPro
       } catch (error) {
         console.error('[SelectionScopePanel] Failed to load students', error);
         if (!cancelled) {
-          toast.error('No pudimos cargar los alumnos para la búsqueda');
+          toast.error('No pudimos cargar los invitados para la búsqueda');
         }
       } finally {
         if (!cancelled) {
@@ -336,7 +336,7 @@ export function SelectionScopePanel({ eventId, folders }: SelectionScopePanelPro
           const response = await fetch(`/api/admin/photos/unified?${params.toString()}`);
           if (!response.ok) {
             const payload = await response.json().catch(() => ({}));
-            throw new Error(payload?.error || 'No se pudo buscar por alumno');
+            throw new Error(payload?.error || 'No se pudo buscar por invitado');
           }
           const payload = await response.json();
           const mapped = (payload?.photos || []).map(mapUnifiedPhoto);
@@ -470,7 +470,7 @@ export function SelectionScopePanel({ eventId, folders }: SelectionScopePanelPro
               <Input
                 value={selectionFilter}
                 onChange={(event) => setSelectionFilter(event.target.value)}
-                placeholder="Filtrar por nombre, alumno o carpeta"
+                placeholder="Filtrar por nombre, invitado o carpeta"
                 className="pl-9 h-8 w-64"
               />
               <Search className="absolute left-2 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -581,7 +581,7 @@ export function SelectionScopePanel({ eventId, folders }: SelectionScopePanelPro
           <div>
             <h4 className="text-sm font-semibold">Agregar fotos desde el wizard</h4>
             <p className="text-xs text-muted-foreground">
-              Buscá por nombre de archivo, alumno o carpeta y sumalas sin salir de este flujo.
+              Buscá por nombre de archivo, invitado o carpeta y sumalas sin salir de este flujo.
             </p>
           </div>
         </div>
@@ -595,7 +595,7 @@ export function SelectionScopePanel({ eventId, folders }: SelectionScopePanelPro
         }}>
           <TabsList className="grid h-9 w-full grid-cols-3">
             <TabsTrigger value="filename">Archivo</TabsTrigger>
-            <TabsTrigger value="student">Alumno</TabsTrigger>
+            <TabsTrigger value="student">Invitado</TabsTrigger>
             <TabsTrigger value="folder">Carpeta</TabsTrigger>
           </TabsList>
 
@@ -618,7 +618,7 @@ export function SelectionScopePanel({ eventId, folders }: SelectionScopePanelPro
             {studentsLoading ? (
               <div className="flex items-center gap-2 text-xs text-muted-foreground">
                 <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                Cargando alumnos…
+                Cargando invitados…
               </div>
             ) : (
               <div className="space-y-2">
@@ -629,7 +629,7 @@ export function SelectionScopePanel({ eventId, folders }: SelectionScopePanelPro
                   }
                   className="w-full rounded-md border px-3 py-2 text-sm"
                 >
-                  <option value="">Elegí un alumno…</option>
+                  <option value="">Elegí un invitado…</option>
                   {students.map((student) => (
                     <option key={student.id} value={student.id}>
                       {student.name}
@@ -638,7 +638,7 @@ export function SelectionScopePanel({ eventId, folders }: SelectionScopePanelPro
                   ))}
                 </select>
                 <p className="text-xs text-muted-foreground">
-                  Solo se mostrarán las fotos etiquetadas con el alumno seleccionado.
+                  Solo se mostrarán las fotos etiquetadas con el invitado seleccionado.
                 </p>
               </div>
             )}
@@ -698,7 +698,7 @@ export function SelectionScopePanel({ eventId, folders }: SelectionScopePanelPro
                   </p>
                 ) : searchMode === 'student' ? (
                   <p className="text-xs">
-                    Asegurate de que el alumno tenga fotos etiquetadas.
+                    Asegurate de que el invitado tenga fotos etiquetadas.
                   </p>
                 ) : (
                   <p className="text-xs">

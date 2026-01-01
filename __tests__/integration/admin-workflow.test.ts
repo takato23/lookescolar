@@ -1,5 +1,7 @@
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
+import { qrService } from '@/lib/services/qr.service';
+import { STUDENT_QR_PREFIX } from '@/lib/qr/format';
 
 // Test configuration
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL!;
@@ -67,7 +69,7 @@ describe('Admin Workflow Integration Tests', () => {
         grade: '1º',
         section: 'A',
         student_number: 'TEST001',
-        qr_code: 'STU-TEST-001',
+        qr_code: null,
         active: true,
       })
       .select('id')
@@ -78,6 +80,15 @@ describe('Admin Workflow Integration Tests', () => {
     }
 
     testStudentId = student.id;
+
+    const qrResult = await qrService.generateStudentIdentificationQR(
+      testEventId,
+      testStudentId,
+      'Test Student',
+      testCourseId
+    );
+    const qrCodeValue = `${STUDENT_QR_PREFIX}${qrResult.token}`;
+    expect(qrCodeValue).toMatch(/^LKSTUDENT_/);
 
     // Create test photo
     const { data: photo, error: photoError } = await supabaseAdmin

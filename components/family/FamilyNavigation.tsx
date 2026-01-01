@@ -27,21 +27,21 @@ export async function FamilyNavigation({ token }: FamilyNavigationProps) {
         <div className="flex h-16 items-center justify-between">
           <div className="flex items-center space-x-8">
             <a
-              href={`/f/${token}`}
+              href={`/store-unified/${token}`}
               className="flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium text-purple-700 transition-colors hover:bg-purple-100 hover:text-purple-900"
             >
               <span>🏠</span>
               <span>Inicio</span>
             </a>
             <a
-              href={`/f/${token}#gallery`}
+              href={`/store-unified/${token}#gallery`}
               className="flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-purple-50 hover:text-purple-700"
             >
               <span>📸</span>
               <span>Galería</span>
             </a>
             <a
-              href={`/f/${token}#cart`}
+              href={`/store-unified/${token}#cart`}
               className="flex items-center space-x-2 rounded-md px-3 py-2 text-sm font-medium text-gray-600 transition-colors hover:bg-purple-50 hover:text-purple-700"
             >
               <span>🛒</span>

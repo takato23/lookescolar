@@ -2,6 +2,10 @@ import { NextRequest, NextResponse } from 'next/server';
 import { withAuth } from '@/lib/middleware/auth.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
+import { qrService } from '@/lib/services/qr.service';
+import { getQrTaggingStatus } from '@/lib/qr/feature';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
+import { STUDENT_QR_PREFIX } from '@/lib/qr/format';
 
 // GET /api/admin/students
 // Optional query params:
@@ -94,8 +98,13 @@ export const POST = withAuth(async (req: NextRequest) => {
       );
     }
 
+    const { tenantId } = resolveTenantFromHeaders(req.headers);
+    const qrFeature = eventId
+      ? await getQrTaggingStatus({ tenantId, eventId })
+      : { enabled: false };
+
     // Import to database
-    const result = await importStudents(students, eventId);
+    const result = await importStudents(students, eventId, qrFeature.enabled);
 
     return NextResponse.json(result);
   } catch (e: any) {
@@ -158,7 +167,11 @@ function parseCSVContent(content: string): any[] {
 }
 
 // Import students to database
-async function importStudents(students: any[], eventId: string | null) {
+async function importStudents(
+  students: any[],
+  eventId: string | null,
+  qrTaggingEnabled: boolean
+) {
   const supabase = await createServerSupabaseServiceClient();
 
   let successCount = 0;
@@ -170,27 +183,35 @@ async function importStudents(students: any[], eventId: string | null) {
     try {
       const validatedStudent = studentSchema.parse(students[i]);
 
-      // Generate QR code (simple format for now)
-      const qrCode = `${validatedStudent.class}-${validatedStudent.name.substring(0, 3).toUpperCase()}${Math.random().toString(36).substring(2, 5).toUpperCase()}`;
-
       // Insert into subjects table (students are stored as subjects)
-      const { error } = await supabase
+      const { data: subject, error } = await supabase
         .from('subjects')
         .insert({
           name: `${validatedStudent.name} ${validatedStudent.lastname}`,
           event_id: eventId,
-          qr_code: qrCode,
+          qr_code: null,
           metadata: {
             email: validatedStudent.email,
             class: validatedStudent.class,
             imported_at: new Date().toISOString(),
           },
         })
-        .select()
+        .select('id')
         .single();
 
       if (error) {
         throw error;
+      }
+
+      let qrCodeValue: string | null = null;
+      if (qrTaggingEnabled && eventId) {
+        const fullName = `${validatedStudent.name} ${validatedStudent.lastname}`;
+        const qrResult = await qrService.generateStudentIdentificationQR(
+          eventId,
+          subject.id,
+          fullName
+        );
+        qrCodeValue = `${STUDENT_QR_PREFIX}${qrResult.token}`;
       }
 
       importedStudents.push({
@@ -198,7 +219,7 @@ async function importStudents(students: any[], eventId: string | null) {
         lastname: validatedStudent.lastname,
         email: validatedStudent.email,
         class: validatedStudent.class,
-        qr_code: qrCode,
+        qr_code: qrCodeValue,
       });
 
       successCount++;

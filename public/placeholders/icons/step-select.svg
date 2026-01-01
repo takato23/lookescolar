@@ -1,0 +1,36 @@
+<svg width="64" height="64" viewBox="0 0 64 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Cursor/mano apuntando -->
+  <path
+    d="M24 42L24 22C24 20.3431 25.3431 19 27 19C28.6569 19 30 20.3431 30 22L30 32"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <path
+    d="M30 30C30 28.3431 31.3431 27 33 27C34.6569 27 36 28.3431 36 30V32"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+  />
+  <path
+    d="M36 31C36 29.3431 37.3431 28 39 28C40.6569 28 42 29.3431 42 31V33"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+  />
+  <path
+    d="M42 32C42 30.3431 43.3431 29 45 29C46.6569 29 48 30.3431 48 32V40C48 46 44 50 38 50H32C28 50 24 47 24 42"
+    stroke="currentColor"
+    stroke-width="2.5"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+  />
+  <!-- Corazón pequeño -->
+  <path
+    d="M16 20C16 16 20 14 22 16C24 14 28 16 28 20C28 24 22 28 22 28C22 28 16 24 16 20Z"
+    stroke="currentColor"
+    stroke-width="2"
+    fill="none"
+  />
+</svg>

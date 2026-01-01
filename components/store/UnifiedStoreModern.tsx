@@ -69,7 +69,7 @@ const getAlbumPackages = (photoCount: number) => [
     originalPrice: 8500,
     price: 6800,
     discount: 20,
-    features: [`${Math.floor(photoCount * 0.3)} fotos seleccionadas`, 'Alta resolución', '6 meses de acceso', 'Compartir con familia']
+    features: [`${Math.floor(photoCount * 0.3)} fotos seleccionadas`, 'Alta resolución', '6 meses de acceso', 'Compartir con invitados']
   },
   {
     id: 'mini_album',

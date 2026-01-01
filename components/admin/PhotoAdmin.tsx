@@ -100,6 +100,7 @@ import {
   Star,
   Eye,
   EyeOff,
+  FolderPlus,
   FolderOpen,
   Folder,
   Package,
@@ -139,6 +140,7 @@ import { StudentManagement } from '@/components/admin/shared/StudentManagement';
 import { ShareManager } from '@/components/admin/share/ShareManager';
 import { AssignFolderPhotos } from '@/app/admin/events/[id]/library/components/AssignFolderPhotos';
 import BatchStudentManagement from '@/components/admin/BatchStudentManagement';
+import { BulkGalleryCreator } from '@/components/admin/BulkGalleryCreator';
 
 // Enhanced interfaces for complete data when needed
 interface UnifiedFolder extends OptimizedFolder {
@@ -220,7 +222,7 @@ export default function PhotoAdmin({
           : null;
       if (saved === 'true') return true;
       if (saved === 'false') return false;
-    } catch {}
+    } catch { }
     return true; // default ON as solicitado
   });
   const [statusFilter, setStatusFilter] = useState<
@@ -270,6 +272,7 @@ export default function PhotoAdmin({
   const [showStudentManagement, setShowStudentManagement] = useState(false);
   const [showAssignModal, setShowAssignModal] = useState(false);
   const [showBatchStudentModal, setShowBatchStudentModal] = useState(false);
+  const [showBulkCreator, setShowBulkCreator] = useState(false);
   const [batchCourses, setBatchCourses] = useState<any[]>([]);
   const [isLoadingBatchCourses, setIsLoadingBatchCourses] = useState(false);
   // Share creation state
@@ -303,14 +306,14 @@ export default function PhotoAdmin({
       return saved
         ? JSON.parse(saved)
         : {
-            defaultPageSize: 50,
-            enableAutoUpload: false,
-            showPreviewThumbnails: true,
-            defaultViewMode: 'grid', // 'grid' or 'list'
-            enableDragAndDrop: true,
-            showUploadProgress: true,
-            autoSelectUploaded: false,
-          };
+          defaultPageSize: 50,
+          enableAutoUpload: false,
+          showPreviewThumbnails: true,
+          defaultViewMode: 'grid', // 'grid' or 'list'
+          enableDragAndDrop: true,
+          showUploadProgress: true,
+          autoSelectUploaded: false,
+        };
     } catch {
       return {
         defaultPageSize: 50,
@@ -368,14 +371,14 @@ export default function PhotoAdmin({
       setUploadState((prev) =>
         prev
           ? {
-              ...prev,
-              inProgress: true,
-              batches: prev.batches.map((x, idx) =>
-                idx === bi
-                  ? { ...x, uploaded: 0, failed: 0, status: 'uploading' }
-                  : x
-              ),
-            }
+            ...prev,
+            inProgress: true,
+            batches: prev.batches.map((x, idx) =>
+              idx === bi
+                ? { ...x, uploaded: 0, failed: 0, status: 'uploading' }
+                : x
+            ),
+          }
           : prev
       );
 
@@ -430,11 +433,11 @@ export default function PhotoAdmin({
           const batches = prev.batches.map((x, idx) =>
             idx === bi
               ? {
-                  ...x,
-                  uploaded: 0,
-                  failed: files.length,
-                  status: 'error' as const,
-                }
+                ...x,
+                uploaded: 0,
+                failed: files.length,
+                status: 'error' as const,
+              }
               : x
           );
           const totals = recalcTotals(batches);
@@ -571,7 +574,7 @@ export default function PhotoAdmin({
         'le:includeSubfolders',
         includeSubfolders ? 'true' : 'false'
       );
-    } catch {}
+    } catch { }
   }, [includeSubfolders]);
 
   // Folders query with longer stale time (they don't change often)
@@ -722,11 +725,11 @@ export default function PhotoAdmin({
     if (selectedEventId) {
       try {
         localStorage.setItem('le:lastEventId', selectedEventId);
-      } catch {}
+      } catch { }
     } else {
       try {
         localStorage.removeItem('le:lastEventId');
-      } catch {}
+      } catch { }
     }
 
     syncQueryParams((params) => {
@@ -1200,9 +1203,9 @@ export default function PhotoAdmin({
         }),
         variables.targetFolderId !== selectedFolderId
           ? queryClient.invalidateQueries({
-              queryKey: ['optimized-assets', variables.targetFolderId],
-              refetchType: 'active',
-            })
+            queryKey: ['optimized-assets', variables.targetFolderId],
+            refetchType: 'active',
+          })
           : Promise.resolve(),
       ]);
 
@@ -1290,7 +1293,7 @@ export default function PhotoAdmin({
       Math.round(
         ((uploadState.uploaded + uploadState.failed) /
           Math.max(1, uploadState.total)) *
-          100
+        100
       )
     );
   }, [uploadState]);
@@ -1490,11 +1493,11 @@ export default function PhotoAdmin({
           setUploadState((prev) =>
             prev
               ? {
-                  ...prev,
-                  batches: prev.batches.map((x, idx) =>
-                    idx === bi ? { ...x, status: 'uploading' } : x
-                  ),
-                }
+                ...prev,
+                batches: prev.batches.map((x, idx) =>
+                  idx === bi ? { ...x, status: 'uploading' } : x
+                ),
+              }
               : prev
           );
 
@@ -1518,19 +1521,19 @@ export default function PhotoAdmin({
               setUploadState((prev) =>
                 prev
                   ? {
-                      ...prev,
-                      uploaded: successCount,
-                      batches: prev.batches.map((x, idx) =>
-                        idx === bi
-                          ? {
-                              ...x,
-                              uploaded: uploadedNow,
-                              failed: 0,
-                              status: 'done',
-                            }
-                          : x
-                      ),
-                    }
+                    ...prev,
+                    uploaded: successCount,
+                    batches: prev.batches.map((x, idx) =>
+                      idx === bi
+                        ? {
+                          ...x,
+                          uploaded: uploadedNow,
+                          failed: 0,
+                          status: 'done',
+                        }
+                        : x
+                    ),
+                  }
                   : prev
               );
             } else {
@@ -1547,19 +1550,19 @@ export default function PhotoAdmin({
               setUploadState((prev) =>
                 prev
                   ? {
-                      ...prev,
-                      failed: errorCount,
-                      batches: prev.batches.map((x, idx) =>
-                        idx === bi
-                          ? {
-                              ...x,
-                              uploaded: 0,
-                              failed: batch.length,
-                              status: 'error',
-                            }
-                          : x
-                      ),
-                    }
+                    ...prev,
+                    failed: errorCount,
+                    batches: prev.batches.map((x, idx) =>
+                      idx === bi
+                        ? {
+                          ...x,
+                          uploaded: 0,
+                          failed: batch.length,
+                          status: 'error',
+                        }
+                        : x
+                    ),
+                  }
                   : prev
               );
             }
@@ -1569,19 +1572,19 @@ export default function PhotoAdmin({
               setUploadState((prev) =>
                 prev
                   ? {
-                      ...prev,
-                      failed: errorCount,
-                      batches: prev.batches.map((x, idx) =>
-                        idx === bi
-                          ? {
-                              ...x,
-                              uploaded: 0,
-                              failed: batch.length,
-                              status: 'error',
-                            }
-                          : x
-                      ),
-                    }
+                    ...prev,
+                    failed: errorCount,
+                    batches: prev.batches.map((x, idx) =>
+                      idx === bi
+                        ? {
+                          ...x,
+                          uploaded: 0,
+                          failed: batch.length,
+                          status: 'error',
+                        }
+                        : x
+                    ),
+                  }
                   : prev
               );
               console.warn('Upload aborted for batch', bi + 1);
@@ -1591,19 +1594,19 @@ export default function PhotoAdmin({
               setUploadState((prev) =>
                 prev
                   ? {
-                      ...prev,
-                      failed: errorCount,
-                      batches: prev.batches.map((x, idx) =>
-                        idx === bi
-                          ? {
-                              ...x,
-                              uploaded: 0,
-                              failed: batch.length,
-                              status: 'error',
-                            }
-                          : x
-                      ),
-                    }
+                    ...prev,
+                    failed: errorCount,
+                    batches: prev.batches.map((x, idx) =>
+                      idx === bi
+                        ? {
+                          ...x,
+                          uploaded: 0,
+                          failed: batch.length,
+                          status: 'error',
+                        }
+                        : x
+                    ),
+                  }
                   : prev
               );
             }
@@ -1657,9 +1660,9 @@ export default function PhotoAdmin({
           // Si hay subfolders, invalidar assets de todas las carpetas relacionadas
           includeSubfolders
             ? queryClient.invalidateQueries({
-                queryKey: ['optimized-assets'],
-                refetchType: 'active',
-              })
+              queryKey: ['optimized-assets'],
+              refetchType: 'active',
+            })
             : Promise.resolve(),
         ]);
 
@@ -1889,7 +1892,7 @@ export default function PhotoAdmin({
       // Copy to clipboard for convenience
       try {
         await navigator.clipboard.writeText(shareUrl);
-      } catch {}
+      } catch { }
 
       toast.success(`🏪 Tienda "${shareData.title}" creada!`, {
         description:
@@ -2151,6 +2154,18 @@ export default function PhotoAdmin({
                     </PhotoUploadButton>
                   )}
 
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => setShowBulkCreator(true)}
+                    disabled={!selectedEventId}
+                    className="h-9 rounded-full px-4 text-sm font-medium shadow-sm"
+                    title="Crear múltiples galerías desde carpetas"
+                  >
+                    <FolderPlus className="mr-2 h-4 w-4" />
+                    Crear Masivamente
+                  </Button>
+
                   {/* Botón de Generar Tienda */}
                   <Button
                     variant="modern"
@@ -2352,321 +2367,321 @@ export default function PhotoAdmin({
               </div>
             </div>
           </section>
-        {/* Mobile filters panel */}
-        {showMobileFilters && (
-          <div
-            id="mobile-filters"
-            className="rounded-3xl border border-white/25 bg-white/85 px-4 py-3 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/70 md:hidden"
-          >
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label className="text-sm text-foreground">Estado</Label>
-                <Select
-                  value={statusFilter}
-                  onValueChange={(v) => setStatusFilter(v as any)}
+          {/* Mobile filters panel */}
+          {showMobileFilters && (
+            <div
+              id="mobile-filters"
+              className="rounded-3xl border border-white/25 bg-white/85 px-4 py-3 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/70 md:hidden"
+            >
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <Label className="text-sm text-foreground">Estado</Label>
+                  <Select
+                    value={statusFilter}
+                    onValueChange={(v) => setStatusFilter(v as any)}
+                  >
+                    <SelectTrigger className="h-9 w-full">
+                      <SelectValue placeholder="Todos" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Todos</SelectItem>
+                      <SelectItem value="ready">Lista</SelectItem>
+                      <SelectItem value="processing">Procesando</SelectItem>
+                      <SelectItem value="pending">Pendiente</SelectItem>
+                      <SelectItem value="error">Error</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* File type filter removed per request */}
+
+                {/* Min/Max MB removed by request */}
+
+                <div>
+                  <Label className="text-sm text-foreground">Start</Label>
+                  <Input
+                    type="date"
+                    value={startDate}
+                    onChange={(e) => setStartDate(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+                <div>
+                  <Label className="text-sm text-foreground">End</Label>
+                  <Input
+                    type="date"
+                    value={endDate}
+                    onChange={(e) => setEndDate(e.target.value)}
+                    className="h-9"
+                  />
+                </div>
+              </div>
+              <div className="mt-3 flex justify-between">
+                <Button variant="ghost" onClick={handleResetFilters}>
+                  <X className="mr-1 h-4 w-4" /> Reset
+                </Button>
+                <Button
+                  variant="default"
+                  onClick={() => setShowMobileFilters(false)}
                 >
-                  <SelectTrigger className="h-9 w-full">
-                    <SelectValue placeholder="Todos" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Todos</SelectItem>
-                    <SelectItem value="ready">Lista</SelectItem>
-                    <SelectItem value="processing">Procesando</SelectItem>
-                    <SelectItem value="pending">Pendiente</SelectItem>
-                    <SelectItem value="error">Error</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* File type filter removed per request */}
-
-              {/* Min/Max MB removed by request */}
-
-              <div>
-                <Label className="text-sm text-foreground">Start</Label>
-                <Input
-                  type="date"
-                  value={startDate}
-                  onChange={(e) => setStartDate(e.target.value)}
-                  className="h-9"
-                />
-              </div>
-              <div>
-                <Label className="text-sm text-foreground">End</Label>
-                <Input
-                  type="date"
-                  value={endDate}
-                  onChange={(e) => setEndDate(e.target.value)}
-                  className="h-9"
-                />
+                  Apply
+                </Button>
               </div>
             </div>
-            <div className="mt-3 flex justify-between">
-              <Button variant="ghost" onClick={handleResetFilters}>
-                <X className="mr-1 h-4 w-4" /> Reset
-              </Button>
-              <Button
-                variant="default"
-                onClick={() => setShowMobileFilters(false)}
-              >
-                Apply
-              </Button>
-            </div>
-          </div>
-        )}
+          )}
 
-        {/* 🚀 FASE 2: Banner de contexto de evento */}
-        {selectedEventId && (
-          <div className="rounded-3xl border border-white/20 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/70">
-            <EventContextBanner
-              eventId={selectedEventId}
-              onRemoveContext={handleRemoveEventContext}
-              compact={true}
-            />
-          </div>
-        )}
-        {!selectedEventId && (
-          <div className="rounded-3xl border border-dashed border-white/30 bg-white/70 px-4 py-3 text-sm text-slate-600 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/60 dark:text-slate-300">
-            Elegí un evento para gestionar enlaces y sincronizar las carpetas.
-          </div>
-        )}
-
-        {/* Main Content Layout */}
-        <div className="flex flex-1 flex-col gap-6 pb-6 pt-4 xl:flex-row xl:items-start xl:gap-10">
-          <aside className="xl:w-[260px] xl:min-w-[250px] 2xl:w-[340px] 2xl:min-w-[320px] xl:shrink-0">
-            <div className="rounded-3xl border border-white/25 bg-white/80 p-3 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/60 xl:p-4">
-              <FolderTreePanel
-                folders={folders}
-                selectedFolderId={selectedFolderId}
-                onSelectFolder={handleSelectFolder}
-                onCreateFolder={handleCreateFolder}
-                isLoading={isLoadingFolders}
+          {/* 🚀 FASE 2: Banner de contexto de evento */}
+          {selectedEventId && (
+            <div className="rounded-3xl border border-white/20 bg-white/80 px-4 py-3 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/70">
+              <EventContextBanner
                 eventId={selectedEventId}
-                className="max-h-[calc(100vh-360px)] overflow-hidden xl:pr-1.5"
-                onOpenStudentManagement={() => setShowStudentManagement(true)}
-                onFolderAction={handleFolderAction}
-                clipboard={{
-                  hasData: Boolean(folderClipboard),
-                  sourceFolderId: folderClipboard?.folderId,
-                  sourceName: folderClipboard?.folderName,
-                }}
-                onPasteToRoot={() => handlePasteFolder(null)}
-                onOpenBatchStudentManagement={() =>
-                  setShowBatchStudentModal(true)
-                }
-                selectedEventName={
-                  eventsList.find((ev) => ev.id === selectedEventId)?.name ??
-                  null
-                }
+                onRemoveContext={handleRemoveEventContext}
+                compact={true}
               />
             </div>
-          </aside>
+          )}
+          {!selectedEventId && (
+            <div className="rounded-3xl border border-dashed border-white/30 bg-white/70 px-4 py-3 text-sm text-slate-600 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/60 dark:text-slate-300">
+              Elegí un evento para gestionar enlaces y sincronizar las carpetas.
+            </div>
+          )}
 
-          <div className="relative flex-1">
-            <div
-              className={cn(
-                'flex h-full min-h-[540px] flex-col rounded-3xl border border-white/25 bg-white/90 shadow-[0_25px_60px_-40px_rgba(15,23,42,0.55)] dark:border-slate-800/60 dark:bg-slate-950/70',
-                inspectorOpen ? 'xl:pr-[320px]' : ''
-              )}
-            >
-              {hasError ? (
-                <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-red-50 px-6 text-red-600 dark:bg-red-500/10">
-                  <AlertCircle className="h-12 w-12" />
-                  <div className="text-center">
-                    <h4 className="mb-1 text-lg font-medium">
-                      Error al cargar datos
-                    </h4>
-                    <p className="max-w-md text-sm text-red-700/90 dark:text-red-200">
-                      {errorMessage}
-                    </p>
-                  </div>
-                  <Button
-                    onClick={() => {
-                      queryClient.invalidateQueries({
-                        queryKey: ['optimized-folders'],
-                      });
-                      queryClient.invalidateQueries({
-                        queryKey: ['optimized-assets'],
-                      });
-                      egressMonitor.resetSession();
-                    }}
-                    variant="outline"
-                  >
-                    <RefreshCw className="mr-2 h-4 w-4" />
-                    Reintentar
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex h-full flex-col">
-                  <div className="relative flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white/90 px-4 py-3 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-300">
-                    <div className="flex items-center gap-2">
-                      <span className="font-medium text-slate-700 dark:text-slate-100">
-                        {eventsList.find((e) => e.id === selectedEventId)?.name ||
-                          'Sin evento'}
-                      </span>
-                      <span className="hidden text-slate-400 xl:inline">•</span>
-                      <span className="text-slate-500 dark:text-slate-300">
-                        {totalAssetsCount} fotos en vista
-                      </span>
+          {/* Main Content Layout */}
+          <div className="flex flex-1 flex-col gap-6 pb-6 pt-4 xl:flex-row xl:items-start xl:gap-10">
+            <aside className="xl:w-[260px] xl:min-w-[250px] 2xl:w-[340px] 2xl:min-w-[320px] xl:shrink-0">
+              <div className="rounded-3xl border border-white/25 bg-white/80 p-3 shadow-sm backdrop-blur dark:border-slate-800/60 dark:bg-slate-950/60 xl:p-4">
+                <FolderTreePanel
+                  folders={folders}
+                  selectedFolderId={selectedFolderId}
+                  onSelectFolder={handleSelectFolder}
+                  onCreateFolder={handleCreateFolder}
+                  isLoading={isLoadingFolders}
+                  eventId={selectedEventId}
+                  className="max-h-[calc(100vh-360px)] overflow-hidden xl:pr-1.5"
+                  onOpenStudentManagement={() => setShowStudentManagement(true)}
+                  onFolderAction={handleFolderAction}
+                  clipboard={{
+                    hasData: Boolean(folderClipboard),
+                    sourceFolderId: folderClipboard?.folderId,
+                    sourceName: folderClipboard?.folderName,
+                  }}
+                  onPasteToRoot={() => handlePasteFolder(null)}
+                  onOpenBatchStudentManagement={() =>
+                    setShowBatchStudentModal(true)
+                  }
+                  selectedEventName={
+                    eventsList.find((ev) => ev.id === selectedEventId)?.name ??
+                    null
+                  }
+                />
+              </div>
+            </aside>
+
+            <div className="relative flex-1">
+              <div
+                className={cn(
+                  'flex h-full min-h-[540px] flex-col rounded-3xl border border-white/25 bg-white/90 shadow-[0_25px_60px_-40px_rgba(15,23,42,0.55)] dark:border-slate-800/60 dark:bg-slate-950/70',
+                  inspectorOpen ? 'xl:pr-[320px]' : ''
+                )}
+              >
+                {hasError ? (
+                  <div className="flex flex-1 flex-col items-center justify-center gap-4 bg-red-50 px-6 text-red-600 dark:bg-red-500/10">
+                    <AlertCircle className="h-12 w-12" />
+                    <div className="text-center">
+                      <h4 className="mb-1 text-lg font-medium">
+                        Error al cargar datos
+                      </h4>
+                      <p className="max-w-md text-sm text-red-700/90 dark:text-red-200">
+                        {errorMessage}
+                      </p>
                     </div>
-                    <div className="flex flex-1 items-center gap-2 overflow-x-auto pr-8">
-                      <span className="text-slate-400">Jerarquía:</span>
-                      {breadcrumbItems.length > 0 ? (
-                        <div className="flex items-center gap-1">
-                          {breadcrumbItems.map((item, idx) => (
-                            <span
-                              key={item.id}
-                              className="flex items-center gap-1 text-slate-600 dark:text-slate-200"
-                            >
-                              <button
-                                onClick={() => handleSelectFolder(item.id)}
-                                className="text-blue-600 hover:underline dark:text-blue-400"
-                                title={item.name}
+                    <Button
+                      onClick={() => {
+                        queryClient.invalidateQueries({
+                          queryKey: ['optimized-folders'],
+                        });
+                        queryClient.invalidateQueries({
+                          queryKey: ['optimized-assets'],
+                        });
+                        egressMonitor.resetSession();
+                      }}
+                      variant="outline"
+                    >
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      Reintentar
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex h-full flex-col">
+                    <div className="relative flex flex-wrap items-center gap-2 border-b border-slate-200 bg-white/90 px-4 py-3 text-xs text-slate-500 dark:border-slate-800 dark:bg-slate-950/80 dark:text-slate-300">
+                      <div className="flex items-center gap-2">
+                        <span className="font-medium text-slate-700 dark:text-slate-100">
+                          {eventsList.find((e) => e.id === selectedEventId)?.name ||
+                            'Sin evento'}
+                        </span>
+                        <span className="hidden text-slate-400 xl:inline">•</span>
+                        <span className="text-slate-500 dark:text-slate-300">
+                          {totalAssetsCount} fotos en vista
+                        </span>
+                      </div>
+                      <div className="flex flex-1 items-center gap-2 overflow-x-auto pr-8">
+                        <span className="text-slate-400">Jerarquía:</span>
+                        {breadcrumbItems.length > 0 ? (
+                          <div className="flex items-center gap-1">
+                            {breadcrumbItems.map((item, idx) => (
+                              <span
+                                key={item.id}
+                                className="flex items-center gap-1 text-slate-600 dark:text-slate-200"
                               >
-                                {item.name}
-                              </button>
-                              {idx < breadcrumbItems.length - 1 && (
-                                <span className="text-slate-400">/</span>
-                              )}
-                            </span>
-                          ))}
-                        </div>
-                      ) : (
-                        <span className="font-medium text-slate-500">—</span>
-                      )}
+                                <button
+                                  onClick={() => handleSelectFolder(item.id)}
+                                  className="text-blue-600 hover:underline dark:text-blue-400"
+                                  title={item.name}
+                                >
+                                  {item.name}
+                                </button>
+                                {idx < breadcrumbItems.length - 1 && (
+                                  <span className="text-slate-400">/</span>
+                                )}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <span className="font-medium text-slate-500">—</span>
+                        )}
+                      </div>
+                      <div className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent dark:from-slate-950 md:hidden" />
+                      <div className="ml-auto flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => {
+                            try {
+                              navigator.clipboard.writeText(
+                                breadcrumbPath || ''
+                              );
+                              toast.success('Ruta copiada');
+                            } catch { }
+                          }}
+                          title="Copiar ruta"
+                          className="h-7 px-2 text-xs"
+                        >
+                          Copiar ruta
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={goUp}
+                          title="Subir un nivel"
+                          className="h-7 px-2 text-xs"
+                        >
+                          Subir
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={goToRoot}
+                          title="Ir a la raíz del evento"
+                          className="h-7 px-2 text-xs"
+                        >
+                          Ir a raíz
+                        </Button>
+                      </div>
                     </div>
-                    <div className="pointer-events-none absolute right-0 top-0 h-full w-8 bg-gradient-to-l from-white to-transparent dark:from-slate-950 md:hidden" />
-                    <div className="ml-auto flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => {
-                          try {
-                            navigator.clipboard.writeText(
-                              breadcrumbPath || ''
-                            );
-                            toast.success('Ruta copiada');
-                          } catch {}
-                        }}
-                        title="Copiar ruta"
-                        className="h-7 px-2 text-xs"
-                      >
-                        Copiar ruta
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={goUp}
-                        title="Subir un nivel"
-                        className="h-7 px-2 text-xs"
-                      >
-                        Subir
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={goToRoot}
-                        title="Ir a la raíz del evento"
-                        className="h-7 px-2 text-xs"
-                      >
-                        Ir a raíz
-                      </Button>
-                    </div>
-                  </div>
 
-                  <PhotoGridPanel
-                    assets={assets}
-                    selectedAssetIds={selectedAssetIds}
-                    onSelectionChange={handleAssetSelection}
-                    onSelectAll={handleSelectAll}
-                    onClearSelection={handleClearSelection}
-                    onCreateAlbum={() => setShowCreateShareModal(true)}
-                    onBulkDelete={handleBulkDelete}
-                    onBulkMove={handleBulkMove}
+                    <PhotoGridPanel
+                      assets={assets}
+                      selectedAssetIds={selectedAssetIds}
+                      onSelectionChange={handleAssetSelection}
+                      onSelectAll={handleSelectAll}
+                      onClearSelection={handleClearSelection}
+                      onCreateAlbum={() => setShowCreateShareModal(true)}
+                      onBulkDelete={handleBulkDelete}
+                      onBulkMove={handleBulkMove}
+                      folders={folders}
+                      currentFolderId={selectedFolderId}
+                      onLoadMore={handleLoadMore}
+                      hasMore={hasNextPage}
+                      isLoading={isLoadingAssets}
+                      isLoadingMore={isFetchingNextPage}
+                      albumTargetInfo={albumTargetInfo}
+                      totalCount={totalAssetsCount}
+                      isLoadingAllPages={isLoadingAllPages}
+                      className="h-full"
+                    />
+                  </div>
+                )}
+              </div>
+
+              <div
+                className={cn(
+                  'pointer-events-none absolute inset-y-4 right-0 z-30 hidden w-[300px] transition-all duration-200 xl:block',
+                  inspectorOpen
+                    ? 'pointer-events-auto translate-x-0 opacity-100'
+                    : 'translate-x-6 opacity-0'
+                )}
+              >
+                <div className="flex h-full flex-col gap-3">
+                  <div className="flex justify-end">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                      onClick={() => setIsInspectorCollapsed(true)}
+                      aria-label="Ocultar inspector"
+                    >
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </div>
+                  <InspectorPanel
+                    selectedAssets={selectedAssets}
                     folders={folders}
                     currentFolderId={selectedFolderId}
-                    onLoadMore={handleLoadMore}
-                    hasMore={hasNextPage}
-                    isLoading={isLoadingAssets}
-                    isLoadingMore={isFetchingNextPage}
+                    onBulkMove={handleBulkMove}
+                    onBulkDelete={handleBulkDelete}
+                    onCreateAlbum={handleCreateAlbum}
+                    egressMetrics={egressMetrics}
                     albumTargetInfo={albumTargetInfo}
-                    totalCount={totalAssetsCount}
-                    isLoadingAllPages={isLoadingAllPages}
-                    className="h-full"
+                    className="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
+                  />
+                </div>
+              </div>
+
+              {inspectorAvailable && (
+                <Button
+                  variant="secondary"
+                  size="sm"
+                  className={cn(
+                    'absolute bottom-6 right-6 hidden items-center gap-2 rounded-full px-4 shadow-sm transition-all duration-200 xl:flex',
+                    inspectorOpen
+                      ? 'pointer-events-none translate-y-6 opacity-0'
+                      : 'translate-y-0 opacity-100'
+                  )}
+                  onClick={() => setIsInspectorCollapsed(false)}
+                >
+                  <Eye className="h-4 w-4" /> Inspector
+                </Button>
+              )}
+
+              {inspectorAvailable && (
+                <div className="mt-4 xl:hidden">
+                  <InspectorPanel
+                    selectedAssets={selectedAssets}
+                    folders={folders}
+                    currentFolderId={selectedFolderId}
+                    onBulkMove={handleBulkMove}
+                    onBulkDelete={handleBulkDelete}
+                    onCreateAlbum={handleCreateAlbum}
+                    egressMetrics={egressMetrics}
+                    albumTargetInfo={albumTargetInfo}
+                    className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
                   />
                 </div>
               )}
             </div>
-
-            <div
-              className={cn(
-                'pointer-events-none absolute inset-y-4 right-0 z-30 hidden w-[300px] transition-all duration-200 xl:block',
-                inspectorOpen
-                  ? 'pointer-events-auto translate-x-0 opacity-100'
-                  : 'translate-x-6 opacity-0'
-              )}
-            >
-              <div className="flex h-full flex-col gap-3">
-                <div className="flex justify-end">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                    onClick={() => setIsInspectorCollapsed(true)}
-                    aria-label="Ocultar inspector"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
-                </div>
-                <InspectorPanel
-                  selectedAssets={selectedAssets}
-                  folders={folders}
-                  currentFolderId={selectedFolderId}
-                  onBulkMove={handleBulkMove}
-                  onBulkDelete={handleBulkDelete}
-                  onCreateAlbum={handleCreateAlbum}
-                  egressMetrics={egressMetrics}
-                  albumTargetInfo={albumTargetInfo}
-                  className="h-full overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-800 dark:bg-slate-900"
-                />
-              </div>
-            </div>
-
-            {inspectorAvailable && (
-              <Button
-                variant="secondary"
-                size="sm"
-                className={cn(
-                  'absolute bottom-6 right-6 hidden items-center gap-2 rounded-full px-4 shadow-sm transition-all duration-200 xl:flex',
-                  inspectorOpen
-                    ? 'pointer-events-none translate-y-6 opacity-0'
-                    : 'translate-y-0 opacity-100'
-                )}
-                onClick={() => setIsInspectorCollapsed(false)}
-              >
-                <Eye className="h-4 w-4" /> Inspector
-              </Button>
-            )}
-
-            {inspectorAvailable && (
-              <div className="mt-4 xl:hidden">
-                <InspectorPanel
-                  selectedAssets={selectedAssets}
-                  folders={folders}
-                  currentFolderId={selectedFolderId}
-                  onBulkMove={handleBulkMove}
-                  onBulkDelete={handleBulkDelete}
-                  onCreateAlbum={handleCreateAlbum}
-                  egressMetrics={egressMetrics}
-                  albumTargetInfo={albumTargetInfo}
-                  className="rounded-2xl border border-slate-200 bg-white shadow-sm dark:border-slate-800 dark:bg-slate-900"
-                />
-              </div>
-            )}
           </div>
         </div>
       </div>
-    </div>
 
       {/* Enhanced Drag Overlay */}
       <DragOverlay>
@@ -2679,7 +2694,7 @@ export default function PhotoAdmin({
                   draggedAssetData.preview_url ??
                   getPreviewUrl(
                     draggedAssetData.preview_path ||
-                      draggedAssetData.watermark_path,
+                    draggedAssetData.watermark_path,
                     draggedAssetData.original_path
                   )
                 }
@@ -3452,6 +3467,17 @@ export default function PhotoAdmin({
           </div>
         </div>
       )}
+
+
+      <BulkGalleryCreator
+        isOpen={showBulkCreator}
+        onClose={() => setShowBulkCreator(false)}
+        eventId={selectedEventId || ''}
+        onComplete={() => {
+          // Refresh folders
+          queryClient.invalidateQueries({ queryKey: ['optimized-folders'] });
+        }}
+      />
     </DndContext>
   );
 }

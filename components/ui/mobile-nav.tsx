@@ -17,7 +17,6 @@ import {
   Package,
   Camera,
   Upload,
-  Users,
   Settings,
   LogOut,
   ChevronRight,
@@ -26,7 +25,6 @@ import {
   Plus,
   User,
   QrCode,
-  BarChart3,
   Send,
   Eye,
   Clock,
@@ -118,7 +116,6 @@ export function MobileNav({
   const quickActions: QuickAction[] = [
     { icon: Upload, label: 'Subir', href: '/mockup/admin/upload', color: 'blue' },
     { icon: QrCode, label: 'QR', href: '/mockup/admin/qr', color: 'purple' },
-    { icon: BarChart3, label: 'Stats', href: '/mockup/admin/analytics', color: 'green' },
     { icon: Plus, label: 'Nuevo', href: '/mockup/admin/events/new', color: 'orange' },
   ];
 
@@ -156,11 +153,8 @@ export function MobileNav({
     { href: '/mockup/admin', icon: Home, label: 'Dashboard', color: 'blue' },
     { href: '/mockup/admin/events', icon: Calendar, label: 'Eventos', color: 'green' },
     { href: '/mockup/admin/photos', icon: Camera, label: 'Fotos', color: 'purple' },
-    { href: '/mockup/admin/upload', icon: Upload, label: 'Subir Fotos', color: 'blue' },
-    { href: '/mockup/admin/students', icon: Users, label: 'Estudiantes', color: 'cyan' },
-    { href: '/mockup/admin/orders', icon: Package, label: 'Pedidos', color: 'orange' },
     { href: '/mockup/admin/publish', icon: Send, label: 'Publicar', color: 'pink' },
-    { href: '/mockup/admin/analytics', icon: BarChart3, label: 'Análisis', color: 'indigo' },
+    { href: '/mockup/admin/orders', icon: Package, label: 'Pedidos', color: 'orange' },
     { href: '/mockup/admin/settings', icon: Settings, label: 'Configuración', color: 'gray' },
   ];
 

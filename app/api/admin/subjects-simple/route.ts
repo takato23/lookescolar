@@ -31,7 +31,7 @@ export const GET = withAuth(async (request: NextRequest) => {
     if (error) {
       console.error('Error fetching subjects:', error);
       return NextResponse.json(
-        { error: 'Error obteniendo alumnos' },
+        { error: 'Error obteniendo invitados' },
         { status: 500 }
       );
     }

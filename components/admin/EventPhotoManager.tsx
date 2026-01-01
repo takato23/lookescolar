@@ -70,8 +70,6 @@ import { useEventMetrics } from '@/hooks/useEventMetrics';
 import { StoreConfigPanel } from '@/components/admin/shared/StoreConfigPanel';
 import { ProductManagementPanel } from '@/components/admin/ProductManagementPanel';
 import { HierarchicalFolderTreeEnhanced } from '@/components/admin/HierarchicalFolderTreeEnhanced';
-import { ProfessionalShareModal } from '@/components/admin/ProfessionalShareModal';
-import { ShareScopeConfig } from '@/lib/services/share.service';
 import { usePhotoSelectionStore, selectionSelectors, selectionShallow } from '@/store/usePhotoSelectionStore';
 
 // Types
@@ -312,24 +310,6 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
   // UI state
   const [showAddLevelModal, setShowAddLevelModal] = useState(false);
   const [showStudentModal, setShowStudentModal] = useState(false);
-  const [shareModal, setShareModal] = useState<
-    null | {
-      id: string;
-      token: string;
-      type: 'event' | 'folder';
-      url: string;
-      galleryUrl?: string;
-      title: string;
-      description: string;
-      scopeConfig?: ShareScopeConfig;
-      expiresAt?: string | null;
-      isActive?: boolean;
-      allowDownload?: boolean;
-      allowComments?: boolean;
-      audiencesCount?: number;
-      staffContactsCount?: number;
-    }
-  >(null);
   const [bulkActionLoading, setBulkActionLoading] = useState(false);
   const [, setFolderActionLoading] = useState(false);
   const [showUploadInterface, setShowUploadInterface] = useState(false);
@@ -717,81 +697,16 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
   };
 
   const handleShareEvent = async () => {
-    try {
-      const res = await fetch('/api/share', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shareType: 'event', eventId }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data?.share?.shareUrl) {
-        throw new Error(data?.error || 'No se pudo generar el enlace de evento');
-      }
-      const shareUrl = (data.share.storeUrl as string) || (data.share.shareUrl as string);
-      
-      setShareModal({
-        id: data.share?.id || data.shareToken?.id || '',
-        token: data.share?.token || data.shareToken?.token || '',
-        type: 'event',
-        url: shareUrl,
-        galleryUrl: data.share?.shareUrl,
-        title: event?.name || 'Evento Escolar',
-        description: `${event?.location || 'Galería'} - ${event?.date || 'Evento de fotos'}`,
-        scopeConfig: data.share?.scopeConfig,
-        expiresAt: data.share?.expiresAt ?? null,
-        isActive: true,
-        allowDownload: data.share?.allowDownload ?? false,
-        allowComments: data.share?.allowComments ?? false,
-        audiencesCount: data.share?.audiencesCount ?? 0,
-        staffContactsCount: data.share?.staffContactsCount ?? undefined,
-      });
-    } catch (error) {
-      console.error('Error sharing event:', error);
-      try { (await import('sonner')).toast.error('No se pudo generar el enlace del evento'); } catch {}
-    }
+    router.push(`/admin/events/${eventId}/share?openWizard=1`);
   };
 
   const handleShareFolder = async (folderIdArg?: string) => {
-    try {
-      const folderToShare = folderIdArg || selectedFolderId;
-      if (!folderToShare) {
-        try { (await import('sonner')).toast.error('Selecciona una carpeta para compartir'); } catch {}
-        return;
-      }
-      const res = await fetch('/api/share', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ shareType: 'folder', folderId: folderToShare, eventId }),
-      });
-      const data = await res.json();
-      if (!res.ok || !data?.share?.shareUrl) {
-        throw new Error(data?.error || 'No se pudo generar el enlace de carpeta');
-      }
-      const shareUrl = (data.share.storeUrl as string) || (data.share.shareUrl as string);
-      
-      const folder = folders.find(f => f.id === folderToShare);
-      const folderName = folder?.name || 'Carpeta';
-      
-      setShareModal({
-        id: data.share?.id || data.shareToken?.id || '',
-        token: data.share?.token || data.shareToken?.token || '',
-        type: 'folder',
-        url: shareUrl,
-        galleryUrl: data.share?.shareUrl,
-        title: folderName,
-        description: `Álbum de fotos - ${event?.name || 'Evento'}`,
-        scopeConfig: data.share?.scopeConfig,
-        expiresAt: data.share?.expiresAt ?? null,
-        isActive: true,
-        allowDownload: data.share?.allowDownload ?? false,
-        allowComments: data.share?.allowComments ?? false,
-        audiencesCount: data.share?.audiencesCount ?? 0,
-        staffContactsCount: data.share?.staffContactsCount ?? undefined,
-      });
-    } catch (error) {
-      console.error('Error sharing folder:', error);
-      try { (await import('sonner')).toast.error('No se pudo generar el enlace de carpeta'); } catch {}
+    const folderToShare = folderIdArg || selectedFolderId;
+    if (!folderToShare) {
+      try { (await import('sonner')).toast.error('Selecciona una carpeta para compartir'); } catch {}
+      return;
     }
+    router.push(`/admin/events/${eventId}/share?openWizard=1`);
   };
 
   // Load event data on mount
@@ -1118,7 +1033,7 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             <div className="flex items-center gap-2">
               <Users className="h-4 w-4 text-gray-400" />
               <span className="text-gray-500 dark:text-gray-400">
-                {metrics?.folders?.familyFolders || event.stats?.totalSubjects || 0} familias
+                {metrics?.folders?.familyFolders || event.stats?.totalSubjects || 0} clientes
               </span>
             </div>
             <div className="flex items-center gap-2">
@@ -1634,7 +1549,9 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
               <div className="max-w-4xl mx-auto space-y-6">
                 <div>
                   <h3 className="text-xl font-medium text-foreground mb-2">Compartir</h3>
-                  <p className="text-gray-500 dark:text-gray-400">Genera enlaces públicos para compartir fotos con familias</p>
+                  <p className="text-gray-500 dark:text-gray-400">
+                    Genera enlaces públicos para compartir fotos con clientes e invitados
+                  </p>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -1766,34 +1683,6 @@ export default function EventPhotoManager({ eventId, initialEvent }: EventPhotoM
             </form>
           </div>
         </div>
-      )}
-
-      {shareModal && (
-        <ProfessionalShareModal
-          id={shareModal.id}
-          url={shareModal.url}
-          galleryUrl={shareModal.galleryUrl}
-          title={shareModal.title}
-          description={shareModal.description}
-          type={shareModal.type}
-          isOpen={true}
-          scopeConfig={shareModal.scopeConfig}
-          expiresAt={shareModal.expiresAt}
-          isActive={shareModal.isActive}
-          allowDownload={shareModal.allowDownload}
-          allowComments={shareModal.allowComments}
-          audiencesCount={shareModal.audiencesCount}
-          staffContactsCount={shareModal.staffContactsCount}
-          onLaunchWizard={() => {
-            setShareModal(null);
-            router.push(`/admin/events/${eventId}/share?openWizard=1`);
-          }}
-          onShareWithStaff={() => {
-            setShareModal(null);
-            router.push(`/admin/events/${eventId}/share?openWizard=1&view=staff`);
-          }}
-          onClose={() => setShareModal(null)} 
-        />
       )}
 
       {/* Student Manager Modal */}

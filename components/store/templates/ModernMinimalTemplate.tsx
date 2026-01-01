@@ -1,10 +1,12 @@
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
+import dynamic from 'next/dynamic';
 import { StoreSettings } from '@/lib/hooks/useStoreSettings';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 import {
   ShoppingCart,
   Heart,
@@ -14,13 +16,27 @@ import {
   X,
   Filter,
   Search,
-  CreditCard,
   ArrowRight,
-  Check,
   Download,
 } from 'lucide-react';
+import { toast } from 'sonner';
 import type { TemplateBaseProps } from '@/lib/types/folder-hierarchy-types';
 import { useTemplateFavorites } from '@/hooks/useTemplateFavorites';
+import { StoreCheckoutDialog } from '@/components/store/StoreCheckoutDialog';
+import { ProductOptionsSelector, type StoreProduct } from '@/components/store/ProductOptionsSelector';
+import { useUnifiedCartStore, type ProductOptions } from '@/lib/stores/unified-cart-store';
+import {
+  getGridClasses,
+  getPaletteTokens,
+  getTypographyPreset,
+  resolveStoreDesign
+} from '@/lib/store/store-design';
+import { PLACEHOLDER_IMAGES } from '@/lib/config/placeholder-images';
+
+const CanvasGlowBackground = dynamic(
+  () => import('./backgrounds/CanvasGlowBackground'),
+  { ssr: false, loading: () => null }
+);
 
 interface Photo {
   id: string;
@@ -43,6 +59,9 @@ interface ModernMinimalTemplateProps extends TemplateBaseProps {
   subject?: Subject;
   isPreselected?: boolean;
   totalPhotos?: number;
+  onLoadMorePhotos?: () => void;
+  hasMorePhotos?: boolean;
+  loadingMore?: boolean;
 }
 
 interface CartItem {
@@ -51,6 +70,8 @@ interface CartItem {
   productName: string;
   price: number;
   quantity: number;
+  photoUrl?: string;
+  options?: ProductOptions;
 }
 
 export function ModernMinimalTemplate({
@@ -62,7 +83,10 @@ export function ModernMinimalTemplate({
   onFolderNavigate: _onFolderNavigate,
   isNavigatingFolder: _isNavigatingFolder,
   isPreselected: _isPreselected = false,
-  totalPhotos: _totalPhotos = 0
+  totalPhotos: _totalPhotos = 0,
+  onLoadMorePhotos,
+  hasMorePhotos = false,
+  loadingMore = false,
 }: ModernMinimalTemplateProps) {
   const [selectedPhoto, setSelectedPhoto] = useState<Photo | null>(null);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -70,38 +94,139 @@ export function ModernMinimalTemplate({
   const [showCart, setShowCart] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
   const [showFilters, setShowFilters] = useState(false);
-  const [currentStep, setCurrentStep] = useState<'browse' | 'checkout' | 'success'>('browse');
+  const [checkoutOpen, setCheckoutOpen] = useState(false);
+
+  // Product Options Selector State
+  const [optionsSelectorOpen, setOptionsSelectorOpen] = useState(false);
+  const [selectedPhotoForOptions, setSelectedPhotoForOptions] = useState<Photo | null>(null);
+
+  // Unified Cart Store
+  const unifiedCart = useUnifiedCartStore();
+  const design = resolveStoreDesign(
+    settings.design ?? settings.theme_customization?.design ?? null
+  );
+  const palette = getPaletteTokens(design.color.palette);
+  const typography = getTypographyPreset(design.typography.preset);
+  const gridLayout = getGridClasses(design.grid);
+  const coverUrl = settings.banner_url || settings.logo_url || photos[0]?.url || PLACEHOLDER_IMAGES.heroes.studentPortrait;
+  const showCoverImage = design.cover.style !== 'none';
+  const showNavText = design.grid.nav === 'icons_text';
+
+  // Brand colors from config
+  const brandColors = {
+    primary: (settings as any)?.brand_colors?.primary || palette.accent,
+    secondary: (settings as any)?.brand_colors?.secondary || palette.accentSoft,
+    accent: (settings as any)?.brand_colors?.accent || palette.accent,
+  };
+  const heroLayout =
+    design.cover.style === 'center' || design.cover.style === 'joy'
+      ? 'grid-cols-1 text-center'
+      : 'md:grid-cols-[1fr_1.2fr] text-left';
+  const coverFrameClass = cn(
+    'relative overflow-hidden',
+    design.cover.style === 'frame' && 'rounded-3xl border-4',
+    design.cover.style === 'stripe' && 'rounded-2xl p-3',
+    design.cover.style === 'divider' && 'rounded-2xl border-l-4',
+    design.cover.variant === 'journal' && 'border border-dashed',
+    design.cover.variant === 'stamp' && 'border-2 border-dotted',
+    design.cover.variant === 'outline' && 'border',
+    design.cover.variant === 'border' && 'border-4',
+    design.cover.variant === 'album' && 'rounded-3xl shadow-lg',
+    design.cover.variant === 'cliff' && 'rounded-t-[2.5rem] rounded-b-2xl',
+    design.cover.variant === 'split' && 'rounded-2xl',
+    design.cover.variant === 'none' && 'rounded-2xl'
+  );
 
   const activeProducts = Object.entries(settings.products)
     .filter(([_, product]) => product.enabled)
     .map(([id, product]) => ({ id, ...product }));
 
-  const addToCart = useCallback((photoId: string, productId: string) => {
-    const product = activeProducts.find(p => p.id === productId);
-    if (!product) return;
+  // Convert activeProducts to StoreProduct format for ProductOptionsSelector
+  const storeProducts: StoreProduct[] = useMemo(() => {
+    return activeProducts.map(p => ({
+      id: p.id,
+      name: p.name,
+      type: (p as any).type === 'digital' ? 'digital' as const : 'physical' as const,
+      enabled: p.enabled,
+      price: p.price,
+      description: p.description,
+      options: {
+        sizes: (p as any).options?.sizes || ['10x15', '13x18', '15x21'],
+        formats: (p as any).options?.formats || ['Brillante', 'Mate'],
+        quality: (p as any).options?.quality || 'standard',
+      },
+    }));
+  }, [activeProducts]);
+
+  // Handler para abrir el selector de opciones
+  const handleOpenOptionsSelector = useCallback((photo: Photo) => {
+    setSelectedPhotoForOptions(photo);
+    setOptionsSelectorOpen(true);
+  }, []);
+
+  // Handler cuando se confirman las opciones
+  const handleOptionsConfirm = useCallback((options: ProductOptions, finalPrice: number) => {
+    if (!selectedPhotoForOptions) return;
+
+    const photo = selectedPhotoForOptions;
 
     setCart(prev => {
       const existingItem = prev.find(
-        item => item.photoId === photoId && item.productId === productId
+        item => item.photoId === photo.id &&
+                item.productId === options.productId &&
+                item.options?.size === options.size
       );
 
       if (existingItem) {
         return prev.map(item =>
-          item.photoId === photoId && item.productId === productId
+          item.photoId === photo.id &&
+          item.productId === options.productId &&
+          item.options?.size === options.size
             ? { ...item, quantity: item.quantity + 1 }
             : item
         );
       }
 
       return [...prev, {
-        photoId,
-        productId,
-        productName: product.name,
-        price: product.price,
+        photoId: photo.id,
+        productId: options.productId || '',
+        productName: options.productName || '',
+        price: finalPrice,
         quantity: 1,
+        photoUrl: photo.url,
+        options,
       }];
     });
-  }, [activeProducts]);
+
+    // Sync with unified cart
+    unifiedCart.addItem({
+      photoId: photo.id,
+      filename: photo.alt || photo.id,
+      price: finalPrice,
+      watermarkUrl: photo.url,
+      options: {
+        productId: options.productId,
+        productName: options.productName,
+        size: options.size,
+        format: options.format,
+        quality: options.quality,
+      },
+      metadata: {
+        context: 'family',
+        token,
+      },
+    });
+
+    toast.success(`${options.productName} agregado al carrito`);
+    setSelectedPhotoForOptions(null);
+  }, [selectedPhotoForOptions, token, unifiedCart]);
+
+  // addToCart now opens the options selector
+  const addToCart = useCallback((photoId: string, _productId: string) => {
+    const photo = photos.find(p => p.id === photoId);
+    if (!photo) return;
+    handleOpenOptionsSelector(photo);
+  }, [photos, handleOpenOptionsSelector]);
 
   const removeFromCart = useCallback((photoId: string, productId: string) => {
     setCart(prev => prev.filter(
@@ -149,135 +274,40 @@ export function ModernMinimalTemplate({
     );
   });
 
-  const handleCheckout = async () => {
-    setCurrentStep('checkout');
-    // Simulate checkout process
-    setTimeout(() => {
-      setCurrentStep('success');
-      setCart([]);
-    }, 2000);
+  const handleCheckout = () => {
+    if (cart.length === 0) return;
+    setShowCart(false);
+    setCheckoutOpen(true);
   };
 
-  if (currentStep === 'success') {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-green-50 to-emerald-50 flex items-center justify-center p-6">
-        <Card className="max-w-md w-full text-center shadow-2xl border-0">
-          <CardContent className="p-8">
-            <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Check className="h-8 w-8 text-green-600" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">
-              ¡Compra Exitosa!
-            </h2>
-            <p className="text-gray-600 mb-6">
-              Recibirás un email con los detalles de tu pedido y las fotos en alta calidad.
-            </p>
-            <Button 
-              onClick={() => setCurrentStep('browse')}
-              className="w-full bg-gray-900 hover:bg-gray-800 text-white"
-            >
-              Volver a la Galería
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  if (currentStep === 'checkout') {
-    return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center p-6">
-        <Card className="max-w-2xl w-full shadow-2xl border-0">
-          <CardContent className="p-8">
-            <div className="text-center mb-8">
-              <h2 className="text-2xl font-bold text-gray-900 mb-2">
-                Finalizar Compra
-              </h2>
-              <p className="text-gray-600">
-                Revisa tu pedido antes de continuar
-              </p>
-            </div>
-
-            <div className="space-y-4 mb-8">
-              {cart.map((item, index) => {
-                const photo = photos.find(p => p.id === item.photoId);
-                return (
-                  <div key={index} className="flex items-center space-x-4 p-4 bg-white rounded-xl border border-gray-100">
-                    {photo && (
-                      <div className="w-16 h-16 bg-gray-100 rounded-lg overflow-hidden">
-                        <img
-                          src={photo.url}
-                          alt="Preview"
-                          className="w-full h-full object-cover"
-                        />
-                      </div>
-                    )}
-                    <div className="flex-1">
-                      <p className="font-medium text-gray-900">
-                        {item.productName}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Cantidad: {item.quantity}
-                      </p>
-                    </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-gray-900">
-                        {formatPrice(item.price * item.quantity)}
-                      </p>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="border-t pt-6 mb-8">
-              <div className="flex justify-between items-center">
-                <span className="text-lg font-semibold text-gray-900">Total:</span>
-                <span className="text-2xl font-bold text-gray-900">
-                  {formatPrice(getTotalPrice())}
-                </span>
-              </div>
-            </div>
-
-            <div className="flex space-x-4">
-              <Button
-                variant="outline"
-                onClick={() => setCurrentStep('browse')}
-                className="flex-1 border-gray-200"
-              >
-                Volver
-              </Button>
-              <Button
-                onClick={handleCheckout}
-                className="flex-1 bg-gray-900 hover:bg-gray-800 text-white"
-              >
-                <CreditCard className="h-4 w-4 mr-2" />
-                Pagar con Mercado Pago
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
   return (
-    <div className="min-h-screen bg-white">
+    <div
+      className={cn('relative min-h-screen', typography.baseClass)}
+      style={{ backgroundColor: palette.background, color: palette.text }}
+    >
+      <CanvasGlowBackground className="-z-10 opacity-80" />
       {/* Elegant Header */}
-      <header className="sticky top-0 z-50 bg-white/95 backdrop-blur-sm border-b border-gray-100">
+      <header
+        className="sticky top-0 z-50 backdrop-blur-sm border-b"
+        style={{ backgroundColor: palette.surface, borderColor: palette.border }}
+      >
         <div className="max-w-7xl mx-auto px-6">
           <div className="flex items-center justify-between h-16">
             {/* Logo/Title */}
             <div className="flex items-center space-x-4">
-              <div className="w-8 h-8 bg-gray-900 rounded-lg flex items-center justify-center">
-                <span className="text-white font-bold text-sm">L</span>
-              </div>
+              {settings.logo_url ? (
+                <img src={settings.logo_url} alt="Logo" className="h-8 w-auto" />
+              ) : (
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ backgroundColor: brandColors.primary }}>
+                  <span className="text-white font-bold text-sm">L</span>
+                </div>
+              )}
               <div>
-                <h1 className="text-lg font-semibold text-gray-900">
-                  {settings.texts.hero_title}
+                <h1 className="text-lg font-semibold" style={{ color: palette.text }}>
+                  {settings.texts?.hero_title || subject?.name || 'Galería'}
                 </h1>
                 {subject && (
-                  <p className="text-sm text-gray-600">
+                  <p className="text-sm" style={{ color: palette.muted }}>
                     {subject.grade} {subject.section} - {subject.name}
                   </p>
                 )}
@@ -288,24 +318,27 @@ export function ModernMinimalTemplate({
             <div className="flex items-center space-x-3">
               <Button
                 variant="ghost"
-                size="sm"
+                size={showNavText ? 'sm' : 'icon'}
                 onClick={() => setShowFilters(!showFilters)}
-                className="hidden md:flex"
+                className={cn('hidden md:flex', showNavText && 'gap-2')}
               >
-                <Filter className="h-4 w-4 mr-2" />
-                Filtros
+                <Filter className="h-4 w-4" />
+                {showNavText && <span className="text-xs">Filtros</span>}
               </Button>
-              
+
               <Button
                 variant="ghost"
+                size={showNavText ? 'sm' : 'icon'}
                 onClick={() => setShowCart(!showCart)}
-                className="relative"
+                className={cn('relative', showNavText && 'gap-2')}
               >
                 <ShoppingCart className="h-5 w-5" />
+                {showNavText && <span className="text-xs">Carrito</span>}
                 {cart.length > 0 && (
-                  <Badge 
-                    variant="default" 
-                    className="absolute -top-2 -right-2 min-w-[20px] h-5 text-xs px-1 bg-gray-900"
+                  <Badge
+                    variant="default"
+                    className="absolute -top-2 -right-2 min-w-[20px] h-5 text-xs px-1"
+                    style={{ backgroundColor: brandColors.primary }}
                   >
                     {cart.reduce((sum, item) => sum + item.quantity, 0)}
                   </Badge>
@@ -343,14 +376,54 @@ export function ModernMinimalTemplate({
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-6 py-12">
         {/* Hero Section */}
-        <div className="text-center mb-16">
-          <h2 className="text-4xl font-light text-gray-900 mb-4">
-            {settings.texts.hero_subtitle}
-          </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-            Encuentra los mejores momentos de tu experiencia escolar. 
-            Fotos profesionales de alta calidad disponibles para descarga inmediata.
-          </p>
+        <div className={cn('grid items-center gap-8 mb-16', heroLayout)}>
+          <div className={cn('space-y-4', heroLayout.includes('text-center') ? 'mx-auto max-w-2xl' : '')}>
+            <div className={cn('text-xs uppercase tracking-[0.3em]', typography.headingClass)} style={{ color: palette.muted }}>
+              Colección escolar
+            </div>
+            <h2 className={cn('text-4xl font-light', typography.headingClass)}>
+              {settings.texts?.hero_title || subject?.name || 'Galería Fotográfica'}
+            </h2>
+            <p className="text-lg" style={{ color: palette.muted }}>
+              {settings.texts?.welcome_message || settings.texts?.hero_subtitle ||
+                'Encuentra los mejores momentos de tu experiencia escolar.'}
+            </p>
+          </div>
+
+          {showCoverImage && (
+            <div>
+              <div className={coverFrameClass} style={{ borderColor: palette.border }}>
+                {design.cover.variant === 'label' && (
+                  <div
+                    className="absolute left-4 top-4 rounded-full px-3 py-1 text-[10px] uppercase tracking-[0.3em]"
+                    style={{ backgroundColor: palette.surface, color: palette.text }}
+                  >
+                    Edición especial
+                  </div>
+                )}
+                {design.cover.variant === 'split' && (
+                  <div
+                    className="absolute inset-y-0 left-1/2 w-px"
+                    style={{ backgroundColor: palette.border }}
+                  />
+                )}
+                {coverUrl ? (
+                  <img
+                    src={coverUrl}
+                    alt="Portada"
+                    className="h-64 w-full object-cover"
+                  />
+                ) : (
+                  <div
+                    className="h-64 w-full"
+                    style={{
+                      backgroundImage: `linear-gradient(135deg, ${palette.accentSoft} 0%, ${palette.accent} 60%, ${palette.text} 100%)`,
+                    }}
+                  />
+                )}
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Stats */}
@@ -429,7 +502,7 @@ export function ModernMinimalTemplate({
             </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-6">
+          <div className={cn('grid', gridLayout.colsClass, gridLayout.gapClass)}>
             {filteredPhotos.map(photo => (
               <div
                 key={photo.id}
@@ -437,7 +510,7 @@ export function ModernMinimalTemplate({
                 onClick={() => setSelectedPhoto(photo)}
               >
                 <Card className="overflow-hidden border-0 shadow-sm hover:shadow-lg transition-all duration-300 group-hover:-translate-y-1">
-                  <div className="aspect-square relative">
+                  <div className={cn('relative', gridLayout.aspectClass)}>
                     <img
                       src={photo.url}
                       alt={photo.alt}
@@ -508,6 +581,17 @@ export function ModernMinimalTemplate({
               </div>
             ))}
           </div>
+          {hasMorePhotos && onLoadMorePhotos && (
+            <div className="mt-10 flex justify-center">
+              <Button
+                onClick={onLoadMorePhotos}
+                disabled={loadingMore}
+                className="bg-gray-900 hover:bg-gray-800 text-white"
+              >
+                {loadingMore ? 'Cargando...' : 'Cargar mas fotos'}
+              </Button>
+            </div>
+          )}
         </section>
       </main>
 
@@ -604,9 +688,10 @@ export function ModernMinimalTemplate({
                           {formatPrice(getTotalPrice())}
                         </span>
                       </div>
-                      <Button 
+                      <Button
                         onClick={handleCheckout}
-                        className="w-full bg-gray-900 hover:bg-gray-800 text-white h-12"
+                        className="w-full text-white h-12"
+                        style={{ backgroundColor: brandColors.primary }}
                       >
                         Proceder al Pago
                         <ArrowRight className="h-4 w-4 ml-2" />
@@ -620,9 +705,19 @@ export function ModernMinimalTemplate({
         </>
       )}
 
+      <StoreCheckoutDialog
+        open={checkoutOpen}
+        onOpenChange={setCheckoutOpen}
+        token={token}
+        settings={settings}
+        cartItems={cart}
+        photos={photos}
+        onOrderComplete={() => setCart([])}
+      />
+
       {/* Photo Detail Modal */}
       {selectedPhoto && (
-        <div 
+        <div
           className="fixed inset-0 bg-white z-50 overflow-y-auto"
           onClick={() => setSelectedPhoto(null)}
         >
@@ -658,7 +753,7 @@ export function ModernMinimalTemplate({
                 </div>
               </div>
 
-              <div 
+              <div
                 className="grid grid-cols-1 lg:grid-cols-3 gap-8"
                 onClick={(e) => e.stopPropagation()}
               >
@@ -673,41 +768,33 @@ export function ModernMinimalTemplate({
                   </Card>
                 </div>
 
-                {/* Products */}
+                {/* Products - Single CTA Button */}
                 <div className="space-y-6">
                   <div>
                     <h4 className="text-lg font-medium text-gray-900 mb-4">
-                      Selecciona un Producto
+                      Agregar al Carrito
                     </h4>
-                    <div className="space-y-4">
-                      {activeProducts.map(product => (
-                        <Card key={product.id} className="border-0 shadow-sm hover:shadow-md transition-shadow">
-                          <CardContent className="p-6">
-                            <div className="flex items-start justify-between mb-3">
-                              <h5 className="font-medium text-gray-900">
-                                {product.name}
-                              </h5>
-                              <span className="text-lg font-bold text-gray-900">
-                                {formatPrice(product.price)}
-                              </span>
-                            </div>
-                            <p className="text-sm text-gray-600 mb-4">
-                              {product.description}
-                            </p>
-                            <Button
-                              onClick={() => {
-                                addToCart(selectedPhoto.id, product.id);
-                                setShowCart(true);
-                              }}
-                              className="w-full bg-gray-900 hover:bg-gray-800 text-white"
-                            >
-                              <Plus className="h-4 w-4 mr-2" />
-                              Agregar al Carrito
-                            </Button>
-                          </CardContent>
-                        </Card>
-                      ))}
-                    </div>
+                    {activeProducts.length > 0 ? (
+                      <Button
+                        onClick={() => {
+                          const photoToAdd = selectedPhoto;
+                          setSelectedPhoto(null);
+                          setTimeout(() => {
+                            if (photoToAdd) {
+                              handleOpenOptionsSelector(photoToAdd);
+                            }
+                          }, 100);
+                        }}
+                        className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                      >
+                        <ShoppingCart className="h-4 w-4 mr-2" />
+                        Seleccionar opciones
+                      </Button>
+                    ) : (
+                      <p className="text-sm text-gray-500 text-center py-4">
+                        No hay productos disponibles
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
@@ -715,6 +802,20 @@ export function ModernMinimalTemplate({
           </div>
         </div>
       )}
+
+      {/* Product Options Selector Modal */}
+      <ProductOptionsSelector
+        open={optionsSelectorOpen}
+        onClose={() => {
+          setOptionsSelectorOpen(false);
+          setSelectedPhotoForOptions(null);
+        }}
+        onConfirm={handleOptionsConfirm}
+        products={storeProducts}
+        photoUrl={selectedPhotoForOptions?.url || ''}
+        photoName={selectedPhotoForOptions?.alt}
+        defaultProductId={storeProducts[0]?.id}
+      />
     </div>
   );
 }

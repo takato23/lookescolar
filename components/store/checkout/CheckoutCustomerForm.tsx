@@ -129,7 +129,7 @@ export function CheckoutCustomerForm({
         </div>
 
         <div className="space-y-2">
-          <Label htmlFor="studentName">Alumno/a *</Label>
+          <Label htmlFor="studentName">Invitado/a *</Label>
           <Input
             id="studentName"
             value={value.studentName}
@@ -247,4 +247,3 @@ export function CheckoutCustomerForm({
     </section>
   );
 }
-

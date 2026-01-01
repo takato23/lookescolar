@@ -19,7 +19,7 @@ export default function StudentsPage() {
     <div className="p-6">
       <Card>
         <CardHeader>
-          <CardTitle>Alumnos</CardTitle>
+          <CardTitle>Invitados</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -41,7 +41,7 @@ export default function StudentsPage() {
                 ))}
                 {rows.length === 0 && (
                   <tr>
-                    <td className="p-4 text-gray-500">Sin alumnos</td>
+                    <td className="p-4 text-gray-500">Sin invitados</td>
                   </tr>
                 )}
               </tbody>
@@ -52,4 +52,3 @@ export default function StudentsPage() {
     </div>
   );
 }
-

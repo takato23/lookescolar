@@ -1,0 +1,88 @@
+<svg width="1920" height="800" viewBox="0 0 1920 800" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient principal cálido estilo Pixieset -->
+    <linearGradient id="warmGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fef9f3"/>
+      <stop offset="30%" style="stop-color:#fdf4e8"/>
+      <stop offset="70%" style="stop-color:#f5e6d3"/>
+      <stop offset="100%" style="stop-color:#e8d5c4"/>
+    </linearGradient>
+
+    <!-- Overlay suave -->
+    <linearGradient id="overlayGradient" x1="0%" y1="100%" x2="0%" y2="0%">
+      <stop offset="0%" style="stop-color:rgba(0,0,0,0.15)"/>
+      <stop offset="100%" style="stop-color:rgba(0,0,0,0)"/>
+    </linearGradient>
+
+    <!-- Bokeh circles -->
+    <radialGradient id="bokeh1" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:rgba(255,215,157,0.4)"/>
+      <stop offset="100%" style="stop-color:rgba(255,215,157,0)"/>
+    </radialGradient>
+    <radialGradient id="bokeh2" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:rgba(255,182,193,0.3)"/>
+      <stop offset="100%" style="stop-color:rgba(255,182,193,0)"/>
+    </radialGradient>
+    <radialGradient id="bokeh3" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:rgba(173,216,230,0.25)"/>
+      <stop offset="100%" style="stop-color:rgba(173,216,230,0)"/>
+    </radialGradient>
+  </defs>
+
+  <!-- Fondo base -->
+  <rect width="1920" height="800" fill="url(#warmGradient)"/>
+
+  <!-- Bokeh effects para simular luz natural -->
+  <circle cx="1600" cy="150" r="200" fill="url(#bokeh1)"/>
+  <circle cx="1750" cy="300" r="150" fill="url(#bokeh2)"/>
+  <circle cx="1500" cy="400" r="180" fill="url(#bokeh3)"/>
+  <circle cx="200" cy="600" r="250" fill="url(#bokeh1)" opacity="0.5"/>
+  <circle cx="400" cy="200" r="120" fill="url(#bokeh2)" opacity="0.4"/>
+
+  <!-- Siluetas de estudiantes estilizadas -->
+  <g transform="translate(600, 250)">
+    <!-- Estudiante 1 -->
+    <ellipse cx="80" cy="380" rx="60" ry="20" fill="rgba(0,0,0,0.08)"/>
+    <circle cx="80" cy="80" r="55" fill="#c4a882"/>
+    <rect x="25" y="130" width="110" height="260" rx="30" fill="#6b8e6b"/>
+
+    <!-- Estudiante 2 -->
+    <ellipse cx="220" cy="360" rx="55" ry="18" fill="rgba(0,0,0,0.08)"/>
+    <circle cx="220" cy="60" r="50" fill="#d4a574"/>
+    <rect x="170" y="105" width="100" height="240" rx="28" fill="#8b7355"/>
+
+    <!-- Estudiante 3 (centro, más alto) -->
+    <ellipse cx="380" cy="400" rx="65" ry="22" fill="rgba(0,0,0,0.08)"/>
+    <circle cx="380" cy="50" r="58" fill="#a08060"/>
+    <rect x="320" y="100" width="120" height="290" rx="32" fill="#5d7a8c"/>
+
+    <!-- Estudiante 4 -->
+    <ellipse cx="540" cy="370" rx="58" ry="19" fill="rgba(0,0,0,0.08)"/>
+    <circle cx="540" cy="70" r="52" fill="#c9a87c"/>
+    <rect x="488" y="118" width="104" height="250" rx="29" fill="#9b6b6b"/>
+
+    <!-- Estudiante 5 -->
+    <ellipse cx="680" cy="385" rx="62" ry="21" fill="rgba(0,0,0,0.08)"/>
+    <circle cx="680" cy="85" r="56" fill="#b8956e"/>
+    <rect x="625" y="136" width="110" height="265" rx="30" fill="#7a8b6a"/>
+  </g>
+
+  <!-- Overlay sutil -->
+  <rect width="1920" height="800" fill="url(#overlayGradient)" opacity="0.3"/>
+
+  <!-- Área de texto con degradado -->
+  <rect x="0" y="0" width="650" height="800" fill="url(#warmGradient)" opacity="0.85"/>
+  <rect x="650" y="0" width="200" height="800">
+    <animate attributeName="opacity" values="0.85;0" dur="0.001s" fill="freeze"/>
+  </rect>
+
+  <!-- Línea decorativa -->
+  <line x1="80" y1="350" x2="250" y2="350" stroke="#c4a882" stroke-width="2"/>
+
+  <!-- Icono de cámara sutil -->
+  <g transform="translate(80, 380)" opacity="0.6">
+    <rect x="5" y="10" width="40" height="28" rx="4" stroke="#8b7355" stroke-width="2" fill="none"/>
+    <circle cx="25" cy="24" r="8" stroke="#8b7355" stroke-width="2" fill="none"/>
+    <rect x="15" y="6" width="20" height="6" rx="2" fill="#8b7355"/>
+  </g>
+</svg>

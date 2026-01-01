@@ -107,7 +107,7 @@ export function ProductGrid({ className }: ProductGridProps) {
       image:
         'https://images.unsplash.com/photo-1510166218561-8b0b8df7c887?crop=entropy&cs=srgb&fm=jpg&ixid=M3w3NTAwNDR8MHwxfHNlYXJjaHw0fHxmYW1pbHklMjBtb2JpbGUlMjBwaG9uZXxlbnwwfDJ8fGJsdWV8MTc1NjA3Nzg0OHww&ixlib=rb-4.1.0&q=85',
       title: 'Acceso',
-      subtitle: "Familiar 25'",
+      subtitle: "Clientes 25'",
       backgroundColor: 'navy' as const,
       imageAlt: 'Family mobile access - Photo by Kenny Eliason on Unsplash',
     },

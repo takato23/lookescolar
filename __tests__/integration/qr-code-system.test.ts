@@ -12,6 +12,8 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from '@/types/database';
+import { qrService } from '@/lib/services/qr.service';
+import { STUDENT_QR_PREFIX } from '@/lib/qr/format';
 
 const supabase = createClient<Database>(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -47,9 +49,7 @@ const QR_TEST_CONFIG = {
   ],
   // QR code patterns for testing
   qrPatterns: {
-    standard: 'STU-{year}{section}{number}-QR', // STU-1A001-QR
-    withSchool: 'SJ-{year}{section}{number}', // SJ-1A001
-    withChecksum: 'QR-{year}{section}{number}-{checksum}', // QR-1A001-X7
+    canonical: 'LKSTUDENT_<token>',
   },
 };
 
@@ -79,7 +79,7 @@ describe('QR Code System Integration Tests', () => {
       for (const student of testStudentsWithQR) {
         expect(student.qr_code).toBeTruthy();
         expect(student.qr_code.length).toBeGreaterThan(5);
-        expect(student.qr_code).toContain('STU-');
+        expect(student.qr_code).toContain('LKSTUDENT_');
       }
 
       // Verify QR codes are unique
@@ -93,25 +93,21 @@ describe('QR Code System Integration Tests', () => {
     });
 
     it('1.2 QR codes should follow naming convention patterns', async () => {
-      // Test different QR pattern validations
       const qrSamples = testStudentsWithQR.slice(0, 10);
 
       for (const student of qrSamples) {
         const qr = student.qr_code;
 
-        // Should start with STU- prefix
-        expect(qr).toMatch(/^STU-/);
+        // Should start with LKSTUDENT_ prefix
+        expect(qr).toMatch(/^LKSTUDENT_/);
 
-        // Should contain grade and section info
-        expect(qr).toContain(student.grade.replace('°', ''));
-        expect(qr).toContain(student.section);
-
-        // Should end with identifier
-        expect(qr).toMatch(/-QR$|QR$/);
+        // Should contain a token payload
+        const token = qr.replace(/^LKSTUDENT_/, '');
+        expect(token.length).toBeGreaterThanOrEqual(10);
 
         // Should be reasonable length (not too long/short)
-        expect(qr.length).toBeGreaterThanOrEqual(8);
-        expect(qr.length).toBeLessThanOrEqual(20);
+        expect(qr.length).toBeGreaterThanOrEqual(16);
+        expect(qr.length).toBeLessThanOrEqual(64);
       }
 
       console.log('✅ QR codes follow proper naming conventions');
@@ -681,7 +677,7 @@ describe('QR Code System Integration Tests', () => {
     it('5.1 Invalid QR codes should be handled gracefully', async () => {
       const invalidQRCodes = [
         'INVALID-QR-CODE',
-        'STU-NONEXISTENT-QR',
+        'LKSTUDENT_NONEXISTENT',
         'MALFORMED-QR',
         '', // Empty string
         null, // Null value
@@ -863,7 +859,6 @@ async function setupQRTestData() {
     const students = [];
     for (let i = 1; i <= courseData.students; i++) {
       const studentNumber = `${courseData.grade.replace('°', '')}${courseData.section}${i.toString().padStart(3, '0')}`;
-      const qrCode = `STU-${studentNumber}-QR`;
 
       students.push({
         event_id: testEventId,
@@ -872,7 +867,7 @@ async function setupQRTestData() {
         grade: courseData.grade,
         section: courseData.section,
         student_number: studentNumber,
-        qr_code: qrCode,
+        qr_code: null,
         active: true,
       });
     }
@@ -880,10 +875,25 @@ async function setupQRTestData() {
     const { data: createdStudents } = await supabase
       .from('students')
       .insert(students)
-      .select('id, name, qr_code, grade, section');
+      .select('id, name, grade, section');
 
-    testStudentIds.push(...createdStudents.map((s) => s.id));
-    testStudentsWithQR.push(...createdStudents);
+    const studentsWithQR = await Promise.all(
+      (createdStudents || []).map(async (student) => {
+        const qrResult = await qrService.generateStudentIdentificationQR(
+          testEventId,
+          student.id,
+          student.name,
+          course.id
+        );
+        return {
+          ...student,
+          qr_code: `${STUDENT_QR_PREFIX}${qrResult.token}`,
+        };
+      })
+    );
+
+    testStudentIds.push(...studentsWithQR.map((s) => s.id));
+    testStudentsWithQR.push(...studentsWithQR);
   }
 
   // Create test photos for QR detection

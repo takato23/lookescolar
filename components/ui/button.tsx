@@ -251,6 +251,20 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
 
     const Comp = asChild ? Slot : 'button';
 
+    if (asChild) {
+      return (
+        <Comp
+          ref={ref}
+          className={buttonClasses}
+          data-liquid-tone={config.tone}
+          data-liquid-variant={config.dataVariant}
+          {...props}
+        >
+          {children}
+        </Comp>
+      );
+    }
+
     return (
       <Comp
         ref={ref}
@@ -259,12 +273,12 @@ const Button = forwardRef<HTMLButtonElement, ButtonProps>(
         data-liquid-variant={config.dataVariant}
         {...(asChild
           ? {
-              'aria-disabled': disabled || loading,
-            }
+            'aria-disabled': disabled || loading,
+          }
           : {
-              disabled: disabled || loading,
-              ...(type ? { type } : {}),
-            })}
+            disabled: disabled || loading,
+            ...(type ? { type } : {}),
+          })}
         {...props}
       >
         {/* Liquid halo */}

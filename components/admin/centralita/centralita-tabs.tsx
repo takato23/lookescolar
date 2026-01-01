@@ -4,13 +4,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { PropsWithChildren, ReactNode, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
-export type CentralitaTabKey = "overview" | "folders" | "public" | "analytics" | "settings";
+export type CentralitaTabKey = "overview" | "folders" | "public";
 
 export default function CentralitaTabs({
   children,
   defaultTab = "overview",
-  showAdvanced = false,
-}: PropsWithChildren<{ defaultTab?: CentralitaTabKey; showAdvanced?: boolean }>) {
+}: PropsWithChildren<{ defaultTab?: CentralitaTabKey }>) {
   const router = useRouter();
   const sp = useSearchParams();
   const [activeTab, setActiveTab] = useState<CentralitaTabKey>(
@@ -49,12 +48,10 @@ export default function CentralitaTabs({
 
   return (
     <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as CentralitaTabKey)} className="w-full">
-      <TabsList className={`grid w-full ${showAdvanced ? 'grid-cols-5' : 'grid-cols-3'}`}>
+      <TabsList className="grid w-full grid-cols-3">
         <TabsTrigger value="overview">Centro de Control</TabsTrigger>
         <TabsTrigger value="folders">Carpetas</TabsTrigger>
         <TabsTrigger value="public">Galería Pública</TabsTrigger>
-        {showAdvanced && <TabsTrigger value="analytics">Analytics</TabsTrigger>}
-        {showAdvanced && <TabsTrigger value="settings">Configuración</TabsTrigger>}
       </TabsList>
       {/* Render panes as provided */}
       {Object.values(panels)}

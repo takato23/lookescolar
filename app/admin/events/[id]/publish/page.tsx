@@ -1,5 +1,5 @@
 // Server wrapper: fetch initial data for the event-scoped publish page
-import PublishClient from '@/app/admin/publish/PublishClient';
+import CleanPublishPage from '@/components/admin/publish/CleanPublishPage';
 
 export default async function EventScopedPublishPage({ params }: any) {
   const eventId = params.id;
@@ -60,5 +60,10 @@ export default async function EventScopedPublishPage({ params }: any) {
 
   const initialData = { folders, event };
 
-  return <PublishClient initialSelectedEventId={eventId} initialData={initialData} />;
+  return (
+    <CleanPublishPage
+      initialSelectedEventId={eventId}
+      initialData={initialData}
+    />
+  );
 }

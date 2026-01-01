@@ -1,6 +1,6 @@
 'use client';
 
-import { useRouter } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import { User } from '@supabase/supabase-js';
 import AdminHeader from '@/components/admin/AdminHeader';
@@ -24,6 +24,7 @@ import { AdminLayoutProvider, useAdminLayout } from '@/components/admin/admin-la
 import { cn } from '@/lib/utils';
 import '@/styles/admin-dark-mode-fixes.css';
 import '@/styles/dashboard-animations.css';
+import '@/styles/admin-contrast.css';
 import Script from 'next/script';
 
 export default function AdminLayout({
@@ -174,6 +175,7 @@ function AdminLayoutContent({
   useRealTimeNotifications();
   const { config } = useAdminLayout();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const pathname = usePathname();
 
   // Active design system (Clean design is the only active one)
   const USE_CLEAN_DESIGN = true; // Light mode Pixieset-inspired
@@ -274,7 +276,13 @@ function AdminLayoutContent({
 
               {/* Page Content */}
               <main className="flex-1 overflow-x-hidden">
-                <div className="clean-content">
+                <div
+                  className={cn(
+                    'clean-content',
+                    (pathname === '/admin' || pathname.startsWith('/admin/dashboard-pro')) &&
+                      'clean-content--dashboard'
+                  )}
+                >
                   {children}
                 </div>
               </main>

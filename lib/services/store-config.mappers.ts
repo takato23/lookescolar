@@ -1,4 +1,5 @@
 import { sanitizeInput, StoreConfig, StoreProduct, validateStoreConfig } from '@/lib/validations/store-config';
+import { DEFAULT_STORE_DESIGN, resolveStoreDesign } from '@/lib/store/store-design';
 
 type RawDbProducts = Record<string, any> | Array<any> | null | undefined;
 type RawPaymentMethods = Record<string, any> | Array<string> | null | undefined;
@@ -153,12 +154,14 @@ function deepClone<T>(value: T): T {
 export function getDefaultConfig(): StoreConfig {
   return {
     enabled: false,
+    template: 'pixieset',
     currency: 'ARS',
     tax_rate: 0,
     shipping_enabled: true,
     shipping_price: 50000,
     payment_methods: ['mercadopago'],
-    products: deepClone(BASE_PRODUCTS)
+    products: deepClone(BASE_PRODUCTS),
+    design: DEFAULT_STORE_DESIGN
   };
 }
 
@@ -282,8 +285,16 @@ export function convertDbToUiConfig(dbConfig: Record<string, any> | null | undef
     ? convertArrayProducts(productsField)
     : convertMapProducts(productsField || {});
 
+  const rawDesign =
+    dbConfig.design ??
+    dbConfig.theme_customization?.design ??
+    dbConfig.settings?.design ??
+    null;
+  const design = resolveStoreDesign(rawDesign);
+
   const config: StoreConfig = {
     enabled: dbConfig.enabled ?? false,
+    template: (dbConfig.template ?? dbConfig.settings?.template ?? 'pixieset') as StoreConfig['template'],
     products: uiProducts.length > 0 ? uiProducts : getDefaultConfig().products,
     currency: (dbConfig.currency ?? 'ARS') as StoreConfig['currency'],
     tax_rate: typeof dbConfig.tax_rate === 'number' ? dbConfig.tax_rate : Number(dbConfig.tax_rate) || 0,
@@ -292,7 +303,8 @@ export function convertDbToUiConfig(dbConfig: Record<string, any> | null | undef
       typeof dbConfig.shipping_price === 'number'
         ? dbConfig.shipping_price
         : Number(dbConfig.shipping_price) || 50000,
-    payment_methods: convertPaymentMethods(dbConfig.payment_methods)
+    payment_methods: convertPaymentMethods(dbConfig.payment_methods),
+    design
   };
 
   return validateStoreConfig(config);
@@ -325,12 +337,16 @@ export function convertUiToDbConfig(uiConfig: StoreConfig, eventId?: string | nu
   return {
     event_id: eventId ?? null,
     enabled: validated.enabled,
+    template: validated.template,
     currency: validated.currency,
     tax_rate: validated.tax_rate,
     shipping_enabled: validated.shipping_enabled,
     shipping_price: validated.shipping_price,
     products,
     payment_methods: paymentMethods,
+    theme_customization: {
+      design: validated.design ?? DEFAULT_STORE_DESIGN
+    },
     updated_at: new Date().toISOString()
   };
 }
@@ -345,6 +361,7 @@ export function mergeWithDefaults(config: Partial<StoreConfig> | undefined | nul
   return {
     ...base,
     ...config,
-    products: config.products && config.products.length > 0 ? deepClone(config.products) : deepClone(base.products)
+    products: config.products && config.products.length > 0 ? deepClone(config.products) : deepClone(base.products),
+    design: resolveStoreDesign(config.design)
   };
 }

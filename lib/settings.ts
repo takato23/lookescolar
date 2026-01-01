@@ -36,6 +36,10 @@ export const SettingsSchema = z.object({
   language: z.enum(['es', 'en']),
   autoCleanupPreviews: z.boolean(),
   cleanupPreviewDays: z.number(),
+  qrDefaultSize: z.enum(['small', 'medium', 'large']),
+  qrDetectionSensitivity: z.enum(['low', 'medium', 'high']),
+  qrAutoTagOnUpload: z.boolean(),
+  qrShowInGallery: z.boolean(),
 });
 export type AppSettings = z.infer<typeof SettingsSchema>;
 
@@ -86,6 +90,10 @@ export async function getAppSettings(force = false): Promise<AppSettings> {
       language: 'es',
       autoCleanupPreviews: false,
       cleanupPreviewDays: 30,
+      qrDefaultSize: 'medium',
+      qrDetectionSensitivity: 'medium',
+      qrAutoTagOnUpload: true,
+      qrShowInGallery: false,
     };
     cache = { value: defaults, timestamp: now };
     return defaults;
@@ -145,5 +153,9 @@ function mapDbToSettings(data: any): AppSettings {
     language: data.language,
     autoCleanupPreviews: data.auto_cleanup_previews,
     cleanupPreviewDays: data.cleanup_preview_days,
+    qrDefaultSize: data.qr_default_size,
+    qrDetectionSensitivity: data.qr_detection_sensitivity,
+    qrAutoTagOnUpload: data.qr_auto_tag_on_upload,
+    qrShowInGallery: data.qr_show_in_gallery,
   };
 }

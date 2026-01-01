@@ -37,13 +37,11 @@ import {
   ArrowUpDown,
   SortAsc,
   SortDesc,
-  BarChart3,
   Workflow,
   Shield,
 } from 'lucide-react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import OrderDetail from './orders/OrderDetail';
-import OrderAnalyticsDashboard from './orders/OrderAnalyticsDashboard';
 import WorkflowManagementDashboard from './orders/WorkflowManagementDashboard';
 import SecurityAuditDashboard from './orders/SecurityAuditDashboard';
 import { Badge } from '@/components/ui/badge';
@@ -637,14 +635,10 @@ export default function OrderManager() {
 
   return (
     <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-      <TabsList className="grid w-full grid-cols-5">
+      <TabsList className="grid w-full grid-cols-4">
         <TabsTrigger value="orders" className="gap-2">
           <Package className="h-4 w-4" />
           Orders
-        </TabsTrigger>
-        <TabsTrigger value="analytics" className="gap-2">
-          <BarChart3 className="h-4 w-4" />
-          Analytics
         </TabsTrigger>
         <TabsTrigger value="workflows" className="gap-2">
           <Settings className="h-4 w-4" />
@@ -974,7 +968,7 @@ export default function OrderManager() {
                                           ? 'Estudiante'
                                           : order.subject.type === 'couple'
                                             ? 'Pareja'
-                                            : 'Familia'}
+                                            : 'Cliente'}
                                       </span>
                                     </div>
                                   )}
@@ -1185,10 +1179,6 @@ export default function OrderManager() {
             onStatusUpdate={updateOrderStatus}
           />
         </div>
-      </TabsContent>
-
-      <TabsContent value="analytics" className="mt-6">
-        <OrderAnalyticsDashboard />
       </TabsContent>
 
       <TabsContent value="workflows" className="mt-6">

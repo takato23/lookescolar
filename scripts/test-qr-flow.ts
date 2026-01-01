@@ -236,8 +236,8 @@ class QRWorkflowTester {
 
     try {
       for (const student of this.testStudents) {
-        // Generate QR in expected format: STUDENT:ID:NAME:EVENT_ID
-        student.qrCode = `STUDENT:${student.id}:${student.name}:${this.testEventId}`;
+        const token = crypto.randomUUID().replace(/-/g, '');
+        student.qrCode = `LKSTUDENT_${token}`;
       }
 
       this.results.details.qrCodesGenerated = this.testStudents.length;

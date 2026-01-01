@@ -26,6 +26,10 @@ import {
   SECURITY_CONSTANTS,
 } from '@/lib/security/validation';
 import { FreeTierOptimizer } from '@/lib/services/free-tier-optimizer';
+import { getQrTaggingStatus } from '@/lib/qr/feature';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
+import { getAppSettings } from '@/lib/settings';
+import { buildQrDetectionOptions } from '@/lib/qr/settings';
 
 // Configure runtime for server-side processing
 export const runtime = 'nodejs';
@@ -65,8 +69,7 @@ export const POST = RateLimitMiddleware.withRateLimit(
       SecurityLogger.logResourceAccess('photo_upload', authContext, request);
 
       // Verificar IP y User-Agent
-      const ip =
-        request.ip ?? request.headers.get('x-forwarded-for') ?? 'unknown';
+      const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
       if (!SecurityValidator.isAllowedIP(ip)) {
         SecurityLogger.logSecurityEvent(
           'blocked_ip_access',
@@ -170,6 +173,20 @@ export const POST = RateLimitMiddleware.withRateLimit(
           { status: 403 }
         );
       }
+
+      const { tenantId } = resolveTenantFromHeaders(request.headers);
+      const qrFeature = await getQrTaggingStatus({
+        supabase,
+        tenantId,
+        eventId,
+      });
+      const appSettings = await getAppSettings();
+      const qrAutoTagOnUpload = appSettings.qrAutoTagOnUpload ?? true;
+      const detectionOptions = buildQrDetectionOptions({
+        sensitivity: appSettings.qrDetectionSensitivity,
+        maxWidth: 1920,
+        maxHeight: 1080,
+      });
 
       const event = eventData;
 
@@ -383,45 +400,43 @@ export const POST = RateLimitMiddleware.withRateLimit(
           let detectedQRCode = null;
           let detectedStudentId = null;
 
-          try {
-            const qrSvc = await getQrService();
-            const qrResults = await qrSvc.detectQRCodesInImage(
-              processed.source.buffer,
-              eventId,
-              {
-                maxWidth: 1920,
-                maxHeight: 1080,
-                enhanceContrast: true,
+          if (qrFeature.enabled && qrAutoTagOnUpload) {
+            try {
+              const qrSvc = await getQrService();
+              const qrResults = await qrSvc.detectQRCodesInImage(
+                processed.source.buffer,
+                eventId,
+                detectionOptions
+              );
+
+              if (qrResults.length > 0) {
+                // Use the first detected QR code with highest confidence
+                const topQR = qrResults[0];
+                detectedQRCode = topQR.data?.id || null;
+                detectedStudentId = topQR.data?.studentId || null;
+
+                SecurityLogger.logSecurityEvent('qr_detected_in_photo', {
+                  requestId,
+                  filename: originalName,
+                  qrCodeId: detectedQRCode,
+                  studentId: detectedStudentId?.substring(0, 8) + '***',
+                  confidence: topQR.confidence,
+                  eventId,
+                });
               }
-            );
-
-            if (qrResults.length > 0) {
-              // Use the first detected QR code with highest confidence
-              const topQR = qrResults[0];
-              detectedQRCode = topQR.data?.id || null;
-              detectedStudentId = topQR.data?.studentId || null;
-
-              SecurityLogger.logSecurityEvent('qr_detected_in_photo', {
-                requestId,
-                filename: originalName,
-                qrCodeId: detectedQRCode,
-                studentId: detectedStudentId?.substring(0, 8) + '***',
-                confidence: topQR.confidence,
-                eventId,
-              });
+            } catch (qrError: any) {
+              // QR detection failure shouldn't block photo upload
+              SecurityLogger.logSecurityEvent(
+                'qr_detection_failed',
+                {
+                  requestId,
+                  filename: originalName,
+                  error: qrError.message,
+                  eventId,
+                },
+                'warn'
+              );
             }
-          } catch (qrError: any) {
-            // QR detection failure shouldn't block photo upload
-            SecurityLogger.logSecurityEvent(
-              'qr_detection_failed',
-              {
-                requestId,
-                filename: originalName,
-                error: qrError.message,
-                eventId,
-              },
-              'warn'
-            );
           }
 
           // Guardar en base de datos (only preview path, no original storage)

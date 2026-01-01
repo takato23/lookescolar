@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useState, useTransition } from 'react';
+import { useEffect, useState, useTransition, useCallback } from 'react';
 import { useParams } from 'next/navigation';
+import Image from 'next/image';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Switch } from '@/components/ui/switch';
@@ -12,7 +13,10 @@ import { toast } from 'sonner';
 import { updateEventSettings, type EventSettings } from '../actions';
 import DesignPanel from '@/components/admin/DesignPanel';
 import GalleryConfigPanel from '@/components/admin/GalleryConfigPanel';
+import { StoreConfigPanel } from '@/components/admin/shared/StoreConfigPanel';
 import { computePhotoAdminUrl } from '@/lib/routes/admin';
+import { Check, ImageIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 const defaults: EventSettings = {
   general: { showOnHomepage: true, location: '' },
@@ -21,30 +25,92 @@ const defaults: EventSettings = {
   store: { enabled: false, priceSheetId: '', showInStore: false },
 };
 
+type EventPhoto = {
+  id: string;
+  storage_path: string | null;
+  preview_url?: string;
+};
+
 export default function SettingsPage() {
   const { id } = useParams<{ id: string }>();
   const [settings, setSettings] = useState<EventSettings>(defaults);
   const [saving, startSaving] = useTransition();
   const [event, setEvent] = useState<any>(null);
+  const [photos, setPhotos] = useState<EventPhoto[]>([]);
+  const [coverPhotoId, setCoverPhotoId] = useState<string | null>(null);
+  const [loadingCover, setLoadingCover] = useState(false);
 
   const general = settings.general ?? { ...defaults.general };
   const privacy = settings.privacy ?? { ...defaults.privacy };
   const download = settings.download ?? { ...defaults.download };
   const store = settings.store ?? { ...defaults.store };
 
+  // Load event data and photos
   useEffect(() => {
     (async () => {
+      // Load event
       let res = await fetch(`/api/admin/events/${id}`, { cache: 'no-store' });
       if (!res.ok) {
         res = await fetch(`/api/admin/events?id=${id}`, { cache: 'no-store' });
       }
       const json = await res.json();
-      setEvent(json.event || json);
+      const eventData = json.event || json;
+      setEvent(eventData);
       if (json.event?.settings)
         setSettings((s) => ({ ...s, ...json.event.settings }));
       if (json.settings) setSettings((s) => ({ ...s, ...json.settings }));
+
+      // Get cover photo from metadata
+      const metadata = eventData?.metadata || {};
+      if (metadata.cover_photo_id) {
+        setCoverPhotoId(metadata.cover_photo_id);
+      }
+
+      // Load photos for cover selection
+      try {
+        const photosRes = await fetch(`/api/admin/events/${id}/photos?limit=12`, { cache: 'no-store' });
+        if (photosRes.ok) {
+          const photosJson = await photosRes.json();
+          setPhotos(photosJson.photos || photosJson.data || []);
+        }
+      } catch (e) {
+        console.warn('Could not load photos for cover selection');
+      }
     })();
   }, [id]);
+
+  // Set cover photo
+  const setCoverPhoto = useCallback(async (photoId: string) => {
+    setLoadingCover(true);
+    try {
+      const res = await fetch(`/api/admin/events/${id}/cover`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ photo_id: photoId }),
+      });
+      if (res.ok) {
+        setCoverPhotoId(photoId);
+        toast.success('Foto de portada actualizada');
+      } else {
+        toast.error('Error al establecer foto de portada');
+      }
+    } catch (e) {
+      toast.error('Error al establecer foto de portada');
+    } finally {
+      setLoadingCover(false);
+    }
+  }, [id]);
+
+  // Build preview URL from storage_path
+  const getPhotoPreviewUrl = (photo: EventPhoto) => {
+    if (photo.preview_url) return photo.preview_url;
+    if (!photo.storage_path) return null;
+    const filename = photo.storage_path.split('/').pop();
+    if (!filename) return null;
+    const baseName = filename.replace(/\.[^.]+$/, '');
+    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+    return `${supabaseUrl}/storage/v1/object/public/photos/previews/${baseName}_preview.webp`;
+  };
 
   const save = () =>
     startSaving(async () => {
@@ -81,46 +147,110 @@ export default function SettingsPage() {
           <TabsTrigger value="general">General</TabsTrigger>
           <TabsTrigger value="privacy">Privacy</TabsTrigger>
           <TabsTrigger value="download">Download</TabsTrigger>
-          <TabsTrigger value="store">Store</TabsTrigger>
+          <TabsTrigger value="store">Tienda</TabsTrigger>
           <TabsTrigger value="design">Design</TabsTrigger>
           <TabsTrigger value="gallery">Gallery</TabsTrigger>
         </TabsList>
 
         <TabsContent value="general">
-          <Card>
-            <CardHeader>
-              <CardTitle>General</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Show on Homepage</Label>
-                <Switch
-                  checked={Boolean(general.showOnHomepage)}
-                  onCheckedChange={(v) =>
-                    setSettings((s) => ({
-                      ...s,
-                      general: { ...(s.general ?? {}), showOnHomepage: v },
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Location</Label>
-                <Input
-                  value={general.location || ''}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      general: {
-                        ...(s.general ?? {}),
-                        location: e.target.value,
-                      },
-                    }))
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <div className="space-y-6">
+            {/* Cover Photo Selection */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Foto de Portada</CardTitle>
+                <CardDescription>
+                  Selecciona la foto principal que aparecerá en el listado de eventos
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                {photos.length > 0 ? (
+                  <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3">
+                    {photos.slice(0, 12).map((photo) => {
+                      const previewUrl = getPhotoPreviewUrl(photo);
+                      const isSelected = coverPhotoId === photo.id;
+                      return (
+                        <button
+                          key={photo.id}
+                          type="button"
+                          disabled={loadingCover}
+                          onClick={() => setCoverPhoto(photo.id)}
+                          className={cn(
+                            'relative aspect-square rounded-lg overflow-hidden border-2 transition-all hover:scale-105',
+                            isSelected
+                              ? 'border-violet-500 ring-2 ring-violet-500/30'
+                              : 'border-transparent hover:border-gray-300'
+                          )}
+                        >
+                          {previewUrl ? (
+                            <Image
+                              src={previewUrl}
+                              alt="Foto del evento"
+                              fill
+                              className="object-cover"
+                              sizes="100px"
+                            />
+                          ) : (
+                            <div className="flex items-center justify-center h-full bg-gray-100">
+                              <ImageIcon className="w-6 h-6 text-gray-400" />
+                            </div>
+                          )}
+                          {isSelected && (
+                            <div className="absolute inset-0 bg-violet-500/20 flex items-center justify-center">
+                              <div className="bg-violet-500 rounded-full p-1">
+                                <Check className="w-4 h-4 text-white" />
+                              </div>
+                            </div>
+                          )}
+                        </button>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <div className="text-center py-8 text-gray-500">
+                    <ImageIcon className="w-12 h-12 mx-auto mb-2 text-gray-300" />
+                    <p>No hay fotos para seleccionar como portada</p>
+                    <p className="text-sm">Sube fotos al evento primero</p>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* General Settings */}
+            <Card>
+              <CardHeader>
+                <CardTitle>General</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <Label>Show on Homepage</Label>
+                  <Switch
+                    checked={Boolean(general.showOnHomepage)}
+                    onCheckedChange={(v) =>
+                      setSettings((s) => ({
+                        ...s,
+                        general: { ...(s.general ?? {}), showOnHomepage: v },
+                      }))
+                    }
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label>Location</Label>
+                  <Input
+                    value={general.location || ''}
+                    onChange={(e) =>
+                      setSettings((s) => ({
+                        ...s,
+                        general: {
+                          ...(s.general ?? {}),
+                          location: e.target.value,
+                        },
+                      }))
+                    }
+                  />
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
 
         <TabsContent value="design">
@@ -241,52 +371,7 @@ export default function SettingsPage() {
         </TabsContent>
 
         <TabsContent value="store">
-          <Card>
-            <CardHeader>
-              <CardTitle>Store</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="flex items-center justify-between">
-                <Label>Enable store</Label>
-                <Switch
-                  checked={Boolean(store.enabled)}
-                  onCheckedChange={(v) =>
-                    setSettings((s) => ({
-                      ...s,
-                      store: { ...(s.store ?? {}), enabled: v },
-                    }))
-                  }
-                />
-              </div>
-              <div className="space-y-2">
-                <Label>Price Sheet ID</Label>
-                <Input
-                  value={store.priceSheetId || ''}
-                  onChange={(e) =>
-                    setSettings((s) => ({
-                      ...s,
-                      store: {
-                        ...(s.store ?? {}),
-                        priceSheetId: e.target.value,
-                      },
-                    }))
-                  }
-                />
-              </div>
-              <div className="flex items-center justify-between">
-                <Label>Show in Store</Label>
-                <Switch
-                  checked={Boolean(store.showInStore)}
-                  onCheckedChange={(v) =>
-                    setSettings((s) => ({
-                      ...s,
-                      store: { ...(s.store ?? {}), showInStore: v },
-                    }))
-                  }
-                />
-              </div>
-            </CardContent>
-          </Card>
+          <StoreConfigPanel mode="event" eventId={id} />
         </TabsContent>
 
         <TabsContent value="gallery">

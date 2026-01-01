@@ -1,0 +1,619 @@
+{
+  "config": {
+    "configFile": "/Users/santiagobalosky/LookEscolar-2/playwright.config.ts",
+    "rootDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+    "forbidOnly": false,
+    "fullyParallel": true,
+    "globalSetup": "/Users/santiagobalosky/LookEscolar-2/__tests__/global-setup.ts",
+    "globalTeardown": "/Users/santiagobalosky/LookEscolar-2/__tests__/global-teardown.ts",
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        {
+          "outputFolder": "test-reports/playwright-report"
+        }
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-reports/playwright-results.json"
+        }
+      ],
+      [
+        "list",
+        null
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "accessibility",
+        "name": "accessibility",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/accessibility-comprehensive.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "responsive-desktop",
+        "name": "responsive-desktop",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/responsive-design.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "responsive-tablet",
+        "name": "responsive-tablet",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/responsive-design.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "responsive-mobile",
+        "name": "responsive-mobile",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/responsive-design.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "workflows",
+        "name": "workflows",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/user-journey-workflows.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "performance",
+        "name": "performance",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/performance-web-vitals.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "chrome",
+        "name": "chrome",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/cross-browser-compatibility.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "firefox",
+        "name": "firefox",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/cross-browser-compatibility.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "safari",
+        "name": "safari",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/cross-browser-compatibility.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "visual-desktop",
+        "name": "visual-desktop",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/visual-regression.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "visual-mobile",
+        "name": "visual-mobile",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/visual-regression.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "error-handling",
+        "name": "error-handling",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/error-handling-edge-cases.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "mobile-touch",
+        "name": "mobile-touch",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/responsive-design.test.ts",
+          "**/user-journey-workflows.test.ts",
+          "**/error-handling-edge-cases.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "tablet",
+        "name": "tablet",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/responsive-design.test.ts",
+          "**/user-journey-workflows.test.ts"
+        ],
+        "timeout": 30000
+      },
+      {
+        "outputDir": "/Users/santiagobalosky/LookEscolar-2/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "actualWorkers": 1
+        },
+        "id": "e2e",
+        "name": "e2e",
+        "testDir": "/Users/santiagobalosky/LookEscolar-2/__tests__",
+        "testIgnore": [],
+        "testMatch": [
+          "**/e2e/**/*.test.ts"
+        ],
+        "timeout": 30000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.55.0",
+    "workers": 1,
+    "webServer": {
+      "command": "npm run dev",
+      "port": 3000,
+      "reuseExistingServer": true,
+      "timeout": 120000
+    }
+  },
+  "suites": [
+    {
+      "title": "e2e/photo-library-public-share.test.ts",
+      "file": "e2e/photo-library-public-share.test.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "Event Photo Library - Public Sharing Workflow",
+          "file": "e2e/photo-library-public-share.test.ts",
+          "line": 67,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "Share Link Generation (Admin)",
+              "file": "e2e/photo-library-public-share.test.ts",
+              "line": 70,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should publish folder and generate share link",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "e2e",
+                      "projectName": "e2e",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "timedOut",
+                          "duration": 32497,
+                          "error": {
+                            "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m",
+                            "stack": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n    at /Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts:68:10",
+                            "location": {
+                              "file": "/Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts",
+                              "column": 10,
+                              "line": 68
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 66 |\u001b[39m\n \u001b[90m 67 |\u001b[39m   test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Share Link Generation (Admin)'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 68 |\u001b[39m     test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 69 |\u001b[39m       \u001b[36mawait\u001b[39m loginAsAdmin(page)\u001b[33m;\u001b[39m\n \u001b[90m 70 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 71 |\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts",
+                                "column": 10,
+                                "line": 68
+                              },
+                              "message": "\u001b[31mTest timeout of 30000ms exceeded while running \"beforeEach\" hook.\u001b[39m\n\n\u001b[0m \u001b[90m 66 |\u001b[39m\n \u001b[90m 67 |\u001b[39m   test\u001b[33m.\u001b[39mdescribe(\u001b[32m'Share Link Generation (Admin)'\u001b[39m\u001b[33m,\u001b[39m () \u001b[33m=>\u001b[39m {\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 68 |\u001b[39m     test\u001b[33m.\u001b[39mbeforeEach(\u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\n \u001b[90m    |\u001b[39m          \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 69 |\u001b[39m       \u001b[36mawait\u001b[39m loginAsAdmin(page)\u001b[33m;\u001b[39m\n \u001b[90m 70 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 71 |\u001b[39m\u001b[0m\n\u001b[2m    at /Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts:68:10\u001b[22m"
+                            },
+                            {
+                              "location": {
+                                "file": "/Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts",
+                                "column": 14,
+                                "line": 17
+                              },
+                              "message": "Error: page.waitForSelector: Test timeout of 30000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('.clean-page-title, .admin-dashboard, [data-testid=\"admin-dashboard\"]') to be visible\u001b[22m\n\n\n\u001b[0m \u001b[90m 15 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclick(\u001b[32m'button[type=\"submit\"]'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 16 |\u001b[39m   \u001b[90m// Wait for admin dashboard or common element\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 17 |\u001b[39m   \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mwaitForSelector(\u001b[32m'.clean-page-title, .admin-dashboard, [data-testid=\"admin-dashboard\"]'\u001b[39m\u001b[33m,\u001b[39m {\n \u001b[90m    |\u001b[39m              \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 18 |\u001b[39m     timeout\u001b[33m:\u001b[39m \u001b[35m30000\u001b[39m\u001b[33m,\u001b[39m\n \u001b[90m 19 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 20 |\u001b[39m }\u001b[0m\n\u001b[2m    at loginAsAdmin (/Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts:17:14)\u001b[22m\n\u001b[2m    at /Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts:69:7\u001b[22m"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-24T14:47:22.557Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/santiagobalosky/LookEscolar-2/test-results/e2e-photo-library-public-s-96fbf-der-and-generate-share-link-e2e/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/santiagobalosky/LookEscolar-2/test-results/e2e-photo-library-public-s-96fbf-der-and-generate-share-link-e2e/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/santiagobalosky/LookEscolar-2/test-results/e2e-photo-library-public-s-96fbf-der-and-generate-share-link-e2e/error-context.md"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts",
+                            "column": 10,
+                            "line": 68
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "91005434eab9458c4973-3abdfd68bde38ec6e42a",
+                  "file": "e2e/photo-library-public-share.test.ts",
+                  "line": 76,
+                  "column": 5
+                }
+              ]
+            },
+            {
+              "title": "Public Share Access",
+              "file": "e2e/photo-library-public-share.test.ts",
+              "line": 93,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should access public gallery directly",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "e2e",
+                      "projectName": "e2e",
+                      "results": [
+                        {
+                          "workerIndex": 1,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 9740,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  locator('text=Todas').first()\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Todas').first()\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  locator('text=Todas').first()\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Todas').first()\u001b[22m\n\n    at /Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts:114:56",
+                            "location": {
+                              "file": "/Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts",
+                              "column": 56,
+                              "line": 114
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 112 |\u001b[39m\n \u001b[90m 113 |\u001b[39m       \u001b[90m// Verify we see some content (filters or photos)\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 114 |\u001b[39m       \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=Todas'\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 115 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 116 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 117 |\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts",
+                                "column": 56,
+                                "line": 114
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  locator('text=Todas').first()\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('text=Todas').first()\u001b[22m\n\n\n\u001b[0m \u001b[90m 112 |\u001b[39m\n \u001b[90m 113 |\u001b[39m       \u001b[90m// Verify we see some content (filters or photos)\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 114 |\u001b[39m       \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'text=Todas'\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                        \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 115 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 116 |\u001b[39m   })\u001b[33m;\u001b[39m\n \u001b[90m 117 |\u001b[39m\u001b[0m\n\u001b[2m    at /Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts:114:56\u001b[22m"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [
+                            {
+                              "text": "No share link available, public access tests might fail if not generated.\n"
+                            }
+                          ],
+                          "retry": 0,
+                          "startTime": "2025-12-24T14:47:56.081Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "/Users/santiagobalosky/LookEscolar-2/test-results/e2e-photo-library-public-s-96a2d-ess-public-gallery-directly-e2e/test-failed-1.png"
+                            },
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/santiagobalosky/LookEscolar-2/test-results/e2e-photo-library-public-s-96a2d-ess-public-gallery-directly-e2e/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/santiagobalosky/LookEscolar-2/test-results/e2e-photo-library-public-s-96a2d-ess-public-gallery-directly-e2e/error-context.md"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts",
+                            "column": 56,
+                            "line": 114
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "91005434eab9458c4973-dcdd000e0879723e1a9c",
+                  "file": "e2e/photo-library-public-share.test.ts",
+                  "line": 111,
+                  "column": 5
+                }
+              ]
+            },
+            {
+              "title": "Public Gallery Functionality",
+              "file": "e2e/photo-library-public-share.test.ts",
+              "line": 125,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "should display photos grid",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "e2e",
+                      "projectName": "e2e",
+                      "results": [
+                        {
+                          "workerIndex": 2,
+                          "parallelIndex": 0,
+                          "status": "interrupted",
+                          "duration": 20427,
+                          "error": {
+                            "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  locator('section img').first()\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('section img').first()\u001b[22m\n",
+                            "stack": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  locator('section img').first()\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('section img').first()\u001b[22m\n\n    at /Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts:131:57",
+                            "location": {
+                              "file": "/Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts",
+                              "column": 57,
+                              "line": 131
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 129 |\u001b[39m       \u001b[90m// PixiesetGalleryMain renders images with alt text or just imgs\u001b[39m\n \u001b[90m 130 |\u001b[39m       \u001b[90m// We can look for any img inside the main section\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 131 |\u001b[39m       \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'section img'\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 132 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 133 |\u001b[39m\n \u001b[90m 134 |\u001b[39m     test(\u001b[32m'should allow filtering photos'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "/Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts",
+                                "column": 57,
+                                "line": 131
+                              },
+                              "message": "Error: \u001b[2mexpect(\u001b[22m\u001b[31mlocator\u001b[39m\u001b[2m).\u001b[22mtoBeVisible\u001b[2m()\u001b[22m failed\n\nLocator:  locator('section img').first()\nExpected: visible\nReceived: <element(s) not found>\nTimeout:  5000ms\n\nCall log:\n\u001b[2m  - Expect \"toBeVisible\" with timeout 5000ms\u001b[22m\n\u001b[2m  - waiting for locator('section img').first()\u001b[22m\n\n\n\u001b[0m \u001b[90m 129 |\u001b[39m       \u001b[90m// PixiesetGalleryMain renders images with alt text or just imgs\u001b[39m\n \u001b[90m 130 |\u001b[39m       \u001b[90m// We can look for any img inside the main section\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 131 |\u001b[39m       \u001b[36mawait\u001b[39m expect(page\u001b[33m.\u001b[39mlocator(\u001b[32m'section img'\u001b[39m)\u001b[33m.\u001b[39mfirst())\u001b[33m.\u001b[39mtoBeVisible()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m                                                         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 132 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 133 |\u001b[39m\n \u001b[90m 134 |\u001b[39m     test(\u001b[32m'should allow filtering photos'\u001b[39m\u001b[33m,\u001b[39m \u001b[36masync\u001b[39m ({ page }) \u001b[33m=>\u001b[39m {\u001b[0m\n\u001b[2m    at /Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts:131:57\u001b[22m"
+                            }
+                          ],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-12-24T14:48:06.594Z",
+                          "annotations": [],
+                          "attachments": [
+                            {
+                              "name": "video",
+                              "contentType": "video/webm",
+                              "path": "/Users/santiagobalosky/LookEscolar-2/test-results/e2e-photo-library-public-s-87578--should-display-photos-grid-e2e/video.webm"
+                            },
+                            {
+                              "name": "error-context",
+                              "contentType": "text/markdown",
+                              "path": "/Users/santiagobalosky/LookEscolar-2/test-results/e2e-photo-library-public-s-87578--should-display-photos-grid-e2e/error-context.md"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "/Users/santiagobalosky/LookEscolar-2/__tests__/e2e/photo-library-public-share.test.ts",
+                            "column": 57,
+                            "line": 131
+                          }
+                        }
+                      ],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "91005434eab9458c4973-22b98402c4e2c0b39fd7",
+                  "file": "e2e/photo-library-public-share.test.ts",
+                  "line": 137,
+                  "column": 5
+                },
+                {
+                  "title": "should allow filtering photos",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "e2e",
+                      "projectName": "e2e",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "91005434eab9458c4973-e82341b04715bacb858a",
+                  "file": "e2e/photo-library-public-share.test.ts",
+                  "line": 145,
+                  "column": 5
+                },
+                {
+                  "title": "should show selection/buy options",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 30000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "e2e",
+                      "projectName": "e2e",
+                      "results": [],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "91005434eab9458c4973-03c84b7ea2892de69bc5",
+                  "file": "e2e/photo-library-public-share.test.ts",
+                  "line": 157,
+                  "column": 5
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-12-24T14:47:17.249Z",
+    "duration": 70057.44099999999,
+    "expected": 0,
+    "skipped": 3,
+    "unexpected": 2,
+    "flaky": 0
+  }
+}

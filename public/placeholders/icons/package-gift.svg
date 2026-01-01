@@ -1,0 +1,30 @@
+<svg width="48" height="48" viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Caja base -->
+  <rect
+    x="6" y="18"
+    width="36" height="24"
+    rx="2"
+    stroke="currentColor"
+    stroke-width="2.5"
+    fill="none"
+  />
+  <!-- Tapa de la caja -->
+  <rect
+    x="4" y="12"
+    width="40" height="8"
+    rx="2"
+    stroke="currentColor"
+    stroke-width="2.5"
+    fill="none"
+  />
+  <!-- Cinta vertical -->
+  <line x1="24" y1="12" x2="24" y2="42" stroke="currentColor" stroke-width="2.5"/>
+  <!-- Cinta horizontal -->
+  <line x1="4" y1="16" x2="44" y2="16" stroke="currentColor" stroke-width="2"/>
+  <!-- Moño izquierdo -->
+  <ellipse cx="18" cy="10" rx="5" ry="3" stroke="currentColor" stroke-width="2" fill="none"/>
+  <!-- Moño derecho -->
+  <ellipse cx="30" cy="10" rx="5" ry="3" stroke="currentColor" stroke-width="2" fill="none"/>
+  <!-- Nudo central -->
+  <circle cx="24" cy="10" r="3" stroke="currentColor" stroke-width="2" fill="none"/>
+</svg>

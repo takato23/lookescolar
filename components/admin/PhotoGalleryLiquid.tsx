@@ -38,6 +38,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { buildPhotosUrl } from '@/lib/utils/photos-url-builder';
 import QRScannerModal, { type StudentInfo } from './QRScannerModal';
+import { useQrTagging } from '@/lib/hooks/useQrTagging';
 import TaggingModal from './TaggingModal';
 import { PhotoModal as GalleryPhotoModal } from '@/components/gallery/PhotoModal';
 import { SimpleTooltip } from '@/components/ui/tooltip';
@@ -422,6 +423,8 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
     null
   );
   const [isAssigningPhotos, setIsAssigningPhotos] = useState(false);
+  const qrTaggingStatus = useQrTagging(selectedEvent);
+  const qrTaggingEnabled = Boolean(selectedEvent) && qrTaggingStatus.enabled;
 
   // Manual Tagging State
   const [showTaggingModal, setShowTaggingModal] = useState(false);
@@ -475,6 +478,12 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
   useEffect(() => {
     setSelectedEvent(externalSelectedEvent);
   }, [externalSelectedEvent]);
+
+  useEffect(() => {
+    if (!qrTaggingEnabled && showQRScanner) {
+      setShowQRScanner(false);
+    }
+  }, [qrTaggingEnabled, showQRScanner]);
 
   // Filtered photos
   const filteredPhotos = useMemo(() => {
@@ -1597,7 +1606,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
         />
       )}
 
-      {showQRScanner && (
+      {showQRScanner && qrTaggingEnabled && (
         <QRScannerModal
           isOpen={showQRScanner}
           onClose={() => setShowQRScanner(false)}
@@ -1605,6 +1614,7 @@ const PhotoGalleryLiquid: React.FC<PhotoGalleryLiquidProps> = ({
             setCurrentStudent(student);
             setShowQRScanner(false);
           }}
+          eventId={selectedEvent ?? undefined}
         />
       )}
 

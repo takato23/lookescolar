@@ -34,8 +34,8 @@ import {
   FileDown,
   Info,
   ShoppingBag,
-  Timer,
 } from 'lucide-react';
+import { StorePreview } from '@/components/admin/preview';
 import { cn } from '@/lib/utils';
 import {
   FilterChip,
@@ -218,12 +218,8 @@ export default function CleanPublishPage({
   const [folderOrder, setFolderOrder] = useState<string[]>([]);
   const [statsExpanded, setStatsExpanded] = useState<string | null>(null);
   const [downloadingQRs, setDownloadingQRs] = useState(false);
-  // Store Preview state
-  const [storePreviewModal, setStorePreviewModal] = useState<{
-    folder: FolderRow;
-    previewUrl: string;
-    expiresAt: string;
-  } | null>(null);
+  // Store Preview state - simplified to use UnifiedPreview component
+  const [storePreviewFolder, setStorePreviewFolder] = useState<FolderRow | null>(null);
   const [storePreviewLoading, setStorePreviewLoading] = useState<string | null>(null);
   const gridRef = useRef<HTMLDivElement>(null);
 
@@ -721,67 +717,14 @@ export default function CleanPublishPage({
     }
   }, [selectedFolders, folders, getQrCodeUrl, showToast]);
 
-  // Open Store Preview - generates temporary token and opens store as families see it
-  const openStorePreview = useCallback(async (folder: FolderRow) => {
+  // Open Store Preview - uses UnifiedPreview component
+  const openStorePreview = useCallback((folder: FolderRow) => {
     if (folder.photo_count === 0) {
       showToast('La carpeta no tiene fotos para previsualizar', 'info');
       return;
     }
-
-    setStorePreviewLoading(folder.id);
-
-    try {
-      const response = await fetch('/api/admin/preview', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ folder_id: folder.id }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al generar vista previa');
-      }
-
-      const data = await response.json();
-
-      if (data.success && data.preview_url) {
-        setStorePreviewModal({
-          folder,
-          previewUrl: data.preview_url,
-          expiresAt: data.expires_at,
-        });
-      } else {
-        throw new Error('No se pudo generar la URL de vista previa');
-      }
-    } catch (error) {
-      console.error('Error opening store preview:', error);
-      showToast(
-        error instanceof Error ? error.message : 'Error al abrir vista previa',
-        'error'
-      );
-    } finally {
-      setStorePreviewLoading(null);
-    }
+    setStorePreviewFolder(folder);
   }, [showToast]);
-
-  // Open store preview in new tab
-  const openStorePreviewInNewTab = useCallback(() => {
-    if (storePreviewModal?.previewUrl) {
-      window.open(storePreviewModal.previewUrl, '_blank');
-    }
-  }, [storePreviewModal]);
-
-  // Calculate remaining time for preview token
-  const getPreviewTimeRemaining = useCallback((expiresAt: string) => {
-    const now = new Date();
-    const expiry = new Date(expiresAt);
-    const diffMs = expiry.getTime() - now.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-
-    if (diffMins < 1) return 'Menos de 1 minuto';
-    if (diffMins < 60) return `${diffMins} minutos`;
-    return `${Math.floor(diffMins / 60)}h ${diffMins % 60}m`;
-  }, []);
 
   // Drag & Drop handlers
   const handleDragStart = useCallback((e: DragEvent<HTMLDivElement>, folderId: string) => {
@@ -885,7 +828,7 @@ export default function CleanPublishPage({
             <div>
               <h1 className="publish-hero-title">Centro de Publicación</h1>
               <p className="publish-hero-subtitle">
-                Gestiona y comparte tus galerías con las familias
+                Gestiona y comparte tus galerías con clientes e invitados
               </p>
             </div>
           </div>
@@ -997,7 +940,7 @@ export default function CleanPublishPage({
                 <div className="publish-public-card-text">
                   <div className="publish-public-card-label-row">
                     <span className="publish-public-card-label">Galería Pública</span>
-                    <CleanTooltip content="Permite que todas las fotos publicadas del evento sean accesibles desde un único link público. Ideal para compartir el evento completo con familias.">
+                    <CleanTooltip content="Permite que todas las fotos publicadas del evento sean accesibles desde un único link público. Ideal para compartir el evento completo con clientes e invitados.">
                       <Info className="w-4 h-4 text-[var(--clean-text-muted)] cursor-help" />
                     </CleanTooltip>
                   </div>
@@ -1040,7 +983,7 @@ export default function CleanPublishPage({
             {/* Helpful message when disabled */}
             {isPublicEnabled === false && (
               <p className="publish-public-card-hint">
-                💡 Activa la galería pública para que las familias puedan ver todas las fotos del evento desde un único enlace.
+                💡 Activa la galería pública para que los clientes e invitados puedan ver todas las fotos del evento desde un único enlace.
               </p>
             )}
           </div>
@@ -1226,7 +1169,7 @@ export default function CleanPublishPage({
         onClose={() => setConfirmUnpublish(null)}
         onConfirm={() => confirmUnpublish && handleUnpublish(confirmUnpublish.id)}
         title="¿Despublicar carpeta?"
-        description={`"${confirmUnpublish?.name}" dejará de estar accesible para las familias. Podrás volver a publicarla en cualquier momento.`}
+        description={`"${confirmUnpublish?.name}" dejará de estar accesible para los clientes e invitados. Podrás volver a publicarla en cualquier momento.`}
         confirmText="Despublicar"
         danger
         loading={loadingAction === confirmUnpublish?.id}
@@ -1238,7 +1181,7 @@ export default function CleanPublishPage({
         onClose={() => setConfirmBulkUnpublish(false)}
         onConfirm={() => handleBulkAction('unpublish')}
         title={`¿Despublicar ${selectedFolders.length} carpetas?`}
-        description="Las carpetas seleccionadas dejarán de estar accesibles para las familias. Podrás volver a publicarlas en cualquier momento."
+        description="Las carpetas seleccionadas dejarán de estar accesibles para los clientes e invitados. Podrás volver a publicarlas en cualquier momento."
         confirmText="Despublicar todo"
         danger
         loading={bulkLoading}
@@ -1386,72 +1329,17 @@ export default function CleanPublishPage({
         </div>
       )}
 
-      {/* Store Preview Modal - Shows store as families would see it */}
-      {storePreviewModal && (
-        <div className="clean-modal-overlay" onClick={() => setStorePreviewModal(null)}>
-          <div className="clean-modal clean-modal--xl publish-store-preview-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="clean-modal-header">
-              <div className="flex items-center gap-3">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-br from-purple-500 to-pink-500 text-white">
-                  <ShoppingBag className="w-5 h-5" />
-                </div>
-                <div>
-                  <h3 className="clean-modal-title">Vista Previa de Tienda</h3>
-                  <p className="text-sm text-[var(--clean-text-muted)]">
-                    {storePreviewModal.folder.name}
-                  </p>
-                </div>
-              </div>
-              <button
-                className="clean-icon-btn"
-                onClick={() => setStorePreviewModal(null)}
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
-
-            {/* Preview info banner */}
-            <div className="publish-store-preview-banner">
-              <div className="flex items-center gap-2 text-sm">
-                <Timer className="w-4 h-4" />
-                <span>Token temporal: expira en {getPreviewTimeRemaining(storePreviewModal.expiresAt)}</span>
-              </div>
-              <div className="flex items-center gap-2">
-                <button
-                  className="clean-btn clean-btn--primary clean-btn--sm"
-                  onClick={openStorePreviewInNewTab}
-                >
-                  <ExternalLink className="w-4 h-4" />
-                  Abrir en nueva pestaña
-                </button>
-              </div>
-            </div>
-
-            {/* Iframe with store preview */}
-            <div className="clean-modal-body p-0">
-              <div className="publish-store-preview-iframe-container">
-                <iframe
-                  src={storePreviewModal.previewUrl}
-                  className="publish-store-preview-iframe"
-                  title={`Vista previa de tienda - ${storePreviewModal.folder.name}`}
-                  sandbox="allow-scripts allow-same-origin allow-forms allow-popups"
-                />
-              </div>
-            </div>
-
-            <div className="clean-modal-footer">
-              <button
-                className="clean-btn clean-btn--secondary"
-                onClick={() => setStorePreviewModal(null)}
-              >
-                Cerrar vista previa
-              </button>
-              <div className="text-sm text-[var(--clean-text-muted)]">
-                Asi veran las familias la tienda
-              </div>
-            </div>
-          </div>
-        </div>
+      {/* Store Preview Modal - Uses UnifiedPreview component */}
+      {storePreviewFolder && storePreviewFolder.event_id && (
+        <StorePreview
+          open={true}
+          onClose={() => setStorePreviewFolder(null)}
+          eventId={storePreviewFolder.event_id}
+          folderId={storePreviewFolder.id}
+          variant="modal"
+          title="Vista Previa de Tienda"
+          subtitle={storePreviewFolder.name}
+        />
       )}
     </div>
   );

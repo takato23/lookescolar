@@ -29,12 +29,14 @@ import {
   Calendar,
   Globe,
   Smartphone,
+  Tablet,
+  Monitor,
   Star,
-  Palette,
   Type,
   Grid3X3,
   AlertCircle,
   ExternalLink,
+  RefreshCw,
   Play,
   Sparkles,
   FolderOpen,
@@ -49,6 +51,7 @@ import {
   ArrowDown,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { PreviewFrame, type DeviceType } from '@/components/admin/preview';
 import type { Database } from '@/types/database';
 
 // Types from database
@@ -69,19 +72,17 @@ interface EventStats {
 }
 
 // Tabs for the sidebar
-type SidebarTab = 'photos' | 'design' | 'settings' | 'activity';
+type SidebarTab = 'photos' | 'settings' | 'activity';
 
 // Settings sub-sections
-type SettingsSection = 'general' | 'privacy' | 'download' | 'favorite' | 'store';
+type SettingsSection =
+  | 'general'
+  | 'privacy'
+  | 'download'
+  | 'favorite'
+  | 'store'
+  | 'qr';
 
-// Design sub-sections
-type DesignSection = 'cover' | 'theme' | 'layout' | 'app';
-
-// Cover style options
-type CoverStyle = 'full' | 'third' | 'none';
-
-// Theme options
-type ThemeName = 'echo' | 'spring' | 'lark' | 'sage';
 
 // Props from the API
 interface CleanEventDetailPageProps {
@@ -120,15 +121,39 @@ function parseEventSettings(event: EventRow): {
   downloadEnabled?: boolean;
   favoriteEnabled?: boolean;
   storeEnabled?: boolean;
+  qrTaggingEnabled?: boolean;
 } {
   const metadata = event.metadata as Record<string, unknown> | null;
   if (!metadata) return {};
+
+  // Check for settings in the new nested location (metadata.settings.*)
+  // or the old flat location (metadata.*)
+  const settings = (metadata.settings as Record<string, unknown>) || {};
+
+  const qrTaggingEnabled =
+    typeof settings.qrTaggingEnabled === 'boolean'
+      ? settings.qrTaggingEnabled
+      : typeof settings.qr_tagging_enabled === 'boolean'
+        ? settings.qr_tagging_enabled
+        : typeof metadata.qrTaggingEnabled === 'boolean'
+          ? metadata.qrTaggingEnabled
+          : typeof metadata.qr_tagging_enabled === 'boolean'
+            ? metadata.qr_tagging_enabled
+            : undefined;
+
   return {
     url: typeof metadata.url === 'string' ? metadata.url : undefined,
     password: typeof metadata.password === 'string' ? metadata.password : undefined,
-    downloadEnabled: Boolean(metadata.downloadEnabled ?? metadata.download_enabled),
-    favoriteEnabled: Boolean(metadata.favoriteEnabled ?? metadata.favorite_enabled),
-    storeEnabled: Boolean(metadata.storeEnabled ?? metadata.store_enabled),
+    downloadEnabled: Boolean(
+      settings.downloadEnabled ?? metadata.downloadEnabled ?? metadata.download_enabled
+    ),
+    favoriteEnabled: Boolean(
+      settings.favoriteEnabled ?? metadata.favoriteEnabled ?? metadata.favorite_enabled
+    ),
+    storeEnabled: Boolean(
+      settings.storeEnabled ?? metadata.storeEnabled ?? metadata.store_enabled
+    ),
+    qrTaggingEnabled,
   };
 }
 
@@ -136,7 +161,6 @@ export default function CleanEventDetailPage({ event, stats }: CleanEventDetailP
   const [activeTab, setActiveTab] = useState<SidebarTab>('photos');
   const [showShareModal, setShowShareModal] = useState(false);
   const [settingsSection, setSettingsSection] = useState<SettingsSection>('general');
-  const [designSection, setDesignSection] = useState<DesignSection>('cover');
   const [showMobilePreview, setShowMobilePreview] = useState(false);
 
   // Folders state - fetch from API
@@ -186,7 +210,53 @@ export default function CleanEventDetailPage({ event, stats }: CleanEventDetailP
   const selectedFolder = folders.find((f) => f.id === selectedFolderId) || folders[0];
   const eventDate = formatEventDate(event);
   const eventStatus = getEventStatus(event);
-  const eventSettings = parseEventSettings(event);
+  const [eventSettings, setEventSettings] = useState(() => parseEventSettings(event));
+
+  // Function to update a specific setting - updates local state and persists to API
+  const updateSetting = async (key: string, value: boolean) => {
+    // Update local state immediately for responsive UI
+    setEventSettings(prev => ({
+      ...prev,
+      [key]: value,
+    }));
+
+    // Persist to API
+    try {
+      const eventRes = await fetch(`/api/admin/events/${event.id}`);
+      const eventData = await eventRes.json();
+      const currentMetadata = eventData.event?.metadata || {};
+
+      const newMetadata = {
+        ...currentMetadata,
+        settings: {
+          ...(currentMetadata.settings || {}),
+          [key]: value,
+        },
+      };
+
+      const response = await fetch(`/api/admin/events/${event.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ metadata: newMetadata }),
+      });
+
+      if (!response.ok) {
+        console.error('Failed to save setting');
+        // Revert on error
+        setEventSettings(prev => ({
+          ...prev,
+          [key]: !value,
+        }));
+      }
+    } catch (error) {
+      console.error('Error saving setting:', error);
+      // Revert on error
+      setEventSettings(prev => ({
+        ...prev,
+        [key]: !value,
+      }));
+    }
+  };
 
   return (
     <div className="clean-event-detail">
@@ -239,11 +309,6 @@ export default function CleanEventDetailPage({ event, stats }: CleanEventDetailP
               onClick={() => setActiveTab('photos')}
             />
             <TabButton
-              icon={<Pencil className="w-4 h-4" />}
-              active={activeTab === 'design'}
-              onClick={() => setActiveTab('design')}
-            />
-            <TabButton
               icon={<Settings className="w-4 h-4" />}
               active={activeTab === 'settings'}
               onClick={() => setActiveTab('settings')}
@@ -253,6 +318,36 @@ export default function CleanEventDetailPage({ event, stats }: CleanEventDetailP
               active={activeTab === 'activity'}
               onClick={() => setActiveTab('activity')}
             />
+          </div>
+
+          {/* Store Configuration - Two Options */}
+          <div className="mt-4 px-3 space-y-2">
+            {/* Quick Wizard - Primary */}
+            <Link
+              href={`/admin/store-wizard?eventId=${event.id}`}
+              className="group flex items-center gap-3 w-full px-4 py-3 bg-gradient-to-r from-amber-600 to-amber-700 hover:from-amber-700 hover:to-amber-800 text-white rounded-lg transition-all shadow-sm hover:shadow-md"
+            >
+              <Sparkles className="w-5 h-5" />
+              <div className="flex-1 text-left">
+                <span className="block text-sm font-medium">Configuración Fácil</span>
+                <span className="block text-xs text-amber-100">Wizard paso a paso</span>
+              </div>
+              <svg className="w-4 h-4 opacity-60 group-hover:translate-x-0.5 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
+
+            {/* Full Settings - Secondary */}
+            <Link
+              href={`/admin/store-settings?eventId=${event.id}`}
+              className="group flex items-center gap-3 w-full px-3 py-2 text-neutral-600 hover:text-neutral-900 hover:bg-neutral-100 rounded-lg transition-all text-sm"
+            >
+              <Settings className="w-4 h-4" />
+              <span>Configuración avanzada</span>
+              <svg className="w-3 h-3 ml-auto opacity-40 group-hover:opacity-60" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
+            </Link>
           </div>
 
           {/* Tab Content */}
@@ -273,12 +368,6 @@ export default function CleanEventDetailPage({ event, stats }: CleanEventDetailP
                 onSectionChange={setSettingsSection}
               />
             )}
-            {activeTab === 'design' && (
-              <DesignTabContent
-                activeSection={designSection}
-                onSectionChange={setDesignSection}
-              />
-            )}
             {activeTab === 'activity' && <ActivityTabContent />}
           </div>
         </aside>
@@ -293,14 +382,7 @@ export default function CleanEventDetailPage({ event, stats }: CleanEventDetailP
               eventId={event.id}
               settings={eventSettings}
               activeSection={settingsSection}
-            />
-          )}
-          {activeTab === 'design' && (
-            <DesignView
-              event={event}
-              activeSection={designSection}
-              showMobilePreview={showMobilePreview}
-              onToggleMobilePreview={() => setShowMobilePreview(!showMobilePreview)}
+              onSettingChange={updateSetting}
             />
           )}
           {activeTab === 'activity' && <ActivityView />}
@@ -865,6 +947,7 @@ type ParsedSettings = {
   downloadEnabled?: boolean;
   favoriteEnabled?: boolean;
   storeEnabled?: boolean;
+  qrTaggingEnabled?: boolean;
 };
 
 // Settings Tab Content (Sidebar)
@@ -889,31 +972,38 @@ function SettingsTabContent({
         />
         <SettingsMenuItem
           icon={<Lock />}
-          label="Privacy"
+          label="Privacidad"
           badge={settings?.password ? 'ON' : undefined}
           active={activeSection === 'privacy'}
           onClick={() => onSectionChange('privacy')}
         />
         <SettingsMenuItem
           icon={<Download />}
-          label="Download"
+          label="Descargas"
           badge={settings?.downloadEnabled ? 'ON' : 'OFF'}
           active={activeSection === 'download'}
           onClick={() => onSectionChange('download')}
         />
         <SettingsMenuItem
           icon={<Heart />}
-          label="Favorite"
+          label="Favoritos"
           badge={settings?.favoriteEnabled ? 'ON' : 'OFF'}
           active={activeSection === 'favorite'}
           onClick={() => onSectionChange('favorite')}
         />
         <SettingsMenuItem
           icon={<ShoppingCart />}
-          label="Store"
+          label="Tienda"
           badge={settings?.storeEnabled ? 'ON' : 'OFF'}
           active={activeSection === 'store'}
           onClick={() => onSectionChange('store')}
+        />
+        <SettingsMenuItem
+          icon={<QrCode />}
+          label="QR"
+          badge={(settings?.qrTaggingEnabled ?? true) ? 'ON' : 'OFF'}
+          active={activeSection === 'qr'}
+          onClick={() => onSectionChange('qr')}
         />
       </nav>
     </div>
@@ -955,46 +1045,6 @@ function SettingsMenuItem({
   );
 }
 
-// Design Tab Content (Sidebar)
-function DesignTabContent({
-  activeSection,
-  onSectionChange,
-}: {
-  activeSection: DesignSection;
-  onSectionChange: (section: DesignSection) => void;
-}) {
-  return (
-    <div className="clean-settings-nav">
-      <span className="clean-settings-label">DESIGN</span>
-      <nav className="clean-settings-menu">
-        <SettingsMenuItem
-          icon={<ImageIcon />}
-          label="Cover Style"
-          active={activeSection === 'cover'}
-          onClick={() => onSectionChange('cover')}
-        />
-        <SettingsMenuItem
-          icon={<Palette />}
-          label="Theme"
-          active={activeSection === 'theme'}
-          onClick={() => onSectionChange('theme')}
-        />
-        <SettingsMenuItem
-          icon={<Grid3X3 />}
-          label="Photos Layout"
-          active={activeSection === 'layout'}
-          onClick={() => onSectionChange('layout')}
-        />
-        <SettingsMenuItem
-          icon={<Smartphone />}
-          label="App Settings"
-          active={activeSection === 'app'}
-          onClick={() => onSectionChange('app')}
-        />
-      </nav>
-    </div>
-  );
-}
 
 // Activity Tab Content (Sidebar)
 function ActivityTabContent() {
@@ -1034,13 +1084,14 @@ interface UploadItem {
   abortController?: AbortController;
 }
 
-// Helper to get Supabase storage URL
-const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-const getStorageUrl = (path: string, bucket: string = 'photos') => {
+// Helper to resolve admin preview URLs for storage paths
+const getStorageUrl = (path: string) => {
   if (!path) return '';
-  // If it's already a full URL, return as is
   if (path.startsWith('http')) return path;
-  return `${SUPABASE_URL}/storage/v1/object/public/${bucket}/${path}`;
+  const normalized = path.replace(/^\/+/, '').trim();
+  if (!normalized) return '';
+  if (!/\.(png|jpg|jpeg|webp|gif|avif)$/i.test(normalized)) return '';
+  return `/admin/previews/${normalized}`;
 };
 
 // Photos View (Main Content) - Pixieset Style
@@ -1086,10 +1137,10 @@ function PhotosView({
   // Get photo URL (preview or original)
   const getPhotoUrl = (photo: Photo) => {
     if (photo.preview_path) {
-      return getStorageUrl(photo.preview_path, 'photos');
+      return getStorageUrl(photo.preview_path);
     }
     if (photo.storage_path) {
-      return getStorageUrl(photo.storage_path, 'photos');
+      return getStorageUrl(photo.storage_path);
     }
     return '';
   };
@@ -1429,10 +1480,10 @@ function PhotosView({
     const selectedPhotosList = photos.filter(p => selectedPhotos.has(p.id));
 
     for (const photo of selectedPhotosList) {
-      const url = photo.storage_path
-        ? getStorageUrl(photo.storage_path, 'photos')
+    const url = photo.storage_path
+        ? getStorageUrl(photo.storage_path)
         : photo.preview_path
-          ? getStorageUrl(photo.preview_path, 'photos')
+          ? getStorageUrl(photo.preview_path)
           : null;
 
       if (url) {
@@ -2429,10 +2480,12 @@ function SettingsView({
   eventId,
   settings,
   activeSection,
+  onSettingChange,
 }: {
   eventId: string;
   settings?: ParsedSettings;
   activeSection: SettingsSection;
+  onSettingChange?: (key: string, value: boolean) => void;
 }) {
   return (
     <div className="clean-settings-view">
@@ -2440,16 +2493,23 @@ function SettingsView({
         <GeneralSettingsSection eventId={eventId} settings={settings} />
       )}
       {activeSection === 'privacy' && (
-        <PrivacySettingsSection settings={settings} />
+        <PrivacySettingsSection eventId={eventId} settings={settings} />
       )}
       {activeSection === 'download' && (
-        <DownloadSettingsSection settings={settings} />
+        <DownloadSettingsSection eventId={eventId} settings={settings} onSettingChange={onSettingChange} />
       )}
       {activeSection === 'favorite' && (
-        <FavoriteSettingsSection settings={settings} />
+        <FavoriteSettingsSection eventId={eventId} settings={settings} onSettingChange={onSettingChange} />
       )}
       {activeSection === 'store' && (
-        <StoreSettingsSection settings={settings} />
+        <StoreSettingsSection eventId={eventId} settings={settings} onSettingChange={onSettingChange} />
+      )}
+      {activeSection === 'qr' && (
+        <QrSettingsSection
+          eventId={eventId}
+          settings={settings}
+          onSettingChange={onSettingChange}
+        />
       )}
     </div>
   );
@@ -2531,12 +2591,16 @@ function GeneralSettingsSection({
           label="Email Registration"
           description="Track email addresses accessing this collection."
           defaultChecked={false}
+          eventId={eventId}
+          settingKey="emailRegistration"
         />
 
         <SettingsToggle
           label="Gallery Assist"
           description="Enable AI-powered photo organization suggestions."
           defaultChecked={true}
+          eventId={eventId}
+          settingKey="galleryAssist"
         />
       </div>
     </>
@@ -2544,7 +2608,7 @@ function GeneralSettingsSection({
 }
 
 // Privacy Settings Section
-function PrivacySettingsSection({ settings }: { settings?: ParsedSettings }) {
+function PrivacySettingsSection({ eventId, settings }: { eventId: string; settings?: ParsedSettings }) {
   return (
     <>
       <h2 className="clean-settings-title">
@@ -2557,6 +2621,8 @@ function PrivacySettingsSection({ settings }: { settings?: ParsedSettings }) {
           label="Password Protection"
           description="Require a password to access this collection."
           defaultChecked={Boolean(settings?.password)}
+          eventId={eventId}
+          settingKey="passwordProtection"
         />
 
         {settings?.password && (
@@ -2577,12 +2643,16 @@ function PrivacySettingsSection({ settings }: { settings?: ParsedSettings }) {
           label="Hide from Search Engines"
           description="Prevent search engines from indexing this gallery."
           defaultChecked={true}
+          eventId={eventId}
+          settingKey="hideFromSearchEngines"
         />
 
         <SettingsToggle
           label="Require Email to View"
           description="Visitors must enter their email before viewing photos."
           defaultChecked={false}
+          eventId={eventId}
+          settingKey="requireEmailToView"
         />
       </div>
     </>
@@ -2590,7 +2660,15 @@ function PrivacySettingsSection({ settings }: { settings?: ParsedSettings }) {
 }
 
 // Download Settings Section
-function DownloadSettingsSection({ settings }: { settings?: ParsedSettings }) {
+function DownloadSettingsSection({
+  eventId,
+  settings,
+  onSettingChange
+}: {
+  eventId: string;
+  settings?: ParsedSettings;
+  onSettingChange?: (key: string, value: boolean) => void;
+}) {
   return (
     <>
       <h2 className="clean-settings-title">
@@ -2602,7 +2680,8 @@ function DownloadSettingsSection({ settings }: { settings?: ParsedSettings }) {
         <SettingsToggle
           label="Enable Downloads"
           description="Allow visitors to download photos from this collection."
-          defaultChecked={settings?.downloadEnabled}
+          checked={settings?.downloadEnabled}
+          onChange={(value) => onSettingChange?.('downloadEnabled', value)}
         />
 
         <SettingsField
@@ -2632,7 +2711,8 @@ function DownloadSettingsSection({ settings }: { settings?: ParsedSettings }) {
         <SettingsToggle
           label="Include Watermark"
           description="Add watermark to downloaded photos."
-          defaultChecked={false}
+          checked={settings?.downloadWatermark}
+          onChange={(value) => onSettingChange?.('downloadWatermark', value)}
         />
       </div>
     </>
@@ -2640,7 +2720,15 @@ function DownloadSettingsSection({ settings }: { settings?: ParsedSettings }) {
 }
 
 // Favorite Settings Section
-function FavoriteSettingsSection({ settings }: { settings?: ParsedSettings }) {
+function FavoriteSettingsSection({
+  eventId,
+  settings,
+  onSettingChange
+}: {
+  eventId: string;
+  settings?: ParsedSettings;
+  onSettingChange?: (key: string, value: boolean) => void;
+}) {
   return (
     <>
       <h2 className="clean-settings-title">
@@ -2652,13 +2740,15 @@ function FavoriteSettingsSection({ settings }: { settings?: ParsedSettings }) {
         <SettingsToggle
           label="Enable Favorites"
           description="Allow visitors to mark photos as favorites."
-          defaultChecked={settings?.favoriteEnabled}
+          checked={settings?.favoriteEnabled}
+          onChange={(value) => onSettingChange?.('favoriteEnabled', value)}
         />
 
         <SettingsToggle
           label="Notify on Favorites"
           description="Receive email notifications when visitors add favorites."
-          defaultChecked={true}
+          checked={settings?.notifyOnFavorites ?? true}
+          onChange={(value) => onSettingChange?.('notifyOnFavorites', value)}
         />
 
         <SettingsField
@@ -2679,54 +2769,76 @@ function FavoriteSettingsSection({ settings }: { settings?: ParsedSettings }) {
 }
 
 // Store Settings Section
-function StoreSettingsSection({ settings }: { settings?: ParsedSettings }) {
-  const [storeEnabled, setStoreEnabled] = useState(settings?.storeEnabled ?? false);
+function StoreSettingsSection({
+  eventId,
+  settings,
+  onSettingChange
+}: {
+  eventId: string;
+  settings?: ParsedSettings;
+  onSettingChange?: (key: string, value: boolean) => void;
+}) {
+  const storeEnabled = settings?.storeEnabled ?? false;
+  const storeSettingsUrl = `/admin/store-settings?eventId=${eventId}`;
 
   return (
     <>
       <h2 className="clean-settings-title">
-        Store Settings
+        Configuración de tienda
         <span className="clean-settings-info">&#9432;</span>
       </h2>
+
+      <div className="mb-4 rounded-lg border border-dashed border-gray-200 bg-white/60 p-4">
+        <p className="text-sm text-gray-600">
+          La tienda unificada concentra productos, precios y pagos de este evento.
+        </p>
+        <div className="mt-3 flex flex-wrap gap-2">
+          <Link href={storeSettingsUrl} className="clean-btn clean-btn--primary">
+            <ShoppingCart className="clean-btn-icon" />
+            Ir a tienda unificada
+          </Link>
+          <Link
+            href="/admin/store-settings?global=true"
+            className="clean-btn"
+          >
+            Configuración global
+          </Link>
+        </div>
+      </div>
 
       {/* Warning banner */}
       {storeEnabled && (
         <div className="clean-warning-banner">
           <AlertCircle className="w-5 h-5 text-amber-500" />
           <div>
-            <p className="font-medium text-amber-700">Your Store checkout is currently unavailable</p>
-            <p className="text-sm text-amber-600">
-              You need to set up at least one payment method to start accepting orders.
-              Visit Store {'>'} Settings to get started.{' '}
-              <a href="#" className="text-teal-600 hover:underline">Learn more</a>
+            <p className="font-medium text-amber-700">
+              El checkout de la tienda no está disponible
             </p>
-            <a href="#" className="text-teal-500 text-sm font-medium hover:underline">
-              Connect payment method
-            </a>
+            <p className="text-sm text-amber-600">
+              Necesitás configurar al menos un método de pago para aceptar
+              pedidos.
+            </p>
+            <Link
+              href={storeSettingsUrl}
+              className="text-teal-500 text-sm font-medium hover:underline"
+            >
+              Configurar métodos de pago
+            </Link>
           </div>
         </div>
       )}
 
       <div className="clean-settings-form">
-        <div className="clean-settings-field">
-          <label className="clean-settings-field-label">Store Status</label>
-          <div className="clean-toggle-row">
-            <button
-              onClick={() => setStoreEnabled(!storeEnabled)}
-              className={cn('clean-toggle', storeEnabled && 'clean-toggle--active')}
-            >
-              <span className="clean-toggle-knob" />
-            </button>
-            <span className="clean-toggle-label">{storeEnabled ? 'On' : 'Off'}</span>
-          </div>
-          <p className="clean-settings-field-desc">
-            Allow visitors to purchase products for photos from this collection.
-          </p>
-        </div>
+        <SettingsToggle
+          label="Estado de tienda (compatibilidad)"
+          description="Controla la visibilidad de compras en el flujo legacy."
+          checked={storeEnabled}
+          onChange={(value) => onSettingChange?.('storeEnabled', value)}
+        />
 
         <SettingsField
-          label="Price Sheet"
-          description="Set which products are for sale in this collection."
+          label="Lista de precios (legacy)"
+          description="Define qué productos se ofrecen en esta colección."
         >
           <select className="clean-select">
             <option>Paquetes Escolares</option>
@@ -2735,34 +2847,72 @@ function StoreSettingsSection({ settings }: { settings?: ParsedSettings }) {
             <option>Premium Package</option>
           </select>
           <p className="clean-settings-field-desc mt-2">
-            Manage price sheets in{' '}
-            <a href="#" className="text-teal-500 hover:underline">Store</a>
+            Gestioná listas de precios en{' '}
+            <Link href={storeSettingsUrl} className="text-teal-500 hover:underline">
+              Tienda unificada
+            </Link>
           </p>
         </SettingsField>
 
         <div className="clean-feature-card">
           <div className="clean-feature-card-header">
             <Sparkles className="w-5 h-5 text-teal-500" />
-            <h3 className="clean-feature-card-title">Personalized Product Preview</h3>
+            <h3 className="clean-feature-card-title">
+              Previsualización personalizada
+            </h3>
           </div>
           <p className="clean-feature-card-desc">
-            This feature is only available with a lab price sheet on our next generation Store system.
-            Create a new Price Sheet to gain full access to all the all-new Store experience or select
-            existing price sheet that matches requirements.
+            Esta función solo está disponible con una lista de precios del
+            nuevo sistema de tienda. Creá una nueva lista o seleccioná una
+            existente que cumpla los requisitos.
           </p>
         </div>
 
         <SettingsToggle
-          label="Auto-add to Cart"
-          description="Automatically add suggested products to visitor's cart."
-          defaultChecked={false}
+          label="Agregar al carrito automáticamente (legacy)"
+          description="Sugiere productos en el carrito del flujo legacy."
+          checked={settings?.autoAddToCart}
+          onChange={(value) => onSettingChange?.('autoAddToCart', value)}
         />
 
         <SettingsToggle
-          label="Show Prices on Gallery"
-          description="Display product prices on the photo gallery view."
-          defaultChecked={true}
+          label="Mostrar precios en la galería (legacy)"
+          description="Muestra precios en la vista de galería del flujo legacy."
+          checked={settings?.showPricesOnGallery ?? true}
+          onChange={(value) => onSettingChange?.('showPricesOnGallery', value)}
         />
+      </div>
+    </>
+  );
+}
+
+// QR Settings Section
+function QrSettingsSection({
+  settings,
+  onSettingChange,
+}: {
+  settings?: ParsedSettings;
+  onSettingChange?: (key: string, value: boolean) => void;
+}) {
+  const qrEnabled = settings?.qrTaggingEnabled ?? true;
+
+  return (
+    <>
+      <h2 className="clean-settings-title">
+        QR Tagging
+        <span className="clean-settings-info">&#9432;</span>
+      </h2>
+
+      <div className="clean-settings-form">
+        <SettingsToggle
+          label="Enable QR tagging"
+          description="Enable QR-based photo tagging for this event."
+          checked={qrEnabled}
+          onChange={(value) => onSettingChange?.('qrTaggingEnabled', value)}
+        />
+        <p className="clean-settings-field-desc">
+          This toggle is per event and respects the tenant-level feature flag.
+        </p>
       </div>
     </>
   );
@@ -2797,25 +2947,38 @@ function SettingsField({
 function SettingsToggle({
   label,
   description,
-  defaultChecked,
+  checked,
+  onChange,
+  isSaving,
 }: {
   label: string;
   description?: string;
-  defaultChecked?: boolean;
+  checked?: boolean;
+  onChange?: (value: boolean) => void;
+  isSaving?: boolean;
 }) {
-  const [checked, setChecked] = useState(defaultChecked ?? false);
+  const isChecked = checked ?? false;
+
+  const handleToggle = () => {
+    if (onChange) {
+      onChange(!isChecked);
+    }
+  };
 
   return (
     <div className="clean-settings-field">
       <label className="clean-settings-field-label">{label}</label>
       <div className="clean-toggle-row">
         <button
-          onClick={() => setChecked(!checked)}
-          className={cn('clean-toggle', checked && 'clean-toggle--active')}
+          onClick={handleToggle}
+          disabled={isSaving}
+          className={cn('clean-toggle', isChecked && 'clean-toggle--active', isSaving && 'opacity-50 cursor-wait')}
         >
           <span className="clean-toggle-knob" />
         </button>
-        <span className="clean-toggle-label">{checked ? 'On' : 'Off'}</span>
+        <span className="clean-toggle-label">
+          {isSaving ? 'Guardando...' : isChecked ? 'On' : 'Off'}
+        </span>
       </div>
       {description && (
         <p className="clean-settings-field-desc">{description}</p>
@@ -2824,444 +2987,10 @@ function SettingsToggle({
   );
 }
 
-// Design View (Main Content)
-function DesignView({
-  event,
-  activeSection,
-  showMobilePreview,
-  onToggleMobilePreview,
-}: {
-  event: EventRow;
-  activeSection: DesignSection;
-  showMobilePreview: boolean;
-  onToggleMobilePreview: () => void;
-}) {
-  return (
-    <div className="clean-design-view">
-      {/* Preview Toggle Button */}
-      <div className="clean-design-header">
-        <button
-          onClick={onToggleMobilePreview}
-          className={cn(
-            'clean-preview-toggle',
-            showMobilePreview && 'clean-preview-toggle--active'
-          )}
-        >
-          <Smartphone className="w-4 h-4" />
-          {showMobilePreview ? 'Hide Preview' : 'Show Preview'}
-        </button>
-      </div>
 
-      {activeSection === 'cover' && <CoverStyleSection event={event} />}
-      {activeSection === 'theme' && <ThemeSection event={event} />}
-      {activeSection === 'layout' && <LayoutSection />}
-      {activeSection === 'app' && <AppSettingsSection event={event} />}
-    </div>
-  );
-}
 
-// Cover Style Section
-function CoverStyleSection({ event }: { event: EventRow }) {
-  // Read initial cover style from event metadata
-  const getInitialCoverStyle = (): CoverStyle => {
-    const metadata = event.metadata as Record<string, unknown> | null;
-    if (metadata && typeof metadata.coverStyle === 'string') {
-      const style = metadata.coverStyle as string;
-      if (style === 'full' || style === 'third' || style === 'none') {
-        return style;
-      }
-    }
-    return 'full'; // default
-  };
 
-  const [selectedStyle, setSelectedStyle] = useState<CoverStyle>(getInitialCoverStyle);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
 
-  const coverStyles: { id: CoverStyle; label: string }[] = [
-    { id: 'full', label: 'Full' },
-    { id: 'third', label: 'Third' },
-    { id: 'none', label: 'None' },
-  ];
-
-  const handleStyleChange = async (styleId: CoverStyle) => {
-    if (styleId === selectedStyle || isSaving) return;
-
-    setSelectedStyle(styleId);
-    setIsSaving(true);
-    setSaveMessage(null);
-
-    try {
-      // Merge with existing metadata
-      const currentMetadata = (event.metadata as Record<string, unknown>) || {};
-      const newMetadata = {
-        ...currentMetadata,
-        coverStyle: styleId,
-      };
-
-      const response = await fetch(`/api/admin/events/${event.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ metadata: newMetadata }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save');
-      }
-
-      setSaveMessage({ type: 'success', text: 'Cover style saved' });
-      setTimeout(() => setSaveMessage(null), 2000);
-    } catch (error) {
-      console.error('Failed to save cover style:', error);
-      setSaveMessage({ type: 'error', text: 'Failed to save' });
-      // Revert on error
-      setSelectedStyle(getInitialCoverStyle());
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <>
-      <h2 className="clean-settings-title">Cover Style</h2>
-
-      <div className="clean-design-section">
-        <div className="clean-cover-style-header">
-          <span className="clean-label">Photo Cover</span>
-          <div className="clean-cover-actions">
-            {saveMessage && (
-              <span className={cn(
-                'text-sm mr-2',
-                saveMessage.type === 'success' ? 'text-teal-600' : 'text-red-500'
-              )}>
-                {saveMessage.text}
-              </span>
-            )}
-            {isSaving && (
-              <span className="text-sm text-gray-400 mr-2">Saving...</span>
-            )}
-            <button className="clean-link-btn">
-              <ImageIcon className="w-4 h-4" />
-              Change photo
-            </button>
-            <button className="clean-link-btn">
-              <span className="w-4 h-4 flex items-center justify-center">◎</span>
-              Set focal
-            </button>
-          </div>
-        </div>
-
-        <div className="clean-cover-options">
-          {coverStyles.map((style) => (
-            <button
-              key={style.id}
-              onClick={() => handleStyleChange(style.id)}
-              disabled={isSaving}
-              className={cn(
-                'clean-cover-option',
-                selectedStyle === style.id && 'clean-cover-option--selected',
-                isSaving && 'opacity-50 cursor-not-allowed'
-              )}
-            >
-              <div className="clean-cover-preview">
-                {style.id === 'full' && (
-                  <div className="clean-cover-full">
-                    <div className="clean-cover-image-placeholder" />
-                  </div>
-                )}
-                {style.id === 'third' && (
-                  <div className="clean-cover-third">
-                    <div className="clean-cover-image-placeholder" />
-                  </div>
-                )}
-                {style.id === 'none' && (
-                  <div className="clean-cover-none">
-                    <div className="clean-cover-text-placeholder" />
-                  </div>
-                )}
-              </div>
-              <span className="clean-cover-label">{style.label}</span>
-            </button>
-          ))}
-        </div>
-      </div>
-    </>
-  );
-}
-
-// Theme Section
-function ThemeSection({ event }: { event: EventRow }) {
-  // Read initial theme from event metadata
-  const getInitialTheme = (): ThemeName => {
-    const metadata = event.metadata as Record<string, unknown> | null;
-    if (metadata && typeof metadata.themeName === 'string') {
-      const theme = metadata.themeName as string;
-      if (theme === 'echo' || theme === 'spring' || theme === 'lark' || theme === 'sage') {
-        return theme;
-      }
-    }
-    return 'echo'; // default
-  };
-
-  const [selectedTheme, setSelectedTheme] = useState<ThemeName>(getInitialTheme);
-  const [isSaving, setIsSaving] = useState(false);
-  const [saveMessage, setSaveMessage] = useState<{ type: 'success' | 'error'; text: string } | null>(null);
-
-  const themes: { id: ThemeName; label: string; image: string }[] = [
-    { id: 'echo', label: 'Echo', image: '/assets/themes/echo.jpg' },
-    { id: 'spring', label: 'Spring', image: '/assets/themes/spring.jpg' },
-    { id: 'lark', label: 'Lark', image: '/assets/themes/lark.jpg' },
-    { id: 'sage', label: 'Sage', image: '/assets/themes/sage.jpg' },
-  ];
-
-  const handleThemeChange = async (themeId: ThemeName) => {
-    if (themeId === selectedTheme || isSaving) return;
-
-    setSelectedTheme(themeId);
-    setIsSaving(true);
-    setSaveMessage(null);
-
-    try {
-      const currentMetadata = (event.metadata as Record<string, unknown>) || {};
-      const newMetadata = {
-        ...currentMetadata,
-        themeName: themeId,
-      };
-
-      const response = await fetch(`/api/admin/events/${event.id}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ metadata: newMetadata }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to save');
-      }
-
-      setSaveMessage({ type: 'success', text: 'Theme saved' });
-      setTimeout(() => setSaveMessage(null), 2000);
-    } catch (error) {
-      console.error('Failed to save theme:', error);
-      setSaveMessage({ type: 'error', text: 'Failed to save' });
-      setSelectedTheme(getInitialTheme());
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  return (
-    <>
-      <div className="flex items-center justify-between mb-2">
-        <h2 className="clean-settings-title">Theme</h2>
-        {saveMessage && (
-          <span className={cn(
-            'text-sm',
-            saveMessage.type === 'success' ? 'text-teal-600' : 'text-red-500'
-          )}>
-            {saveMessage.text}
-          </span>
-        )}
-        {isSaving && (
-          <span className="text-sm text-gray-400">Saving...</span>
-        )}
-      </div>
-      <p className="text-gray-500 mb-6">
-        Each cover theme offers a unique font and layout giving your cover photo an amazing first impression.
-      </p>
-
-      <div className="clean-theme-grid">
-        {themes.map((theme) => (
-          <button
-            key={theme.id}
-            onClick={() => handleThemeChange(theme.id)}
-            disabled={isSaving}
-            className={cn(
-              'clean-theme-option',
-              selectedTheme === theme.id && 'clean-theme-option--selected',
-              isSaving && 'opacity-50 cursor-not-allowed'
-            )}
-          >
-            <div className="clean-theme-preview">
-              <div className="clean-theme-image">
-                <ImageIcon className="w-8 h-8 text-gray-300" />
-              </div>
-              <div className="clean-theme-overlay">
-                <span className="clean-theme-title-preview">{theme.label}</span>
-              </div>
-            </div>
-            <span className="clean-theme-label">{theme.label}</span>
-          </button>
-        ))}
-      </div>
-
-      <div className="clean-design-accordion">
-        <button className="clean-accordion-trigger">
-          <span>Photos Layout & Color</span>
-          <ChevronDown className="w-4 h-4" />
-        </button>
-        <button className="clean-accordion-trigger">
-          <span>App Icon</span>
-          <ChevronDown className="w-4 h-4" />
-        </button>
-      </div>
-    </>
-  );
-}
-
-// Layout Section
-function LayoutSection() {
-  const [gridSize, setGridSize] = useState<'small' | 'medium' | 'large'>('medium');
-  const [gridGap, setGridGap] = useState<'none' | 'small' | 'medium'>('small');
-
-  return (
-    <>
-      <h2 className="clean-settings-title">Photos Layout & Color</h2>
-
-      <div className="clean-settings-form">
-        <SettingsField label="Grid Size" description="Choose the size of photo thumbnails.">
-          <div className="clean-button-group">
-            {(['small', 'medium', 'large'] as const).map((size) => (
-              <button
-                key={size}
-                onClick={() => setGridSize(size)}
-                className={cn(
-                  'clean-button-option',
-                  gridSize === size && 'clean-button-option--selected'
-                )}
-              >
-                {size.charAt(0).toUpperCase() + size.slice(1)}
-              </button>
-            ))}
-          </div>
-        </SettingsField>
-
-        <SettingsField label="Grid Gap" description="Set the spacing between photos.">
-          <div className="clean-button-group">
-            {(['none', 'small', 'medium'] as const).map((gap) => (
-              <button
-                key={gap}
-                onClick={() => setGridGap(gap)}
-                className={cn(
-                  'clean-button-option',
-                  gridGap === gap && 'clean-button-option--selected'
-                )}
-              >
-                {gap.charAt(0).toUpperCase() + gap.slice(1)}
-              </button>
-            ))}
-          </div>
-        </SettingsField>
-
-        <SettingsField label="Background Color" description="Set the gallery background color.">
-          <div className="clean-color-picker">
-            <div className="clean-color-preview" style={{ backgroundColor: '#ffffff' }} />
-            <input
-              type="text"
-              className="clean-input"
-              defaultValue="#ffffff"
-              placeholder="#ffffff"
-            />
-          </div>
-        </SettingsField>
-
-        <SettingsToggle
-          label="Show Photo Numbers"
-          description="Display photo numbers in the gallery grid."
-          defaultChecked={false}
-        />
-
-        <SettingsToggle
-          label="Lazy Loading"
-          description="Load photos as visitors scroll for better performance."
-          defaultChecked={true}
-        />
-      </div>
-    </>
-  );
-}
-
-// App Settings Section
-function AppSettingsSection({ event }: { event: EventRow }) {
-  const [ctaEnabled, setCtaEnabled] = useState(true);
-
-  return (
-    <>
-      <h2 className="clean-settings-title">App Settings</h2>
-
-      <div className="clean-settings-form">
-        <SettingsField
-          label="App Name"
-          description="The name displayed in the mobile gallery app."
-        >
-          <input
-            type="text"
-            className="clean-input"
-            defaultValue={event.name ?? 'Sample Gallery App'}
-            placeholder="Gallery Name"
-          />
-        </SettingsField>
-
-        <SettingsField
-          label="Event Date"
-          description="The date displayed on the gallery cover."
-        >
-          <input
-            type="date"
-            className="clean-input"
-            defaultValue={event.date ?? ''}
-          />
-        </SettingsField>
-
-        <div className="clean-settings-field">
-          <label className="clean-settings-field-label">Status</label>
-          <SettingsToggle
-            label="Published"
-            description="You can take the gallery app online/offline quickly. Unpublished gallery apps can only be seen by you."
-            defaultChecked={true}
-          />
-        </div>
-
-        <div className="clean-settings-field">
-          <label className="clean-settings-field-label">Call to Action Button</label>
-          <div className="clean-toggle-row mb-3">
-            <button
-              onClick={() => setCtaEnabled(!ctaEnabled)}
-              className={cn('clean-toggle', ctaEnabled && 'clean-toggle--active')}
-            >
-              <span className="clean-toggle-knob" />
-            </button>
-            <span className="clean-toggle-label">{ctaEnabled ? 'Enabled' : 'Disabled'}</span>
-          </div>
-          <p className="clean-settings-field-desc mb-4">
-            Add a call-to-action button to the end of the photo section to bring your clients to other pages like the full gallery, your website or blog.
-          </p>
-
-          {ctaEnabled && (
-            <div className="clean-cta-fields">
-              <SettingsField label="Button Label">
-                <input
-                  type="text"
-                  className="clean-input"
-                  defaultValue="Visit Website"
-                  placeholder="Button text"
-                />
-              </SettingsField>
-
-              <SettingsField label="Link URL">
-                <input
-                  type="url"
-                  className="clean-input"
-                  defaultValue="https://example.com/"
-                  placeholder="https://..."
-                />
-              </SettingsField>
-            </div>
-          )}
-        </div>
-      </div>
-    </>
-  );
-}
 
 // Activity View (Main Content)
 function ActivityView() {
@@ -3279,6 +3008,15 @@ function ActivityView() {
   );
 }
 
+const DEVICE_STORAGE_KEY = 'clean-event-preview-device';
+
+function formatPreviewTime(value: Date) {
+  return value.toLocaleTimeString('es-ES', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
+}
+
 // Mobile Preview Panel
 function MobilePreviewPanel({
   event,
@@ -3287,63 +3025,221 @@ function MobilePreviewPanel({
   event: EventRow;
   onClose: () => void;
 }) {
-  const eventName = event.name ?? 'Sample Gallery App';
-  const eventDate = event.date
-    ? new Date(event.date).toLocaleDateString('en-US', {
-        month: 'long',
-        day: 'numeric',
-        year: 'numeric',
-      }).toUpperCase()
-    : 'DATE';
+  const eventName = event.name ?? 'Galeria';
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [previewError, setPreviewError] = useState<string | null>(null);
+  const [isLoadingPreview, setIsLoadingPreview] = useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
+  const [device, setDevice] = useState<DeviceType>('mobile');
+  const [lastUpdatedAt, setLastUpdatedAt] = useState<Date | null>(null);
+  const [expiresAt, setExpiresAt] = useState<Date | null>(null);
+
+  useEffect(() => {
+    try {
+      const stored = localStorage.getItem(DEVICE_STORAGE_KEY);
+      if (stored === 'mobile' || stored === 'tablet' || stored === 'desktop') {
+        setDevice(stored);
+      }
+    } catch (error) {
+      console.warn('Failed to read preview device preference', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DEVICE_STORAGE_KEY, device);
+    } catch (error) {
+      console.warn('Failed to save preview device preference', error);
+    }
+  }, [device]);
+
+  useEffect(() => {
+    setPreviewUrl(null);
+    setPreviewError(null);
+    setLastUpdatedAt(null);
+    setExpiresAt(null);
+  }, [event.id]);
+
+  useEffect(() => {
+    let isActive = true;
+
+    const loadPreview = async () => {
+      setIsLoadingPreview(true);
+      setPreviewError(null);
+
+      try {
+        const response = await fetch('/api/admin/preview', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ event_id: event.id }),
+        });
+        const data = await response.json().catch(() => ({}));
+
+        if (!response.ok) {
+          throw new Error(data.error || 'No se pudo generar la vista previa');
+        }
+
+        if (!data.preview_url) {
+          throw new Error('Respuesta sin URL de vista previa');
+        }
+
+        if (isActive) {
+          setPreviewUrl(data.preview_url);
+          setLastUpdatedAt(new Date());
+          setExpiresAt(data.expires_at ? new Date(data.expires_at) : null);
+        }
+      } catch (error) {
+        if (isActive) {
+          setPreviewError(
+            error instanceof Error
+              ? error.message
+              : 'No se pudo generar la vista previa'
+          );
+        }
+      } finally {
+        if (isActive) {
+          setIsLoadingPreview(false);
+        }
+      }
+    };
+
+    loadPreview();
+    return () => {
+      isActive = false;
+    };
+  }, [event.id, refreshCount]);
 
   return (
     <aside className="clean-mobile-preview-panel">
       <div className="clean-mobile-preview-header">
         <button onClick={onClose} className="clean-back-link">
           <ChevronLeft className="w-4 h-4" />
-          Back
+          Volver
         </button>
-        <div className="clean-device-toggle">
-          <button className="clean-device-btn clean-device-btn--active">
-            <Smartphone className="w-4 h-4" />
+        <div className="clean-mobile-preview-actions">
+          <button
+            type="button"
+            className="clean-icon-btn"
+            onClick={() => setRefreshCount((count) => count + 1)}
+            title="Refrescar vista previa"
+            aria-label="Refrescar vista previa"
+            disabled={isLoadingPreview}
+          >
+            <RefreshCw className={cn('w-4 h-4', isLoadingPreview && 'animate-spin')} />
+          </button>
+          <button
+            type="button"
+            className="clean-icon-btn"
+            onClick={() => {
+              if (previewUrl) {
+                window.open(previewUrl, '_blank', 'noopener,noreferrer');
+              }
+            }}
+            title="Abrir en nueva pestaña"
+            aria-label="Abrir en nueva pestaña"
+            disabled={!previewUrl}
+          >
+            <ExternalLink className="w-4 h-4" />
           </button>
         </div>
       </div>
 
       <div className="clean-mobile-preview-content">
+        <div className="clean-mobile-preview-toolbar">
+          <div className="clean-device-toggle">
+            <button
+              type="button"
+              className={cn('clean-device-btn', device === 'mobile' && 'clean-device-btn--active')}
+              onClick={() => setDevice('mobile')}
+              aria-pressed={device === 'mobile'}
+              title="Mobile"
+            >
+              <Smartphone className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              className={cn('clean-device-btn', device === 'tablet' && 'clean-device-btn--active')}
+              onClick={() => setDevice('tablet')}
+              aria-pressed={device === 'tablet'}
+              title="Tablet"
+            >
+              <Tablet className="w-4 h-4" />
+            </button>
+            <button
+              type="button"
+              className={cn('clean-device-btn', device === 'desktop' && 'clean-device-btn--active')}
+              onClick={() => setDevice('desktop')}
+              aria-pressed={device === 'desktop'}
+              title="Desktop"
+            >
+              <Monitor className="w-4 h-4" />
+            </button>
+          </div>
+          <div
+            className={cn(
+              'clean-mobile-preview-status',
+              previewError && 'clean-mobile-preview-status--error'
+            )}
+          >
+            {isLoadingPreview
+              ? 'Actualizando...'
+              : previewError
+              ? 'No se pudo actualizar'
+              : previewUrl
+              ? 'Lista'
+              : 'Sin vista previa'}
+            {(lastUpdatedAt || expiresAt) && (
+              <div className="clean-mobile-preview-meta">
+                {lastUpdatedAt && (
+                  <span>Actualizado {formatPreviewTime(lastUpdatedAt)}</span>
+                )}
+                {expiresAt && (
+                  <span>Expira {formatPreviewTime(expiresAt)}</span>
+                )}
+              </div>
+            )}
+          </div>
+        </div>
+
         <p className="clean-mobile-preview-hint">
-          Scroll and click to preview your gallery app.
+          Vista previa de {eventName}. Desliza y toca para navegar.
         </p>
 
-        {/* Phone Frame */}
-        <div className="clean-phone-frame">
-          <div className="clean-phone-notch" />
-          <div className="clean-phone-screen">
-            {/* Cover Image Area */}
-            <div className="clean-phone-cover">
-              <div className="clean-phone-cover-overlay">
-                <span className="clean-phone-date">{eventDate}</span>
-                <h2 className="clean-phone-title">{eventName.toUpperCase()}</h2>
-                <button className="clean-phone-cta">VIEW PHOTOS</button>
+        <div className="clean-mobile-preview-frame">
+          {previewError && !previewUrl ? (
+            <div className="clean-mobile-preview-state clean-mobile-preview-state--error">
+              <div className="clean-mobile-preview-state-inner">
+                <AlertCircle className="w-5 h-5" />
+                <p className="text-sm font-medium">No se pudo cargar la vista previa</p>
+                <p className="text-xs">{previewError}</p>
+                <button
+                  type="button"
+                  className="clean-btn clean-btn--secondary clean-btn--sm"
+                  onClick={() => setRefreshCount((count) => count + 1)}
+                >
+                  Reintentar
+                </button>
               </div>
             </div>
-
-            {/* Bottom Navigation */}
-            <div className="clean-phone-nav">
-              <button className="clean-phone-nav-item clean-phone-nav-item--active">
-                <span className="clean-phone-nav-icon">🏠</span>
-              </button>
-              <button className="clean-phone-nav-item">
-                <Heart className="w-5 h-5" />
-              </button>
-              <button className="clean-phone-nav-item">
-                <Share2 className="w-5 h-5" />
-              </button>
-              <button className="clean-phone-nav-item">
-                <Settings className="w-5 h-5" />
-              </button>
+          ) : previewUrl ? (
+            <PreviewFrame
+              key={`${previewUrl}-${refreshCount}`}
+              src={previewUrl}
+              device={device}
+              title={`Vista previa ${eventName}`}
+              className="clean-mobile-preview-iframe"
+            />
+          ) : (
+            <div className="clean-mobile-preview-state">
+              <div className="clean-mobile-preview-state-inner">
+                <p className="text-sm">
+                  {isLoadingPreview
+                    ? 'Generando vista previa...'
+                    : 'Vista previa no disponible'}
+                </p>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
     </aside>
@@ -3660,10 +3556,10 @@ function PhotoDetailModal({
 
   // Get photo URL
   const photoUrl = photo.preview_path
-    ? getStorageUrl(photo.preview_path, 'photos')
+    ? getStorageUrl(photo.preview_path)
     : photo.storage_path
-    ? getStorageUrl(photo.storage_path, 'photos')
-    : '';
+      ? getStorageUrl(photo.storage_path)
+      : '';
 
   // Load tagged students
   useEffect(() => {

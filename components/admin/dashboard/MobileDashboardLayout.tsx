@@ -9,9 +9,8 @@ import {
   Clock,
   ArrowRight,
   Calendar,
-  Users,
   DollarSign,
-  Zap,
+  Share2,
 } from 'lucide-react';
 
 import { DashboardStats } from '@/types/dashboard';
@@ -39,10 +38,10 @@ export function MobileDashboardLayout({
       color: 'bg-purple-500',
     },
     {
-      href: '/admin/quick-flow',
-      icon: Zap,
-      title: 'Flujo Rápido',
-      color: 'bg-pink-500',
+      href: '/admin/publish',
+      icon: Share2,
+      title: 'Publicar',
+      color: 'bg-emerald-500',
     },
   ];
 
@@ -61,7 +60,7 @@ export function MobileDashboardLayout({
           <h1 className="text-xl font-bold tracking-tight text-slate-900 dark:text-white">
             Estudio
           </h1>
-          <p className="text-xs font-medium text-slate-500 dark:text-slate-400">
+          <p className="text-xs font-medium text-slate-600 dark:text-slate-400">
             {currentTime.toLocaleDateString('es-ES', {
               weekday: 'long',
               day: 'numeric',
@@ -87,7 +86,7 @@ export function MobileDashboardLayout({
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
                 {stats.activeEvents}
               </div>
-              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-600 dark:text-slate-400">
                 Eventos Activos
               </div>
             </div>
@@ -103,7 +102,7 @@ export function MobileDashboardLayout({
               <div className="text-2xl font-bold text-slate-900 dark:text-white">
                 {stats.todayUploads}
               </div>
-              <div className="text-xs font-medium text-slate-500 dark:text-slate-400">
+              <div className="text-xs font-medium text-slate-600 dark:text-slate-400">
                 Fotos Hoy
               </div>
             </div>
@@ -131,7 +130,7 @@ export function MobileDashboardLayout({
                     className={`h-6 w-6 ${action.color.replace('bg-', 'text-')}`}
                   />
                 </div>
-                <span className="text-[10px] font-medium text-slate-600 dark:text-slate-300">
+                <span className="text-[10px] font-medium text-slate-700 dark:text-slate-300">
                   {action.title}
                 </span>
               </a>
@@ -173,7 +172,7 @@ export function MobileDashboardLayout({
           </div>
           <div className="flex items-center justify-between">
             <span className="text-sm text-slate-600 dark:text-slate-300">
-              Total familias
+              Total clientes
             </span>
             <span className="font-bold tabular-nums text-slate-900 dark:text-white">
               {stats.registeredFamilies}
@@ -226,15 +225,15 @@ export function MobileDashboardLayout({
               <ArrowRight className="h-4 w-4 text-slate-400" />
             </a>
             <a
-              href="/admin/subjects"
+              href="/admin/publish"
               className="flex w-full items-center justify-between rounded-xl p-3 transition-colors hover:bg-white/5 active:bg-white/10"
             >
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-purple-500/10 p-2 text-purple-600 dark:text-purple-400">
-                  <Users className="h-4 w-4" />
+                <div className="rounded-lg bg-emerald-500/10 p-2 text-emerald-600 dark:text-emerald-400">
+                  <Share2 className="h-4 w-4" />
                 </div>
                 <span className="text-sm font-medium text-slate-700 dark:text-slate-200">
-                  Administrar familias
+                  Compartir con clientes
                 </span>
               </div>
               <ArrowRight className="h-4 w-4 text-slate-400" />

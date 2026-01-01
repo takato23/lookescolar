@@ -4,6 +4,9 @@ import { z } from 'zod';
 import { verifyAuthAdmin } from '@/lib/security/auth';
 import { applyRateLimit } from '@/lib/security/rate-limit';
 import { supabaseAdmin } from '@/lib/supabase/admin';
+import { qrService } from '@/lib/services/qr.service';
+import { getQrTaggingStatus } from '@/lib/qr/feature';
+import { STUDENT_QR_PREFIX } from '@/lib/qr/format';
 
 // Batch course operations schema
 const BatchCourseSchema = z.object({
@@ -152,6 +155,11 @@ async function batchCourseOperations(body: any, adminId: string) {
   if (eventError || !event) {
     return NextResponse.json({ error: 'Event not found' }, { status: 404 });
   }
+
+  const qrFeature = await getQrTaggingStatus({
+    supabase: supabaseAdmin,
+    eventId: validatedData.eventId,
+  });
 
   const results: Array<{
     index: number;
@@ -342,12 +350,6 @@ async function batchStudentOperations(body: any, adminId: string) {
       try {
         switch (validatedData.operation) {
           case 'create':
-            // Generate QR code if requested
-            let qrCode: string | undefined;
-            if (student.generateQrCode) {
-              qrCode = `STU-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`;
-            }
-
             const { data: newStudent, error: createError } = await supabaseAdmin
               .from('students')
               .insert({
@@ -362,7 +364,7 @@ async function batchStudentOperations(body: any, adminId: string) {
                 parent_name: student.parentName,
                 parent_email: student.parentEmail,
                 parent_phone: student.parentPhone,
-                qr_code: qrCode,
+                qr_code: null,
                 active: student.active,
               })
               .select('id')
@@ -392,13 +394,24 @@ async function batchStudentOperations(body: any, adminId: string) {
               }
             }
 
+            let qrCodeValue: string | undefined;
+            if (student.generateQrCode && qrFeature.enabled) {
+              const qrResult = await qrService.generateStudentIdentificationQR(
+                validatedData.eventId,
+                newStudent.id,
+                student.name,
+                student.courseId || validatedData.courseId
+              );
+              qrCodeValue = `${STUDENT_QR_PREFIX}${qrResult.token}`;
+            }
+
             results.push({
               index: i,
               studentName: student.name,
               status: 'success',
               id: newStudent.id,
               token,
-              qrCode,
+              qrCode: qrCodeValue,
             });
             break;
 
@@ -556,6 +569,11 @@ async function importFromCsv(body: any, adminId: string) {
   const validatedData = ImportCsvSchema.parse(body);
 
   try {
+    const qrFeature = await getQrTaggingStatus({
+      supabase: supabaseAdmin,
+      eventId: validatedData.eventId,
+    });
+
     // Parse CSV data
     const options = {
       hasHeader: true,
@@ -654,11 +672,6 @@ async function importFromCsv(body: any, adminId: string) {
             courseId = course?.id || null;
           }
 
-          // Generate QR code and token
-          const qrCode = options.generateQrCodes
-            ? `STU-${Date.now()}-${Math.random().toString(36).substr(2, 8)}`
-            : null;
-
           const { data: newStudent, error } = await supabaseAdmin
             .from('students')
             .insert({
@@ -671,7 +684,7 @@ async function importFromCsv(body: any, adminId: string) {
               email: values[4] || null,
               parent_name: values[5] || null,
               parent_email: values[6] || null,
-              qr_code: qrCode,
+              qr_code: null,
             })
             .select('id')
             .single();
@@ -693,11 +706,23 @@ async function importFromCsv(body: any, adminId: string) {
             });
           }
 
+          let qrCodeValue: string | null = null;
+          if (options.generateQrCodes && qrFeature.enabled) {
+            const qrResult = await qrService.generateStudentIdentificationQR(
+              validatedData.eventId,
+              newStudent.id,
+              studentName,
+              courseId ?? undefined
+            );
+            qrCodeValue = `${STUDENT_QR_PREFIX}${qrResult.token}`;
+          }
+
           results.push({
             row: i + 1,
             name: studentName,
             status: 'success',
             id: newStudent.id,
+            qrCode: qrCodeValue,
           });
         }
       } catch (error) {

@@ -66,7 +66,7 @@ export function TaggingPreview({
                 <div className="mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-green-100">
                   <span className="text-2xl">👤</span>
                 </div>
-                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Alumno</div>
+                <div className="text-sm font-medium text-gray-500 dark:text-gray-400">Invitado</div>
               </div>
             </div>
           </div>
@@ -79,7 +79,7 @@ export function TaggingPreview({
             </div>
 
             <div className="flex items-start justify-between border-b border-gray-100 py-2">
-              <span className="text-gray-500 dark:text-gray-400">Alumno:</span>
+              <span className="text-gray-500 dark:text-gray-400">Invitado:</span>
               <span className="max-w-48 break-words text-right font-medium text-foreground">
                 {assignment.subjectName}
               </span>

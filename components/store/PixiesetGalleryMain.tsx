@@ -10,18 +10,20 @@ import {
   MapPin,
   Camera,
   Sparkles,
-  Users,
-  Share2,
-  Heart,
   ShoppingBag,
   Image as ImageIcon,
-  Filter,
   ArrowRight,
-  Star,
   BookmarkCheck,
   Loader2,
-  Check,
+  Heart,
+  Share2
 } from 'lucide-react';
+import {
+  resolveStoreDesign,
+  getPaletteTokens,
+  getTypographyPreset,
+  getGridClasses,
+} from '@/lib/store/store-design';
 
 interface Photo {
   id: string;
@@ -97,7 +99,8 @@ function PhotoCard({
   isFavorite,
   onPhotoClick,
   onToggleFavorite,
-  onBuyPhoto
+  onBuyPhoto,
+  design
 }: {
   photo: Photo;
   isHovered: boolean;
@@ -105,6 +108,7 @@ function PhotoCard({
   onPhotoClick: (photo: Photo) => void;
   onToggleFavorite?: (photoId: string) => void;
   onBuyPhoto: (photo: Photo) => void;
+  design: any;
 }) {
   const [imageLoading, setImageLoading] = useState(true);
   const [imageError, setImageError] = useState(false);
@@ -124,7 +128,14 @@ function PhotoCard({
   return (
     <motion.div
       variants={itemVariants}
-      className="group relative overflow-hidden rounded-3xl bg-white/50 shadow-sm transition-all duration-500 hover:shadow-xl hover:-translate-y-1 dark:bg-slate-900/50 border border-white/20 dark:border-white/10 backdrop-blur-sm"
+      className={cn(
+        "group relative overflow-hidden bg-white/50 transition-all duration-500 hover:-translate-y-1 dark:bg-slate-900/50 backdrop-blur-sm",
+        design.cover.variant === 'journal' ? "rounded-sm" : "rounded-3xl",
+        design.cover.variant === 'outline' ? "border border-current" : "shadow-sm hover:shadow-xl",
+      )}
+      style={{
+        borderColor: 'var(--border)',
+      }}
     >
       {/* Favorite button */}
       <motion.button
@@ -148,7 +159,9 @@ function PhotoCard({
       {/* Image container */}
       <button
         type="button"
-        className="relative block aspect-[3/4] w-full overflow-hidden"
+        className={cn("relative block w-full overflow-hidden",
+          design.grid.style === 'horizontal' ? 'aspect-[4/3]' : 'aspect-[3/4]'
+        )}
         onClick={() => onPhotoClick(photo)}
       >
         {imageLoading && (
@@ -192,7 +205,10 @@ function PhotoCard({
           isHovered && "opacity-100"
         )}>
           <div className="transform translate-y-4 transition-transform duration-300 group-hover:translate-y-0">
-            <span className="inline-flex items-center gap-2 rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-slate-900 shadow-lg backdrop-blur-md">
+            <span
+              className="inline-flex items-center gap-2 rounded-full px-4 py-2 text-sm font-medium shadow-lg backdrop-blur-md"
+              style={{ backgroundColor: 'var(--surface)', color: 'var(--text)' }}
+            >
               <Sparkles className="h-4 w-4 text-amber-500" />
               Ver detalles
             </span>
@@ -201,25 +217,19 @@ function PhotoCard({
       </button>
 
       {/* Photo info */}
-      <div className="relative p-4 bg-white/60 dark:bg-slate-900/60 backdrop-blur-md border-t border-white/20 dark:border-white/5">
+      <div
+        className="relative p-4 backdrop-blur-md border-t border-white/5"
+        style={{ backgroundColor: 'var(--background)' }}
+      >
         <div className="flex items-start justify-between gap-3 mb-3">
           <div className="min-w-0 flex-1 space-y-1">
-            <p className="text-sm font-semibold text-slate-900 line-clamp-1 dark:text-slate-100">
+            <p className="text-sm font-semibold line-clamp-1" style={{ color: 'var(--text)' }}>
               {photo.student || 'Foto individual'}
             </p>
-            <p className="text-xs text-slate-500 line-clamp-1 dark:text-slate-400">
+            <p className="text-xs line-clamp-1 opacity-70" style={{ color: 'var(--text-secondary)' }}>
               {photo.subject || 'Colección LookEscolar'}
             </p>
           </div>
-          {photo.isGroupPhoto ? (
-            <Badge variant="outline" className="bg-blue-50/50 text-blue-700 border-blue-200/50 dark:bg-blue-900/20 dark:text-blue-300 dark:border-blue-800/50 backdrop-blur-sm">
-              Grupal
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="bg-slate-100/50 text-slate-700 border-slate-200/50 dark:bg-slate-800/50 dark:text-slate-300 dark:border-slate-700/50 backdrop-blur-sm">
-              Individual
-            </Badge>
-          )}
         </div>
 
         {/* Action buttons */}
@@ -227,14 +237,16 @@ function PhotoCard({
           <Button
             variant="outline"
             size="sm"
-            className="w-full border-slate-200 bg-white/50 hover:bg-white hover:text-slate-900 dark:border-slate-700 dark:bg-slate-800/50 dark:hover:bg-slate-800 dark:text-slate-300 transition-all duration-200"
+            className="w-full transition-all duration-200"
+            style={{ borderColor: 'var(--border)', color: 'var(--text)' }}
             onClick={() => onPhotoClick(photo)}
           >
             Ver
           </Button>
           <Button
             size="sm"
-            className="w-full bg-slate-900 text-white hover:bg-slate-800 dark:bg-white dark:text-slate-900 dark:hover:bg-slate-100 shadow-md hover:shadow-lg transition-all duration-200"
+            className="w-full shadow-md hover:shadow-lg transition-all duration-200"
+            style={{ backgroundColor: 'var(--text)', color: 'var(--background)' }}
             onClick={() => onBuyPhoto(photo)}
           >
             Seleccionar
@@ -263,10 +275,27 @@ export function PixiesetGalleryMain({
   onShareEvent,
   className,
   settings,
-  theme,
+  theme: legacyTheme,
 }: PixiesetGalleryMainProps) {
   const [activeFilter, setActiveFilter] = useState<string>('all');
   const [hoveredPhoto, setHoveredPhoto] = useState<string | null>(null);
+
+  // Resolve Design
+  const design = useMemo(() => resolveStoreDesign(settings?.design), [settings?.design]);
+  const palette = useMemo(() => getPaletteTokens(design.color.palette), [design.color.palette]);
+  const typography = useMemo(() => getTypographyPreset(design.typography.preset), [design.typography.preset]);
+  const grid = useMemo(() => getGridClasses(design.grid), [design.grid]);
+
+  // CSS Variables for dynamic theming
+  const themeStyle = {
+    '--primary': palette.accent,
+    '--secondary': palette.accentSoft,
+    '--background': palette.background,
+    '--surface': palette.surface,
+    '--text': palette.text,
+    '--text-secondary': palette.muted,
+    '--border': palette.border,
+  } as React.CSSProperties;
 
   const metrics = useMemo(() => {
     const primaryPackage = packages[0];
@@ -307,9 +336,9 @@ export function PixiesetGalleryMain({
   }, [photos, activeFilter]);
 
   const heroTitle =
-    theme?.texts?.hero_title || settings?.texts?.hero_title || eventInfo.name;
+    legacyTheme?.texts?.hero_title || settings?.texts?.hero_title || eventInfo.name;
   const heroSubtitle =
-    theme?.texts?.hero_subtitle ||
+    legacyTheme?.texts?.hero_subtitle ||
     settings?.texts?.hero_subtitle ||
     eventInfo.subtitle ||
     'Elegí tus mejores recuerdos en minutos';
@@ -320,75 +349,138 @@ export function PixiesetGalleryMain({
     }
   };
 
+  // Hero Layout Logic
+  const isCentered = design.cover.style === 'center' || design.cover.style === 'joy';
+  const isLeft = design.cover.style === 'left' || design.cover.style === 'novel';
+  const isFrame = design.cover.style === 'frame' || design.cover.style === 'border';
+
+  const heroTextClass = cn(
+    typography.baseClass,
+    isCentered ? "text-center mx-auto" : "text-left",
+    "max-w-3xl"
+  );
+
+  const heroBgStyle = settings?.banner_url ? {
+    backgroundImage: `url(${settings.banner_url})`,
+    backgroundSize: 'cover',
+    backgroundPosition: 'center',
+  } : {
+    background: `linear-gradient(to bottom right, ${palette.accent}, ${palette.text})`
+  };
+
   return (
-    <div className={cn('looke-store min-h-screen bg-slate-50/50 dark:bg-slate-950', className)}>
+    <div
+      className={cn('looke-store min-h-screen transition-colors duration-500', className, typography.baseClass)}
+      style={themeStyle}
+    >
+      <style jsx global>{`
+           :root {
+              --font-theme: ${design.typography.preset === 'serif' ? 'serif' : 'sans-serif'};
+           }
+        `}</style>
+
       {/* Hero Section */}
-      <section className="relative overflow-hidden pb-12 pt-20 lg:pt-32">
+      <section className={cn(
+        "relative overflow-hidden",
+        design.cover.style === 'none' ? "pb-6 pt-12" : "pb-12 pt-20 lg:pt-32"
+      )}>
         {/* Background Elements */}
-        <div className="absolute inset-0 z-0">
-          {settings?.banner_url ? (
-            <>
-              <img
-                src={settings.banner_url}
-                alt="Banner"
-                className="h-full w-full object-cover opacity-90"
-              />
-              <div className="absolute inset-0 bg-gradient-to-b from-slate-900/60 via-slate-900/40 to-slate-50 dark:to-slate-950" />
-            </>
-          ) : (
-            <div className="h-full w-full bg-gradient-to-br from-indigo-600 via-purple-600 to-pink-500">
-              <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
-              <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-slate-50 dark:to-slate-950" />
-            </div>
-          )}
-        </div>
+        {design.cover.style !== 'none' && (
+          <div className="absolute inset-0 z-0 opacity-100">
+            {isFrame ? (
+              <div className="absolute inset-4 md:inset-8 border-[12px] opacity-20" style={{ borderColor: 'var(--surface)' }} />
+            ) : null}
+
+            <div
+              className={cn(
+                "absolute inset-0 transition-opacity",
+                isFrame ? "opacity-90" : "opacity-100"
+              )}
+              style={heroBgStyle}
+            />
+            <div
+              className="absolute inset-0"
+              style={{ background: `linear-gradient(to bottom, rgba(0,0,0,0.3) 0%, ${palette.background} 95%)` }}
+            />
+          </div>
+        )}
 
         <div className="relative z-10 mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="flex flex-col gap-12 lg:flex-row lg:items-center lg:justify-between">
+          <div className={cn(
+            "flex flex-col gap-12",
+            isCentered ? "items-center" : "lg:flex-row lg:items-center lg:justify-between"
+          )}>
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.6 }}
-              className="max-w-2xl space-y-8"
+              className={cn("space-y-8", heroTextClass)}
             >
               <div className="space-y-4">
                 <motion.div
-                  initial={{ opacity: 0, x: -20 }}
+                  initial={{ opacity: 0, x: isCentered ? 0 : -20 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.2 }}
+                  className={cn(isCentered && "flex justify-center")}
                 >
-                  <Badge className="bg-white/10 text-white backdrop-blur-md border-white/20 hover:bg-white/20 transition-colors px-4 py-1.5 text-sm font-medium">
+                  <Badge
+                    className="backdrop-blur-md border hover:bg-white/20 transition-colors px-4 py-1.5 text-sm font-medium"
+                    style={{
+                      backgroundColor: 'rgba(255,255,255,0.1)',
+                      borderColor: 'rgba(255,255,255,0.2)',
+                      color: 'white'
+                    }}
+                  >
                     <Sparkles className="mr-2 h-3.5 w-3.5 text-amber-300" />
                     Experiencia Premium
                   </Badge>
                 </motion.div>
 
-                <h1 className="text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-6xl drop-shadow-sm">
+                <h1
+                  className={cn(
+                    "text-4xl font-bold tracking-tight text-white sm:text-5xl lg:text-7xl drop-shadow-sm",
+                    typography.headingClass
+                  )}
+                  style={{ color: design.cover.style === 'none' ? 'var(--text)' : 'white' }}
+                >
                   {heroTitle}
                 </h1>
-                <p className="max-w-xl text-lg text-white/90 sm:text-xl leading-relaxed font-light">
+                <p
+                  className="text-lg sm:text-2xl leading-relaxed font-light"
+                  style={{ color: design.cover.style === 'none' ? 'var(--text-secondary)' : 'rgba(255,255,255,0.9)' }}
+                >
                   {heroSubtitle}
                 </p>
               </div>
 
-              <div className="flex flex-wrap gap-4 text-sm text-white/80">
-                <div className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 backdrop-blur-sm border border-white/10">
-                  <Calendar className="h-4 w-4" />
-                  <span>{eventInfo.date}</span>
-                </div>
-                {eventInfo.location && (
-                  <div className="flex items-center gap-2 rounded-full bg-white/10 px-4 py-2 backdrop-blur-sm border border-white/10">
-                    <MapPin className="h-4 w-4" />
-                    <span>{eventInfo.location}</span>
-                  </div>
-                )}
+              <div className={cn("flex flex-wrap gap-4 text-sm", isCentered && "justify-center")}>
+                {[
+                  { icon: Calendar, text: eventInfo.date },
+                  { icon: MapPin, text: eventInfo.location },
+                ].map((item, i) => (
+                  item.text && (
+                    <div
+                      key={i}
+                      className="flex items-center gap-2 rounded-full px-4 py-2 backdrop-blur-sm border"
+                      style={{
+                        backgroundColor: design.cover.style === 'none' ? 'var(--surface)' : 'rgba(255,255,255,0.1)',
+                        borderColor: design.cover.style === 'none' ? 'var(--border)' : 'rgba(255,255,255,0.1)',
+                        color: design.cover.style === 'none' ? 'var(--text-secondary)' : 'rgba(255,255,255,0.9)'
+                      }}
+                    >
+                      <item.icon className="h-4 w-4" />
+                      <span>{item.text}</span>
+                    </div>
+                  )
+                ))}
               </div>
 
-              <div className="flex flex-col gap-4 sm:flex-row">
+              <div className={cn("flex gap-4 sm:flex-row", isCentered ? "justify-center" : "")}>
                 <Button
                   size="lg"
                   onClick={handleExplorePackages}
-                  className="group relative overflow-hidden bg-white text-slate-900 hover:bg-slate-50 hover:shadow-2xl hover:shadow-white/20 transition-all duration-300"
+                  className="group relative overflow-hidden transition-all duration-300 shadow-xl hover:shadow-2xl"
+                  style={{ backgroundColor: 'var(--text)', color: 'var(--background)' }}
                 >
                   <span className="relative z-10 flex items-center gap-2 font-semibold">
                     Ver Paquetes
@@ -399,7 +491,12 @@ export function PixiesetGalleryMain({
                   variant="outline"
                   size="lg"
                   onClick={onShareEvent}
-                  className="border-white/30 bg-white/5 text-white hover:bg-white/10 hover:border-white/50 backdrop-blur-sm transition-all duration-300"
+                  className="backdrop-blur-sm transition-all duration-300"
+                  style={{
+                    borderColor: design.cover.style === 'none' ? 'var(--border)' : 'rgba(255,255,255,0.3)',
+                    color: design.cover.style === 'none' ? 'var(--text)' : 'white',
+                    backgroundColor: 'transparent'
+                  }}
                 >
                   <Share2 className="mr-2 h-4 w-4" />
                   Compartir
@@ -407,72 +504,106 @@ export function PixiesetGalleryMain({
               </div>
             </motion.div>
 
-            {/* Stats Card */}
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ delay: 0.3, duration: 0.5 }}
-              className="w-full max-w-md lg:w-auto"
-            >
-              <div className="rounded-3xl border border-white/20 bg-white/10 p-6 backdrop-blur-xl shadow-2xl lg:min-w-[320px]">
-                <h3 className="mb-6 text-center text-lg font-medium text-white">Resumen del evento</h3>
-                <div className="space-y-4">
-                  {metrics.map((metric, index) => (
-                    <motion.div
-                      key={metric.label}
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ delay: 0.4 + index * 0.1 }}
-                      className="flex items-center justify-between rounded-2xl bg-white/5 p-4 border border-white/10 hover:bg-white/10 transition-colors"
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/10 text-white">
-                          {metric.icon}
+            {/* Stats Card (Only for non-centered layouts to balance) */}
+            {!isCentered && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ delay: 0.3, duration: 0.5 }}
+                className="w-full max-w-md lg:min-w-[320px]"
+              >
+                <div
+                  className="rounded-3xl p-6 backdrop-blur-xl shadow-2xl border"
+                  style={{
+                    backgroundColor: design.cover.style === 'none' ? 'var(--surface)' : 'rgba(255,255,255,0.1)',
+                    borderColor: design.cover.style === 'none' ? 'var(--border)' : 'rgba(255,255,255,0.2)'
+                  }}
+                >
+                  <h3 className={cn("mb-6 text-center text-lg font-medium", design.cover.style === 'none' && "text-[var(--text)]")}>
+                    Resumen del evento
+                  </h3>
+                  <div className="space-y-4">
+                    {metrics.map((metric, index) => (
+                      <motion.div
+                        key={metric.label}
+                        initial={{ opacity: 0, x: 20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.4 + index * 0.1 }}
+                        className="flex items-center justify-between rounded-2xl p-4 border transition-colors"
+                        style={{
+                          backgroundColor: design.cover.style === 'none' ? 'var(--background)' : 'rgba(255,255,255,0.05)',
+                          borderColor: design.cover.style === 'none' ? 'var(--border)' : 'rgba(255,255,255,0.1)'
+                        }}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div
+                            className="flex h-10 w-10 items-center justify-center rounded-xl"
+                            style={{
+                              backgroundColor: design.cover.style === 'none' ? 'var(--surface)' : 'rgba(255,255,255,0.1)',
+                              color: design.cover.style === 'none' ? 'var(--primary)' : 'white'
+                            }}
+                          >
+                            {metric.icon}
+                          </div>
+                          <div>
+                            <p className="text-xs font-medium uppercase tracking-wider opacity-60" style={{ color: design.cover.style === 'none' ? 'var(--text-secondary)' : 'white' }}>
+                              {metric.label}
+                            </p>
+                            <p className="text-xl font-bold" style={{ color: design.cover.style === 'none' ? 'var(--text)' : 'white' }}>{metric.value}</p>
+                          </div>
                         </div>
-                        <div>
-                          <p className="text-xs font-medium uppercase tracking-wider text-white/60">
-                            {metric.label}
-                          </p>
-                          <p className="text-xl font-bold text-white">{metric.value}</p>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
+                      </motion.div>
+                    ))}
+                  </div>
                 </div>
-              </div>
-            </motion.div>
+              </motion.div>
+            )}
           </div>
         </div>
       </section>
 
       {/* Gallery Section */}
-      <section className="relative z-20 -mt-8 pb-24">
+      <section className="relative z-20 pb-24 transition-colors duration-500" style={{ backgroundColor: 'var(--background)' }}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-          <div className="rounded-[2.5rem] border border-white/40 bg-white/80 p-6 shadow-2xl backdrop-blur-xl dark:border-slate-700/50 dark:bg-slate-900/80 sm:p-10">
+          <div
+            className={cn(
+              "rounded-[2.5rem] border shadow-xl backdrop-blur-xl sm:p-10 p-6",
+              design.cover.style !== 'none' && "-mt-16"
+            )}
+            style={{
+              backgroundColor: 'var(--surface)',
+              borderColor: 'var(--border)'
+            }}
+          >
 
             {/* Header & Filters */}
             <div className="mb-10 flex flex-col gap-8 lg:flex-row lg:items-end lg:justify-between">
               <div className="space-y-4 max-w-2xl">
-                <h2 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-4xl">
+                <h2 className={cn("text-3xl font-bold tracking-tight sm:text-4xl", typography.headingClass)} style={{ color: 'var(--text)' }}>
                   Galería Fotográfica
                 </h2>
-                <p className="text-lg text-slate-600 dark:text-slate-300 leading-relaxed">
+                <p className="text-lg leading-relaxed" style={{ color: 'var(--text-secondary)' }}>
                   Explora la colección completa. Selecciona tus fotos favoritas para incluirlas en tu paquete personalizado.
                 </p>
               </div>
 
               <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
-                <div className="flex flex-wrap items-center gap-2 rounded-full bg-slate-100/80 p-1.5 dark:bg-slate-800/80 backdrop-blur-sm border border-slate-200 dark:border-slate-700">
+                <div
+                  className="flex flex-wrap items-center gap-2 rounded-full p-1.5 backdrop-blur-sm border"
+                  style={{ backgroundColor: 'var(--background)', borderColor: 'var(--border)' }}
+                >
                   {FILTERS.map((filter) => (
                     <button
                       key={filter.id}
                       onClick={() => setActiveFilter(filter.id)}
                       className={cn(
                         'rounded-full px-4 py-2 text-sm font-medium transition-all duration-200',
-                        activeFilter === filter.id
-                          ? 'bg-white text-slate-900 shadow-md dark:bg-slate-700 dark:text-white'
-                          : 'text-slate-600 hover:bg-white/50 hover:text-slate-900 dark:text-slate-400 dark:hover:bg-slate-700/50 dark:hover:text-white'
+                        activeFilter === filter.id && 'shadow-md'
                       )}
+                      style={{
+                        backgroundColor: activeFilter === filter.id ? 'var(--surface)' : 'transparent',
+                        color: activeFilter === filter.id ? 'var(--accent)' : 'var(--text-secondary)'
+                      }}
                     >
                       {filter.label}
                     </button>
@@ -490,19 +621,20 @@ export function PixiesetGalleryMain({
                   exit={{ opacity: 0, scale: 0.95 }}
                   className="flex flex-col items-center justify-center py-24 text-center"
                 >
-                  <div className="mb-6 rounded-full bg-slate-100 p-6 dark:bg-slate-800">
+                  <div className="mb-6 rounded-full p-6" style={{ backgroundColor: 'var(--background)' }}>
                     <BookmarkCheck className="h-12 w-12 text-slate-400" />
                   </div>
-                  <h3 className="text-xl font-semibold text-slate-900 dark:text-white">
+                  <h3 className="text-xl font-semibold" style={{ color: 'var(--text)' }}>
                     No hay fotos en esta categoría
                   </h3>
-                  <p className="mt-2 max-w-sm text-slate-500 dark:text-slate-400">
+                  <p className="mt-2 max-w-sm" style={{ color: 'var(--text-secondary)' }}>
                     Intenta cambiar el filtro o explora todas las fotos disponibles.
                   </p>
                   <Button
                     variant="link"
                     onClick={() => setActiveFilter('all')}
-                    className="mt-4 text-indigo-600 dark:text-indigo-400"
+                    className="mt-4"
+                    style={{ color: 'var(--primary)' }}
                   >
                     Ver todas las fotos
                   </Button>
@@ -512,7 +644,11 @@ export function PixiesetGalleryMain({
                   variants={containerVariants}
                   initial="hidden"
                   animate="visible"
-                  className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5"
+                  className={cn(
+                    "grid",
+                    grid.colsClass,
+                    grid.gapClass
+                  )}
                 >
                   {filteredPhotos.map((photo) => (
                     <PhotoCard
@@ -523,6 +659,7 @@ export function PixiesetGalleryMain({
                       onPhotoClick={onPhotoClick}
                       onToggleFavorite={onToggleFavorite}
                       onBuyPhoto={onBuyPhoto}
+                      design={design}
                     />
                   ))}
                 </motion.div>

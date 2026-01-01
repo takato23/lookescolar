@@ -4,7 +4,7 @@ import { logger } from '@/lib/utils/logger';
 
 export async function GET() {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
 
     // Get recent performance metrics from the database
     const { data: metrics, error } = await supabase
@@ -22,7 +22,6 @@ export async function GET() {
     // Default values if no metrics found
     const defaultVitals = {
       CLS: 0.1,
-      FID: 50,
       FCP: 1500,
       LCP: 2000,
       TTFB: 600,
@@ -48,11 +47,11 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const vitals = await request.json();
 
     // Validate the vitals data
-    const requiredFields = ['CLS', 'FID', 'FCP', 'LCP', 'TTFB'];
+    const requiredFields = ['CLS', 'FCP', 'LCP', 'TTFB'];
     for (const field of requiredFields) {
       if (typeof vitals[field] !== 'number') {
         return NextResponse.json(

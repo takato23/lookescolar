@@ -350,7 +350,7 @@ export default function StudentsView({
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => router.push(`/f/${student.qr_code}`)}
+                    onClick={() => router.push(`/store-unified/${student.qr_code}`)}
                   >
                     Ver Galería
                   </Button>

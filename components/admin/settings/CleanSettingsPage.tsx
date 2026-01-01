@@ -583,6 +583,10 @@ export default function CleanSettingsPage() {
         const newFormData = {
           ...DEFAULT_FORM_DATA,
           ...settings,
+          businessEmail: settings.businessEmail ?? '',
+          businessPhone: settings.businessPhone ?? '',
+          businessAddress: settings.businessAddress ?? '',
+          businessWebsite: settings.businessWebsite ?? '',
           uploadMaxResolution: String(settings.uploadMaxResolution ?? DEFAULT_FORM_DATA.uploadMaxResolution),
         };
         setFormData(newFormData);
@@ -615,10 +619,16 @@ export default function CleanSettingsPage() {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (etag) headers['If-Match'] = etag;
 
+      const payload = {
+        ...formData,
+        businessEmail: formData.businessEmail.trim() || null,
+        businessWebsite: formData.businessWebsite.trim() || null,
+      };
+
       const response = await fetch('/api/admin/settings', {
         method: 'PATCH',
         headers,
-        body: JSON.stringify(formData),
+        body: JSON.stringify(payload),
       });
 
       if (response.ok) {
@@ -626,11 +636,18 @@ export default function CleanSettingsPage() {
         const newEtag = response.headers.get('ETag') || '';
         setEtag(newEtag);
         toast.success('Configuracion guardada');
-        const payload = 'data' in updatedSettings ? updatedSettings.data : updatedSettings;
+        const responsePayload =
+          'data' in updatedSettings ? updatedSettings.data : updatedSettings;
         const newFormData = {
           ...formData,
-          ...payload,
-          uploadMaxResolution: String(payload.uploadMaxResolution ?? formData.uploadMaxResolution),
+          ...responsePayload,
+          businessEmail: responsePayload.businessEmail ?? '',
+          businessPhone: responsePayload.businessPhone ?? '',
+          businessAddress: responsePayload.businessAddress ?? '',
+          businessWebsite: responsePayload.businessWebsite ?? '',
+          uploadMaxResolution: String(
+            responsePayload.uploadMaxResolution ?? formData.uploadMaxResolution
+          ),
         };
         setFormData(newFormData);
         setOriginalFormData(newFormData); // Reset original después de guardar
@@ -638,7 +655,26 @@ export default function CleanSettingsPage() {
         toast.error('Configuracion modificada por otro usuario. Recargando...');
         await loadSettings();
       } else {
-        toast.error('Error al guardar');
+        let errorMessage = 'Error al guardar';
+        try {
+          const errorData = await response.json();
+          const details =
+            errorData?.details ??
+            errorData?.error ??
+            errorData?.message ??
+            null;
+          if (details && typeof details === 'object') {
+            const firstError = Object.values(details).flat()[0];
+            if (typeof firstError === 'string') {
+              errorMessage = `Error al guardar: ${firstError}`;
+            }
+          } else if (typeof details === 'string') {
+            errorMessage = `Error al guardar: ${details}`;
+          }
+        } catch {
+          // Ignore JSON parsing errors
+        }
+        toast.error(errorMessage);
       }
     } catch (error) {
       toast.error('Error al guardar configuracion');
@@ -1574,7 +1610,7 @@ export default function CleanSettingsPage() {
                   <SectionHeader
                     icon={Key}
                     title="Tokens y Compartidos"
-                    description="Configuracion de tokens familiares"
+                    description="Configuración de tokens para clientes"
                   />
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

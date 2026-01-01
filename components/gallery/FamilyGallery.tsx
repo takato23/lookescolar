@@ -138,7 +138,7 @@ export function FamilyGallery({ context }: FamilyGalleryProps) {
       const normalizedSubject: Subject | null = subjectSource
         ? {
             id: subjectSource.id,
-            name: subjectSource.name ?? 'Galería familiar',
+            name: subjectSource.name ?? 'Galería de clientes',
             grade_section:
               [
                 (subjectSource as any).grade ?? null,
@@ -792,7 +792,7 @@ function FamilyEmptyState() {
             <ul className="text-sm text-gray-600 space-y-1 text-left">
               <li>• El fotógrafo está procesando las imágenes</li>
               <li>• Las fotos aparecerán automáticamente cuando estén listas</li>
-              <li>• Este enlace es privado y seguro para tu familia</li>
+              <li>• Este enlace es privado y seguro para tus clientes</li>
               <li>• Guarda este enlace para volver más tarde</li>
             </ul>
           </div>

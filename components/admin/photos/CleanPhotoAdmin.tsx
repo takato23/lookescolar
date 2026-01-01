@@ -313,15 +313,15 @@ function SelectionToolbar({
         <div className="clean-selection-toolbar-actions">
           <button
             onClick={onCreateAlbum}
-            className="clean-toolbar-btn clean-toolbar-btn--primary"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg shadow-md shadow-violet-500/20 hover:shadow-violet-500/30 hover:scale-[1.02] transition-all duration-200"
             title="Generar tienda"
           >
-            <Link2 className="w-4 h-4" />
+            <Share2 className="w-4 h-4" />
             <span className="hidden sm:inline">Generar tienda</span>
           </button>
           <button
             onClick={onMove}
-            className="clean-toolbar-btn"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-slate-700 bg-white border border-slate-200 rounded-lg hover:bg-slate-50 hover:border-slate-300 hover:shadow-sm transition-all duration-200 dark:text-slate-200 dark:bg-slate-800 dark:border-slate-700 dark:hover:bg-slate-700"
             title="Mover fotos"
           >
             <Move className="w-4 h-4" />
@@ -329,7 +329,7 @@ function SelectionToolbar({
           </button>
           <button
             onClick={onDelete}
-            className="clean-toolbar-btn clean-toolbar-btn--danger"
+            className="inline-flex items-center gap-2 px-3 py-2 text-sm font-medium text-red-600 bg-red-50 border border-red-200 rounded-lg hover:bg-red-100 hover:border-red-300 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200 dark:text-red-400 dark:bg-red-950/30 dark:border-red-900 dark:hover:bg-red-950/50"
             disabled={isDeleting}
             title="Eliminar fotos"
           >
@@ -394,11 +394,20 @@ function CompactFolderItem({
         onClick={onSelect}
         className="clean-folder-content"
       >
-        {isExpanded || !hasChildren ? (
-          <FolderOpen className="w-4 h-4 text-[var(--clean-accent)]" />
-        ) : (
-          <Folder className="w-4 h-4 text-[var(--clean-text-muted)]" />
-        )}
+        <div className={cn(
+          'flex h-6 w-6 items-center justify-center rounded-md transition-all',
+          isSelected
+            ? 'bg-gradient-to-br from-violet-500 to-purple-600 shadow-sm'
+            : isExpanded || !hasChildren
+              ? 'bg-gradient-to-br from-cyan-400/20 to-teal-500/20'
+              : 'bg-slate-100 dark:bg-slate-800'
+        )}>
+          {isExpanded || !hasChildren ? (
+            <FolderOpen className={cn('w-3.5 h-3.5', isSelected ? 'text-white' : 'text-cyan-600 dark:text-cyan-400')} />
+          ) : (
+            <Folder className={cn('w-3.5 h-3.5', isSelected ? 'text-white' : 'text-slate-500 dark:text-slate-400')} />
+          )}
+        </div>
         <span className="clean-folder-name">{folder.name}</span>
         {typeof photoCount === 'number' && photoCount > 0 && (
           <span className="clean-folder-count">{photoCount}</span>
@@ -967,11 +976,16 @@ export default function CleanPhotoAdmin({
         {/* Mobile view is now handled by MobilePhotoAdmin.tsx */}
 
         {/* ============================================
-            DESKTOP HEADER - Original
+            DESKTOP HEADER - Premium Design
             ============================================ */}
         <header className="clean-photo-admin-header hidden md:flex">
           <div className="clean-photo-admin-header-left">
-            <h1 className="clean-page-title">Fotos</h1>
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-violet-500 to-purple-600 shadow-lg shadow-violet-500/25">
+                <ImageIcon className="h-5 w-5 text-white" strokeWidth={2} />
+              </div>
+              <h1 className="clean-page-title">Fotos</h1>
+            </div>
 
             {/* Event Selector - Compact */}
             <div className="clean-event-selector">
@@ -985,6 +999,7 @@ export default function CleanPhotoAdmin({
 
             {/* Photo Count Badge */}
             <span className="clean-photo-count">
+              <ImageIcon className="inline-block h-3.5 w-3.5 mr-1.5 opacity-70" />
               {totalAssetsCount} fotos
             </span>
           </div>
@@ -998,7 +1013,7 @@ export default function CleanPhotoAdmin({
                 showIcon={true}
                 variant="default"
                 size="sm"
-                className="clean-btn clean-btn--primary"
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 rounded-lg shadow-lg shadow-violet-500/25 hover:shadow-violet-500/40 hover:scale-[1.02] transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
               >
                 {isUploading ? 'Subiendo...' : 'Subir fotos'}
               </PhotoUploadButton>
@@ -1445,7 +1460,7 @@ export default function CleanPhotoAdmin({
                 {publishResult.store_url && (
                   <div className="space-y-2">
                     <label className="text-sm font-medium text-muted-foreground">
-                      Link de tienda (para familias)
+                      Link de tienda (para clientes)
                     </label>
                     <div className="flex items-center gap-2">
                       <Input

@@ -67,7 +67,7 @@ export function ContextSidebar({
     {
       id: 4,
       type: 'access',
-      message: 'Familia accedió',
+      message: 'Cliente accedió',
       count: 3,
       time: '12 min',
       icon: Eye,
@@ -92,7 +92,7 @@ export function ContextSidebar({
       color: 'green',
     },
     {
-      label: 'Participación familias',
+      label: 'Participación clientes',
       value: `${Math.round(metrics.engagementRate * 100)}%`,
       trend:
         metrics.engagementRate > 0.5
@@ -317,7 +317,7 @@ export function ContextSidebar({
               <p className="gradient-text-ios26 text-lg font-bold">
                 {metrics.totalSubjects}
               </p>
-              <p className="text-gray-500 dark:text-gray-400 text-xs">Familias</p>
+              <p className="text-gray-500 dark:text-gray-400 text-xs">Clientes</p>
             </div>
 
             <div className="glass-stat-card-ios26 p-3 text-center">

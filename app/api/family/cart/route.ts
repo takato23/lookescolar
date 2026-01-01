@@ -26,7 +26,7 @@ const calculateTotalSchema = z.object({
  */
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const startTime = Date.now();
-  const ip = request.ip ?? request.headers.get('x-forwarded-for') ?? 'unknown';
+  const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 'unknown';
   const requestId = generateRequestId();
 
   try {

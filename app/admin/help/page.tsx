@@ -65,14 +65,14 @@ const helpSections: HelpSection[] = [
   },
   {
     id: 'subjects-flow',
-    title: 'Gestión de Alumnos',
+    title: 'Gestión de Invitados',
     description: 'Todo sobre el sistema de estudiantes y tokens',
     icon: Users,
     articles: [
       {
         id: 'subjects-overview',
         title: 'Flujo Completo de Estudiantes',
-        description: 'Desde la creación hasta el acceso familiar',
+        description: 'Desde la creación hasta el acceso para clientes',
         readTime: '12 min',
         difficulty: 'intermediate',
         tags: ['subjects', 'workflow', 'tokens'],
@@ -80,7 +80,7 @@ const helpSections: HelpSection[] = [
       {
         id: 'qr-management',
         title: 'Códigos QR y Tokens',
-        description: 'Generación, impresión y gestión de códigos QR',
+        description: 'QR para etiquetado + links/tokens para acceso de clientes',
         readTime: '10 min',
         difficulty: 'intermediate',
         tags: ['qr', 'tokens', 'printing'],
@@ -165,7 +165,7 @@ const faqs = [
   {
     question: '¿Para qué sirve el sistema de tagging?',
     answer:
-      'El tagging permite asignar fotos específicas a cada alumno. Así las familias solo ven las fotos de su hijo/a, no todas las fotos del evento. Es como crear una galería personalizada para cada familia.',
+      'El tagging asigna fotos a cada invitado para que cada familia vea solo sus fotos. El QR acelera ese etiquetado al reconocer a la persona en el primer disparo.',
   },
   {
     question: '¿Cómo funciona la sincronización de pedidos?',
@@ -175,12 +175,17 @@ const faqs = [
   {
     question: '¿Qué es el flujo de subjects/estudiantes?',
     answer:
-      'Es el proceso completo: 1) Admin crea lista de alumnos 2) Sistema genera tokens únicos y QRs 3) Se imprimen QRs y entregan 4) En el evento, cada alumno tiene su QR 5) Familias acceden con su token a ver solo sus fotos.',
+      'Es el proceso completo: 1) Admin crea la lista de invitados 2) Se generan QRs para etiquetar fotos 3) Se imprime o muestra el QR en la sesión 4) Se suben las fotos y se auto-etiquetan 5) El acceso de clientes es por link/token (no por QR de tagging).',
+  },
+  {
+    question: '¿El QR sirve para acceder a la galería?',
+    answer:
+      'No. El QR de tagging identifica a la persona en la foto. El acceso de clientes es por link/token de la galería compartida.',
   },
   {
     question: '¿Cómo funciona el QR en la vida real?',
     answer:
-      'El admin imprime los QRs y los entrega antes del evento. El día de las fotos, cada alumno lleva su QR. Después de sacar fotos, el admin escanea el QR del alumno y le asigna las fotos correspondientes.',
+      'Se imprime o muestra el QR (tarjeta, sticker o celular). En la primera foto de cada persona, el QR se sostiene visible a la altura del pecho (puede sostenerlo el alumno/invitado o un asistente). Luego se suben las fotos y el sistema etiqueta automáticamente; si falla, se re-escanea desde el admin.',
   },
 ];
 
@@ -299,6 +304,16 @@ export default function AdminHelpPage() {
                   Enlaces Rápidos
                 </h4>
                 <div className="space-y-2">
+                  <a
+                    href="/qr-field-guide.txt"
+                    className="text-card-foreground/70 hover:text-primary flex items-center gap-2 text-sm transition-colors"
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    <QrCode className="h-4 w-4" />
+                    Guía QR imprimible
+                    <ExternalLink className="h-3 w-3" />
+                  </a>
                   <a
                     href="#"
                     className="text-card-foreground/70 hover:text-primary flex items-center gap-2 text-sm transition-colors"
@@ -427,10 +442,10 @@ export default function AdminHelpPage() {
                               </div>
                               <div>
                                 <p className="text-gray-900 dark:text-gray-100 font-medium">
-                                  Genera lista de alumnos
+                                  Genera lista de invitados
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
-                                  Agregar alumnos uno por uno o importar CSV
+                                  Agregar invitados uno por uno o importar CSV
                                 </p>
                               </div>
                             </div>
@@ -445,7 +460,7 @@ export default function AdminHelpPage() {
                                   Sistema genera tokens
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
-                                  Token único de 20+ caracteres para cada alumno
+                                  Token único de 20+ caracteres para cada invitado
                                 </p>
                               </div>
                             </div>
@@ -457,10 +472,10 @@ export default function AdminHelpPage() {
                               </div>
                               <div>
                                 <p className="text-gray-900 dark:text-gray-100 font-medium">
-                                  Genera QRs
+                                  Genera QRs de etiquetado
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
-                                  PDF con QRs listos para imprimir y entregar
+                                  QRs listos para imprimir o mostrar en pantalla
                                 </p>
                               </div>
                             </div>
@@ -480,10 +495,10 @@ export default function AdminHelpPage() {
                               </div>
                               <div>
                                 <p className="text-gray-900 dark:text-gray-100 font-medium">
-                                  Imprimir QRs
+                                  Preparar QRs
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
-                                  Descargar PDF y imprimir códigos QR
+                                  Imprimir tarjetas o mostrar QRs en celular/tablet
                                 </p>
                               </div>
                             </div>
@@ -495,10 +510,10 @@ export default function AdminHelpPage() {
                               </div>
                               <div>
                                 <p className="text-gray-900 dark:text-gray-100 font-medium">
-                                  Entregar QRs
+                                  Primer disparo con QR
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
-                                  Dar QR a cada alumno/familia antes del evento
+                                  El invitado o un asistente sostiene el QR a la altura del pecho
                                 </p>
                               </div>
                             </div>
@@ -510,10 +525,10 @@ export default function AdminHelpPage() {
                               </div>
                               <div>
                                 <p className="text-gray-900 dark:text-gray-100 font-medium">
-                                  Día de fotos
+                                  Subir fotos + auto-tag
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
-                                  Cada alumno lleva su QR al evento
+                                  El sistema detecta el QR y etiqueta automáticamente
                                 </p>
                               </div>
                             </div>
@@ -525,11 +540,10 @@ export default function AdminHelpPage() {
                               </div>
                               <div>
                                 <p className="text-gray-900 dark:text-gray-100 font-medium">
-                                  Acceso familiar
+                                  Acceso para clientes
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
-                                  Familia escanea QR → accede a /f/[token] → ve
-                                  solo sus fotos
+                                  Se comparte link/token de la galería (QR de acceso opcional)
                                 </p>
                               </div>
                             </div>
@@ -544,10 +558,10 @@ export default function AdminHelpPage() {
                           </h4>
                           <ul className="text-card-foreground/70 space-y-1 text-sm">
                             <li>
-                              • Cada familia ve solo sus fotos (privacidad)
+                              • Cada cliente ve solo sus fotos (privacidad)
                             </li>
                             <li>
-                              • No hay confusion con fotos de otros alumnos
+                              • No hay confusion con fotos de otros invitados
                             </li>
                             <li>
                               • Acceso directo sin registrarse ni hacer login
@@ -580,10 +594,10 @@ export default function AdminHelpPage() {
                               <p className="text-card-foreground/70 text-sm">
                                 El tagging es el proceso de{' '}
                                 <strong>
-                                  asignar fotos específicas a cada alumno
+                                  asignar fotos específicas a cada invitado
                                 </strong>
                                 . Es como crear una galería personalizada donde
-                                cada familia solo ve las fotos de su hijo/a.
+                                cada cliente solo ve las fotos de su hijo/a.
                               </p>
                             </div>
                           </div>
@@ -605,7 +619,7 @@ export default function AdminHelpPage() {
                               <div className="text-card-foreground/70 space-y-2 text-sm">
                                 <p>1. Ir a página de Tagging</p>
                                 <p>2. Seleccionar fotos</p>
-                                <p>3. Elegir alumno de la lista</p>
+                                <p>3. Elegir invitado de la lista</p>
                                 <p>4. Asignar fotos seleccionadas</p>
                               </div>
                             </div>
@@ -617,11 +631,57 @@ export default function AdminHelpPage() {
                                 Método QR (En el Evento)
                               </h5>
                               <div className="text-card-foreground/70 space-y-2 text-sm">
-                                <p>1. Sacar fotos del alumno</p>
-                                <p>2. Escanear su QR</p>
-                                <p>3. Sistema asigna automáticamente</p>
-                                <p>4. Repetir con siguiente alumno</p>
+                                <p>1. Primera foto con el QR visible</p>
+                                <p>2. Subir el lote de fotos</p>
+                                <p>3. Sistema auto-etiqueta por QR</p>
+                                <p>4. Revisar y corregir si falta alguna</p>
                               </div>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="bg-info/5 border-info/20 rounded-lg border p-4">
+                          <div className="flex items-start gap-3">
+                            <Info className="text-info mt-0.5 h-5 w-5 flex-shrink-0" />
+                            <div>
+                              <h4 className="text-info mb-1 font-medium">
+                                QR de tagging vs acceso
+                              </h4>
+                              <p className="text-card-foreground/70 text-sm">
+                                El QR de tagging identifica a la persona en la
+                                foto. El acceso de clientes es por link/token de
+                                la galería (el QR de acceso es opcional y se
+                                genera al publicar).
+                              </p>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div>
+                          <h4 className="text-gray-900 dark:text-gray-100 mb-3 font-medium">
+                            Guía rápida para el set
+                          </h4>
+                          <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                            <div className="border-border rounded-lg border p-4">
+                              <h5 className="text-gray-900 dark:text-gray-100 mb-2 font-medium">
+                                Quién sostiene el QR
+                              </h5>
+                              <p className="text-card-foreground/70 text-sm">
+                                El invitado lo sostiene a la altura del pecho.
+                                Para niños, un docente o asistente puede
+                                sostenerlo cerca del rostro.
+                              </p>
+                            </div>
+                            <div className="border-border rounded-lg border p-4">
+                              <h5 className="text-gray-900 dark:text-gray-100 mb-2 font-medium">
+                                Checklist visual
+                              </h5>
+                              <ul className="text-card-foreground/70 space-y-1 text-sm">
+                                <li>• QR plano y nítido</li>
+                                <li>• Margen blanco visible</li>
+                                <li>• Sin reflejos ni sombras fuertes</li>
+                                <li>• Una sola foto clara es suficiente</li>
+                              </ul>
                             </div>
                           </div>
                         </div>
@@ -632,6 +692,21 @@ export default function AdminHelpPage() {
                             Flujo Completo en el Evento
                           </h4>
                           <div className="space-y-3">
+                            <div className="flex items-start gap-3">
+                              <div className="bg-accent/20 text-accent flex h-6 w-6 items-center justify-center rounded-full text-sm font-medium">
+                                0
+                              </div>
+                              <div>
+                                <p className="text-gray-900 dark:text-gray-100 font-medium">
+                                  QR visible en la primera foto
+                                </p>
+                                <p className="text-card-foreground/70 text-sm">
+                                  El invitado o un asistente sostiene el QR a la altura del pecho
+                                </p>
+                              </div>
+                            </div>
+                            <ArrowRight className="text-card-foreground/40 ml-3 h-4 w-4" />
+
                             <div className="flex items-start gap-3">
                               <div className="bg-accent/20 text-accent flex h-6 w-6 items-center justify-center rounded-full text-sm font-medium">
                                 1
@@ -656,7 +731,7 @@ export default function AdminHelpPage() {
                                   Asignar fotos (tagging)
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
-                                  Manual en la app o QR durante el evento
+                                  Auto-tag por QR o manual en la app
                                 </p>
                               </div>
                             </div>
@@ -668,10 +743,10 @@ export default function AdminHelpPage() {
                               </div>
                               <div>
                                 <p className="text-gray-900 dark:text-gray-100 font-medium">
-                                  Acceso familiar
+                                  Acceso para clientes
                                 </p>
                                 <p className="text-card-foreground/70 text-sm">
-                                  Familia accede y ve solo fotos asignadas
+                                  Cliente accede y ve solo fotos asignadas
                                 </p>
                               </div>
                             </div>

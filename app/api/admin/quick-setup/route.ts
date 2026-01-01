@@ -35,7 +35,7 @@ export async function POST(_request: NextRequest) {
       );
     }
 
-    // 2) Crear alumnos y tokens
+    // 2) Crear invitados y tokens
     const alumnos = [
       { name: 'Juan Pérez', grade_section: '5A' },
       { name: 'María García', grade_section: '5A' },
@@ -60,9 +60,9 @@ export async function POST(_request: NextRequest) {
         .single();
 
       if (subjectError || !subject) {
-        console.error('[Service] Error creando alumno:', subjectError);
+        console.error('[Service] Error creando invitado:', subjectError);
         return NextResponse.json(
-          { error: 'Error creando alumno', details: subjectError?.message },
+          { error: 'Error creando invitado', details: subjectError?.message },
           { status: 400 }
         );
       }

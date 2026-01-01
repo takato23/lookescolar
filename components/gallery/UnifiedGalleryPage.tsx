@@ -300,7 +300,7 @@ export default function UnifiedGalleryPage({ token }: UnifiedGalleryPageProps) {
     if (!canProceedToCheckout()) return;
 
     // Here you would implement the checkout logic
-    window.open(`/f/${token}/checkout`, '_blank');
+    window.open(`/store-unified/${token}`, '_blank');
   };
 
   if (loading) {

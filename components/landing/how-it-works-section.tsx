@@ -2,6 +2,7 @@
 
 import { motion } from 'framer-motion';
 import { UploadCloud, Settings, Share2 } from 'lucide-react';
+import { PLACEHOLDER_IMAGES } from '@/lib/config/placeholder-images';
 
 export function HowItWorksSection() {
   const steps = [
@@ -95,6 +96,24 @@ export function HowItWorksSection() {
             </motion.div>
           ))}
         </div>
+
+        {/* Mobile App Preview */}
+        <motion.div
+          initial={{ opacity: 0, y: 40 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.6, duration: 0.8 }}
+          className="mt-20 flex justify-center"
+        >
+          <div className="relative">
+            <div className="absolute -inset-4 rounded-3xl bg-gradient-to-r from-blue-500/20 to-purple-500/20 blur-2xl" />
+            <img
+              src={PLACEHOLDER_IMAGES.mockups.galleryOnMobile}
+              alt="LookEscolar en tu celular"
+              className="relative h-[500px] w-auto drop-shadow-2xl"
+            />
+          </div>
+        </motion.div>
       </div>
     </section>
   );

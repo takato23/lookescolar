@@ -1,8 +1,27 @@
 'use client'
 
-import { memo, useEffect, useState, useRef, useCallback, useMemo } from 'react'
+import {
+  memo,
+  useEffect,
+  useState,
+  useRef,
+  useCallback,
+  useMemo,
+  type CSSProperties,
+} from 'react'
 import { LucideIcon } from 'lucide-react'
 import { cn } from '@/lib/utils'
+
+export type StatsCardColorVariant =
+  | 'default'
+  | 'gold'
+  | 'blue'
+  | 'purple'
+  | 'green'
+  | 'rose'
+
+export type StatsCardVariant = StatsCardColorVariant | 'minimal' | 'pro'
+export type StatsCardStyleVariant = 'vibrant' | 'pro'
 
 interface StatsCardPremiumProps {
   id?: string
@@ -17,7 +36,8 @@ interface StatsCardPremiumProps {
   }
   icon: LucideIcon
   index?: number
-  variant?: 'default' | 'gold' | 'blue' | 'purple' | 'green' | 'rose'
+  variant?: StatsCardVariant
+  styleVariant?: StatsCardStyleVariant
   size?: 'sm' | 'md' | 'lg'
   animate?: boolean
   onClick?: () => void
@@ -152,98 +172,170 @@ const FloatingParticles = memo(function FloatingParticles({
   )
 })
 
-// Color variants
-const variants = {
+// Color variants - with improved contrast for light mode
+const variants: Record<StatsCardColorVariant, {
+  gradient: string
+  glow: string
+  icon: string
+  ring: string
+  particle: string
+  trend: {
+    up: string
+    down: string
+    neutral: string
+  }
+}> = {
   default: {
     gradient: 'from-neutral-500/20 to-neutral-600/20',
     glow: 'bg-neutral-400',
-    icon: 'text-neutral-500',
+    icon: 'text-neutral-600 dark:text-neutral-400',
     ring: 'ring-neutral-400/30',
     particle: 'bg-neutral-400',
     trend: {
-      up: 'text-emerald-500 bg-emerald-500/10',
-      down: 'text-red-500 bg-red-500/10',
-      neutral: 'text-neutral-500 bg-neutral-500/10',
+      up: 'text-emerald-600 dark:text-emerald-500 bg-emerald-500/10',
+      down: 'text-red-600 dark:text-red-500 bg-red-500/10',
+      neutral: 'text-neutral-600 dark:text-neutral-500 bg-neutral-500/10',
     },
   },
   gold: {
     gradient: 'from-amber-500/20 to-yellow-500/20',
     glow: 'bg-amber-400',
-    icon: 'text-amber-500',
+    icon: 'text-amber-600 dark:text-amber-500',
     ring: 'ring-amber-400/30',
     particle: 'bg-amber-400',
     trend: {
-      up: 'text-emerald-500 bg-emerald-500/10',
-      down: 'text-red-500 bg-red-500/10',
-      neutral: 'text-amber-500 bg-amber-500/10',
+      up: 'text-emerald-600 dark:text-emerald-500 bg-emerald-500/10',
+      down: 'text-red-600 dark:text-red-500 bg-red-500/10',
+      neutral: 'text-amber-600 dark:text-amber-500 bg-amber-500/10',
     },
   },
   blue: {
     gradient: 'from-blue-500/20 to-cyan-500/20',
     glow: 'bg-blue-400',
-    icon: 'text-blue-500',
+    icon: 'text-blue-600 dark:text-blue-500',
     ring: 'ring-blue-400/30',
     particle: 'bg-blue-400',
     trend: {
-      up: 'text-emerald-500 bg-emerald-500/10',
-      down: 'text-red-500 bg-red-500/10',
-      neutral: 'text-blue-500 bg-blue-500/10',
+      up: 'text-emerald-600 dark:text-emerald-500 bg-emerald-500/10',
+      down: 'text-red-600 dark:text-red-500 bg-red-500/10',
+      neutral: 'text-blue-600 dark:text-blue-500 bg-blue-500/10',
     },
   },
   purple: {
     gradient: 'from-purple-500/20 to-pink-500/20',
     glow: 'bg-purple-400',
-    icon: 'text-purple-500',
+    icon: 'text-purple-600 dark:text-purple-500',
     ring: 'ring-purple-400/30',
     particle: 'bg-purple-400',
     trend: {
-      up: 'text-emerald-500 bg-emerald-500/10',
-      down: 'text-red-500 bg-red-500/10',
-      neutral: 'text-purple-500 bg-purple-500/10',
+      up: 'text-emerald-600 dark:text-emerald-500 bg-emerald-500/10',
+      down: 'text-red-600 dark:text-red-500 bg-red-500/10',
+      neutral: 'text-purple-600 dark:text-purple-500 bg-purple-500/10',
     },
   },
   green: {
     gradient: 'from-emerald-500/20 to-teal-500/20',
     glow: 'bg-emerald-400',
-    icon: 'text-emerald-500',
+    icon: 'text-emerald-600 dark:text-emerald-500',
     ring: 'ring-emerald-400/30',
     particle: 'bg-emerald-400',
     trend: {
-      up: 'text-emerald-500 bg-emerald-500/10',
-      down: 'text-red-500 bg-red-500/10',
-      neutral: 'text-emerald-500 bg-emerald-500/10',
+      up: 'text-emerald-600 dark:text-emerald-500 bg-emerald-500/10',
+      down: 'text-red-600 dark:text-red-500 bg-red-500/10',
+      neutral: 'text-emerald-600 dark:text-emerald-500 bg-emerald-500/10',
     },
   },
   rose: {
     gradient: 'from-rose-500/20 to-pink-500/20',
     glow: 'bg-rose-400',
-    icon: 'text-rose-500',
+    icon: 'text-rose-600 dark:text-rose-500',
     ring: 'ring-rose-400/30',
     particle: 'bg-rose-400',
     trend: {
-      up: 'text-emerald-500 bg-emerald-500/10',
-      down: 'text-red-500 bg-red-500/10',
-      neutral: 'text-rose-500 bg-rose-500/10',
+      up: 'text-emerald-600 dark:text-emerald-500 bg-emerald-500/10',
+      down: 'text-red-600 dark:text-red-500 bg-red-500/10',
+      neutral: 'text-rose-600 dark:text-rose-500 bg-rose-500/10',
     },
   },
+}
+
+export function PremiumProgressBar({
+  value,
+  variant = 'default',
+  className,
+  trackClassName,
+  barClassName,
+  barStyle,
+  reducedMotion,
+  ariaLabel = 'Progreso',
+}: {
+  value: number
+  variant?: StatsCardColorVariant
+  className?: string
+  trackClassName?: string
+  barClassName?: string
+  barStyle?: CSSProperties
+  reducedMotion?: boolean
+  ariaLabel?: string
+}) {
+  const colors = variants[variant]
+  const clampedValue = Math.max(0, Math.min(100, Math.round(value)))
+
+  return (
+    <div
+      className={cn(
+        'h-1.5 w-full overflow-hidden rounded-full bg-neutral-200/50 dark:bg-neutral-700/50',
+        className,
+        trackClassName
+      )}
+      role="progressbar"
+      aria-valuenow={clampedValue}
+      aria-valuemin={0}
+      aria-valuemax={100}
+      aria-label={`${ariaLabel}: ${clampedValue}%`}
+    >
+      <div
+        className={cn(
+          'h-full rounded-full transition-all ease-out',
+          !reducedMotion && 'duration-1000',
+          `bg-gradient-to-r ${colors.gradient.replace('/20', '')}`,
+          barClassName
+        )}
+        style={{ width: `${clampedValue}%`, ...barStyle }}
+      />
+    </div>
+  )
 }
 
 // Trend badge component
 const TrendBadge = memo(function TrendBadge({
   trend,
   colors,
+  isPro = false,
 }: {
   trend: { value: number; direction: 'up' | 'down' | 'neutral' }
   colors: typeof variants.default
+  isPro?: boolean
 }) {
   const arrowSymbol = trend.direction === 'up' ? '↑' : trend.direction === 'down' ? '↓' : '→'
   const trendLabel = trend.direction === 'up' ? 'aumentó' : trend.direction === 'down' ? 'disminuyó' : 'sin cambio'
+  const proTone =
+    trend.direction === 'up'
+      ? 'text-emerald-600 dark:text-emerald-300'
+      : trend.direction === 'down'
+        ? 'text-rose-600 dark:text-rose-300'
+        : 'text-slate-600 dark:text-slate-300'
 
   return (
     <span
       className={cn(
-        'px-2 py-1 rounded-full text-xs font-medium',
-        colors.trend[trend.direction]
+        'px-2.5 py-1 rounded-full text-xs font-semibold',
+        isPro
+          ? cn(
+              'border border-slate-200/70 bg-white/70 text-slate-600 shadow-sm backdrop-blur-sm dark:border-slate-800/70 dark:bg-slate-900/60',
+              proTone
+            )
+          : colors.trend[trend.direction]
       )}
       role="status"
       aria-label={`Tendencia: ${trendLabel} ${Math.abs(trend.value)}%`}
@@ -265,6 +357,7 @@ export const StatsCardPremium = memo(function StatsCardPremium({
   icon: Icon,
   index = 0,
   variant = 'default',
+  styleVariant,
   size = 'md',
   animate = true,
   onClick,
@@ -328,8 +421,16 @@ export const StatsCardPremium = memo(function StatsCardPremium({
 
   const displayValue = typeof value === 'number' ? animatedValue : value
 
-  const colors = variants[variant]
+  const resolvedStyle =
+    variant === 'pro' || variant === 'minimal'
+      ? 'pro'
+      : styleVariant ?? 'vibrant'
+  const colorVariant =
+    variant === 'pro' || variant === 'minimal' ? 'default' : variant
+  const colors = variants[colorVariant]
   const sizeClass = SIZE_CLASSES[size]
+  const isPro = resolvedStyle === 'pro'
+  const progressValue = Math.min(100, (index + 1) * 25)
 
   // Memoized formatted display value
   const formattedValue = useMemo(() => {
@@ -364,14 +465,15 @@ export const StatsCardPremium = memo(function StatsCardPremium({
       ref={cardRef}
       id={id}
       className={cn(
-        'group relative overflow-hidden rounded-2xl',
-        'bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl',
-        'border border-white/20 dark:border-neutral-800/50',
-        'shadow-lg dark:shadow-2xl',
-        'transition-all ease-out',
+        'group relative overflow-hidden rounded-2xl transition-all ease-out',
+        isPro
+          ? 'border border-neutral-200/70 bg-gradient-to-br from-white via-white to-neutral-50 shadow-sm dark:border-neutral-800/70 dark:from-neutral-950 dark:via-neutral-950 dark:to-neutral-900'
+          : 'border border-white/20 bg-white/80 shadow-lg backdrop-blur-xl dark:border-neutral-800/50 dark:bg-neutral-900/80 dark:shadow-2xl',
         !prefersReducedMotion && 'duration-500 animate-fade-in-up',
         sizeClass.padding,
-        isHovered && !prefersReducedMotion && 'shadow-2xl dark:shadow-3xl -translate-y-1',
+        isHovered &&
+          !prefersReducedMotion &&
+          (isPro ? 'shadow-md -translate-y-0.5' : 'shadow-2xl dark:shadow-3xl -translate-y-1'),
         onClick && 'cursor-pointer focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2'
       )}
       style={{
@@ -387,21 +489,25 @@ export const StatsCardPremium = memo(function StatsCardPremium({
       aria-label={computedAriaLabel}
     >
       {/* Animated background gradient */}
-      <div
-        className={cn(
-          'absolute inset-0 bg-gradient-to-br transition-opacity',
-          !prefersReducedMotion && 'duration-500',
-          colors.gradient,
-          isHovered ? 'opacity-70' : 'opacity-50'
-        )}
-        aria-hidden="true"
-      />
+      {!isPro && (
+        <div
+          className={cn(
+            'absolute inset-0 bg-gradient-to-br transition-opacity',
+            !prefersReducedMotion && 'duration-500',
+            colors.gradient,
+            isHovered ? 'opacity-70' : 'opacity-50'
+          )}
+          aria-hidden="true"
+        />
+      )}
 
       {/* Floating particles - skip if reduced motion */}
-      {animate && !prefersReducedMotion && <FloatingParticles color={colors.particle} />}
+      {!isPro && animate && !prefersReducedMotion && (
+        <FloatingParticles color={colors.particle} />
+      )}
 
       {/* Glow effect on hover - skip if reduced motion */}
-      {!prefersReducedMotion && (
+      {!isPro && !prefersReducedMotion && (
         <div
           className={cn(
             'absolute -top-24 -right-24 w-48 h-48 rounded-full blur-3xl transition-opacity duration-500 pointer-events-none',
@@ -418,7 +524,7 @@ export const StatsCardPremium = memo(function StatsCardPremium({
         <div className="flex items-start justify-between">
           {/* Icon with animated glow */}
           <div className="relative">
-            {!prefersReducedMotion && (
+            {!isPro && !prefersReducedMotion && (
               <div
                 className={cn(
                   'absolute inset-0 rounded-xl blur-lg transition-all duration-500',
@@ -431,8 +537,10 @@ export const StatsCardPremium = memo(function StatsCardPremium({
             <div
               className={cn(
                 'relative flex items-center justify-center rounded-xl',
-                'bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm',
-                `ring-2 ${colors.ring}`,
+                isPro
+                  ? 'border border-neutral-200/70 bg-neutral-100 dark:border-neutral-800/70 dark:bg-neutral-900'
+                  : 'bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm ring-2',
+                !isPro && colors.ring,
                 'transition-all',
                 !prefersReducedMotion && 'duration-500',
                 sizeClass.icon,
@@ -440,7 +548,11 @@ export const StatsCardPremium = memo(function StatsCardPremium({
               )}
             >
               <Icon
-                className={cn(sizeClass.iconInner, colors.icon, 'transition-all duration-300')}
+                className={cn(
+                  sizeClass.iconInner,
+                  isPro ? 'text-neutral-600 dark:text-neutral-200' : colors.icon,
+                  'transition-all duration-300'
+                )}
                 aria-hidden="true"
               />
             </div>
@@ -449,13 +561,14 @@ export const StatsCardPremium = memo(function StatsCardPremium({
           {/* Helper badge / Trend */}
           {(helper || trend) && (
             <div className="flex items-center gap-2">
-              {trend && <TrendBadge trend={trend} colors={colors} />}
+              {trend && <TrendBadge trend={trend} colors={colors} isPro={isPro} />}
               {helper && (
                 <span
                   className={cn(
                     'px-2.5 py-1 rounded-full',
-                    'bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm',
-                    'text-neutral-600 dark:text-neutral-300',
+                    isPro
+                      ? 'border border-slate-200/70 bg-white/80 text-slate-600 shadow-sm backdrop-blur-sm dark:border-slate-800/70 dark:bg-slate-900/60 dark:text-slate-200'
+                      : 'bg-white/60 dark:bg-neutral-800/60 backdrop-blur-sm text-neutral-600 dark:text-neutral-300',
                     sizeClass.helper,
                     'font-medium shadow-sm'
                   )}
@@ -471,7 +584,7 @@ export const StatsCardPremium = memo(function StatsCardPremium({
         <p
           className={cn(
             'mt-6 font-bold uppercase tracking-wider',
-            'text-neutral-500 dark:text-neutral-400',
+            'text-neutral-600 dark:text-neutral-400',
             sizeClass.label
           )}
         >
@@ -482,9 +595,10 @@ export const StatsCardPremium = memo(function StatsCardPremium({
         <p
           className={cn(
             'mt-2 font-bold tabular-nums',
-            'bg-gradient-to-br from-neutral-900 to-neutral-600 dark:from-white dark:to-neutral-300',
-            'bg-clip-text text-transparent',
-            sizeClass.value
+            sizeClass.value,
+            isPro
+              ? 'text-neutral-900 dark:text-white'
+              : 'bg-gradient-to-br from-neutral-900 to-neutral-600 bg-clip-text text-transparent dark:from-white dark:to-neutral-300'
           )}
           aria-live="polite"
           aria-atomic="true"
@@ -495,26 +609,20 @@ export const StatsCardPremium = memo(function StatsCardPremium({
         </p>
 
         {/* Progress bar */}
-        <div
-          className="mt-4 h-1.5 w-full overflow-hidden rounded-full bg-neutral-200/50 dark:bg-neutral-700/50"
-          role="progressbar"
-          aria-valuenow={Math.min(100, (index + 1) * 25)}
-          aria-valuemin={0}
-          aria-valuemax={100}
-          aria-label={`Progreso: ${Math.min(100, (index + 1) * 25)}%`}
-        >
-          <div
-            className={cn(
-              'h-full rounded-full transition-all ease-out',
-              !prefersReducedMotion && 'duration-1000',
-              `bg-gradient-to-r ${colors.gradient.replace('/20', '')}`
-            )}
-            style={{
-              width: isVisible ? `${Math.min(100, (index + 1) * 25)}%` : '0%',
-              transitionDelay: prefersReducedMotion ? '0s' : `${index * 0.1 + 0.3}s`,
-            }}
-          />
-        </div>
+        <PremiumProgressBar
+          value={isVisible ? progressValue : 0}
+          variant={colorVariant}
+          reducedMotion={prefersReducedMotion}
+          className="mt-4"
+          trackClassName={isPro ? 'bg-neutral-200/70 dark:bg-neutral-800/60' : undefined}
+          barClassName={isPro ? 'shadow-[0_6px_14px_rgba(15,23,42,0.12)] dark:shadow-[0_6px_14px_rgba(0,0,0,0.4)]' : undefined}
+          barStyle={
+            !prefersReducedMotion
+              ? { transitionDelay: `${index * 0.1 + 0.3}s` }
+              : undefined
+          }
+          ariaLabel="Progreso"
+        />
 
         {/* Hover shine effect - skip if reduced motion */}
         {!prefersReducedMotion && (

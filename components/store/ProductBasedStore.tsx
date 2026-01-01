@@ -1,10 +1,10 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { 
+import {
   ArrowUpRight, Camera, Package, Grid3x3,
-  Calendar, Users, Download, Plus, Check, 
+  Calendar, Users, Download, Plus, Check,
   ChevronLeft, Quote, Eye, X, ArrowRight,
   ShoppingCart, Sparkles, Info
 } from 'lucide-react';
@@ -12,6 +12,7 @@ import { useRouter } from 'next/navigation';
 import { formatCurrency } from '@/lib/utils';
 import { toast } from 'sonner';
 import { createClientSupabaseClient } from '@/lib/supabase/client';
+import { SmartMockup } from './SmartMockup';
 
 interface Product {
   id: string;
@@ -55,6 +56,13 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
   const [loading, setLoading] = useState(true);
   const [photos, setPhotos] = useState<any[]>([]);
   const [showPhotoDetail, setShowPhotoDetail] = useState<string | null>(null);
+
+  // Hero photo for mockups
+  const heroPhoto = useMemo(() => {
+    if (!photos || photos.length === 0) return undefined;
+    // Return the first photo as default, or random if preferred
+    return photos[0];
+  }, [photos]);
 
   useEffect(() => {
     fetchProducts();
@@ -111,7 +119,7 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
   const getPhotoSelectionCount = () => {
     const product = getSelectedProduct();
     if (!product) return 0;
-    
+
     return product.config?.includes?.reduce((total: number, item: any) => {
       if (item.type === 'individual_photo' && item.selectable) {
         return total + item.quantity;
@@ -126,36 +134,36 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
 
   const getTotalPrice = () => {
     let total = 0;
-    
+
     // Base product price
     const product = getSelectedProduct();
     if (product) {
       total += product.base_price;
     }
-    
+
     // Additional copies
     const copies = additionalCopies.get(selectedProduct || '') || [];
     copies.forEach(copy => {
       const printPrice = printPrices.find(p => p.size === copy.size);
       if (printPrice) {
         let copyPrice = printPrice.price * copy.quantity;
-        
+
         // Apply discount if configured
         if (product?.config?.allows_additional_copies && product.config.additional_copies_discount) {
           copyPrice *= (1 - product.config.additional_copies_discount);
         }
-        
+
         total += copyPrice;
       }
     });
-    
+
     return total;
   };
 
   const handlePhotoSelection = (photoId: string) => {
     const currentPhotos = new Set(getCurrentProductPhotos());
     const maxPhotos = getPhotoSelectionCount();
-    
+
     if (currentPhotos.has(photoId)) {
       currentPhotos.delete(photoId);
     } else if (currentPhotos.size < maxPhotos) {
@@ -164,7 +172,7 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
       toast.error(`Puedes seleccionar máximo ${maxPhotos} fotos para este paquete`);
       return;
     }
-    
+
     const newSelectedPhotos = new Map(selectedPhotos);
     newSelectedPhotos.set(selectedProduct!, currentPhotos);
     setSelectedPhotos(newSelectedPhotos);
@@ -173,11 +181,11 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
   const handleAddCopy = (photoId: string, size: string) => {
     const currentCopies = additionalCopies.get(selectedProduct || '') || [];
     const existingCopy = currentCopies.find(c => c.size === size);
-    
-    const newCopies = existingCopy 
+
+    const newCopies = existingCopy
       ? currentCopies.map(c => c.size === size ? { ...c, quantity: c.quantity + 1 } : c)
       : [...currentCopies, { size, quantity: 1 }];
-    
+
     const newAdditionalCopies = new Map(additionalCopies);
     newAdditionalCopies.set(selectedProduct!, newCopies);
     setAdditionalCopies(newAdditionalCopies);
@@ -191,14 +199,14 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
       additional_copies: additionalCopies.get(selectedProduct || '') || [],
       total: getTotalPrice()
     };
-    
+
     sessionStorage.setItem('checkoutData', JSON.stringify(checkoutData));
-    router.push(`/f/${shareData.token}/checkout`);
+    router.push(`/store-unified/${shareData.token}`);
   };
 
   const getPhotoUrl = (photo: any) => {
-    return photo.preview_path || photo.watermark_path || photo.storage_path || 
-           `https://picsum.photos/600/800?random=${photo.id}`;
+    return photo.preview_path || photo.watermark_path || photo.storage_path ||
+      `https://picsum.photos/600/800?random=${photo.id}`;
   };
 
   if (loading) {
@@ -212,7 +220,7 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
   return (
     <div className="min-h-screen bg-white">
       {/* Navigation */}
-      <motion.nav 
+      <motion.nav
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         className="sticky top-0 z-50 bg-white border-b border-gray-100"
@@ -242,17 +250,16 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                 ].map((item, i) => (
                   <div key={item.id} className="flex items-center gap-8">
                     <button
-                      className={`text-xs tracking-wider transition-all ${
-                        step === item.id
-                          ? 'font-semibold text-black'
-                          : 'text-gray-400'
-                      }`}
+                      className={`text-xs tracking-wider transition-all ${step === item.id
+                        ? 'font-semibold text-black'
+                        : 'text-gray-400'
+                        }`}
                     >
                       <span className="flex items-center gap-2">
                         <span className={`
                           w-6 h-6 rounded-full flex items-center justify-center text-xs
-                          ${step === item.id 
-                            ? 'bg-black text-white' 
+                          ${step === item.id
+                            ? 'bg-black text-white'
                             : 'bg-gray-100 text-gray-400'
                           }
                         `}>
@@ -310,36 +317,87 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                     >
                       <div
                         className={`
-                          relative bg-white border-2 cursor-pointer transition-all
-                          ${selectedProduct === product.id 
-                            ? 'border-black shadow-xl' 
-                            : 'border-gray-200 hover:border-gray-400 hover:shadow-lg'
+                          relative bg-white border-2 cursor-pointer transition-all overflow-hidden group
+                          ${selectedProduct === product.id
+                            ? 'border-black shadow-xl ring-1 ring-black/5'
+                            : 'border-gray-100 hover:border-gray-300 hover:shadow-lg'
                           }
                         `}
                         onClick={() => setSelectedProduct(product.id)}
                       >
                         {product.featured && (
-                          <div className="absolute -top-3 left-8 z-10">
-                            <div className="bg-black text-white text-xs px-4 py-1.5 tracking-wider">
-                              RECOMENDADO
+                          <div className="absolute top-4 right-4 z-20">
+                            <div className="bg-black text-white text-[10px] font-bold px-3 py-1 tracking-widest uppercase shadow-lg">
+                              Recomendado
                             </div>
                           </div>
                         )}
 
+                        {/* Visual Mockup Area */}
+                        <div className="bg-gray-50 p-8 flex items-center justify-center min-h-[300px]">
+                          {(() => {
+                            const productName = product.name.toLowerCase();
+                            const productType = product.type.toLowerCase();
+                            let mockupPath = null;
+
+                            if (productName.includes('carpeta') || productName.includes('folder')) {
+                              mockupPath = '/placeholders/mockups/school-folder-open.png';
+                            } else if (productName.includes('marco') || productName.includes('frame') || productName.includes('cuadro')) {
+                              mockupPath = '/placeholders/mockups/framed-photo.png';
+                            } else if (productName.includes('digital') || productName.includes('galería') || productName.includes('gallery')) {
+                              mockupPath = '/placeholders/mockups/gallery-on-mobile.png';
+                            } else if (productName.includes('pack') || productName.includes('paquete') || productName.includes('print') || productName.includes('impresiones')) {
+                              mockupPath = '/placeholders/mockups/print-package.png';
+                            }
+
+                            if (mockupPath) {
+                              return (
+                                <div className="relative w-full max-w-[280px] aspect-[4/3] group-hover:scale-105 transition-transform duration-500 shadow-lg">
+                                  <img
+                                    src={mockupPath}
+                                    alt={product.name}
+                                    className="w-full h-full object-cover rounded-md"
+                                  />
+                                  {/* Optional: Overlay actual photo if we want to get fancy later, but for now just the mockup is cleaner */}
+                                </div>
+                              );
+                            }
+
+                            return (
+                              <SmartMockup
+                                type={product.type === 'physical_package' ? 'package' : 'print'}
+                                photoUrl={heroPhoto ? getPhotoUrl(heroPhoto) : undefined}
+                                className="w-full max-w-[240px] transition-transform duration-500 group-hover:scale-105"
+                              />
+                            );
+                          })()}
+                        </div>
+
                         <div className="p-8">
-                          <h3 className="text-2xl font-bold mb-2">{product.name}</h3>
-                          <p className="text-gray-600 mb-6">{product.description}</p>
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h3 className="text-xl font-bold mb-1">{product.name}</h3>
+                              <p className="text-sm text-gray-500 line-clamp-2">{product.description}</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="text-2xl font-light tracking-tight">
+                                {formatCurrency(product.base_price)}
+                              </p>
+                            </div>
+                          </div>
 
                           {/* What's included */}
-                          <div className="space-y-3 mb-8">
-                            <p className="text-sm font-semibold text-gray-700">INCLUYE:</p>
+                          <div className="space-y-3 mb-8 bg-gray-50 p-4 rounded-xl">
+                            <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Incluye</p>
                             {product.config?.includes?.map((item: any, j: number) => (
                               <div key={j} className="flex items-center gap-3">
-                                <Package className="w-4 h-4 text-gray-400" />
-                                <span className="text-sm">
-                                  {item.quantity}x {item.type === 'individual_photo' ? 'Foto Individual' : 
-                                   item.type === 'small_copies' ? `Copias ${item.size}` : 
-                                   item.type === 'group_photo' ? 'Foto Grupal' : item.type} 
+                                <div className="w-6 h-6 rounded-full bg-white border border-gray-200 flex items-center justify-center shadow-sm">
+                                  <Check className="w-3 h-3 text-black" />
+                                </div>
+                                <span className="text-sm text-gray-700">
+                                  <strong>{item.quantity}x</strong> {item.type === 'individual_photo' ? 'Foto Individual' :
+                                    item.type === 'small_copies' ? `Copias ${item.size}` :
+                                      item.type === 'group_photo' ? 'Foto Grupal' : item.type}
                                   {item.size && ` (${item.size})`}
                                 </span>
                               </div>
@@ -348,29 +406,28 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
 
                           {/* Features */}
                           {product.config?.allows_additional_copies && (
-                            <div className="bg-green-50 text-green-700 text-xs px-3 py-2 rounded mb-6">
-                              <Sparkles className="w-3 h-3 inline mr-1" />
-                              {(product.config.additional_copies_discount * 100).toFixed(0)}% descuento en copias adicionales
+                            <div className="bg-blue-50 text-blue-700 text-xs px-3 py-2 rounded mb-6 flex items-center gap-2">
+                              <Sparkles className="w-3 h-3" />
+                              <span className="font-medium">{(product.config.additional_copies_discount * 100).toFixed(0)}% OFF en copias extra</span>
                             </div>
                           )}
 
-                          {/* Price */}
-                          <div className="border-t pt-6">
-                            <p className="text-3xl font-light">
-                              {formatCurrency(product.base_price)}
-                            </p>
-                            <button
-                              className={`
-                                w-full mt-4 py-3 font-medium tracking-wider text-sm transition-all
-                                ${selectedProduct === product.id 
-                                  ? 'bg-black text-white' 
-                                  : 'bg-white text-black border border-gray-200 hover:bg-gray-50'
-                                }
-                              `}
-                            >
-                              {selectedProduct === product.id ? 'SELECCIONADO' : 'SELECCIONAR'}
-                            </button>
-                          </div>
+                          <button
+                            className={`
+                              w-full py-4 font-medium tracking-wider text-sm transition-all flex items-center justify-center gap-2
+                              ${selectedProduct === product.id
+                                ? 'bg-black text-white shadow-lg'
+                                : 'bg-white text-black border border-black hover:bg-black hover:text-white'
+                              }
+                            `}
+                          >
+                            {selectedProduct === product.id ? (
+                              <>
+                                <Check className="w-4 h-4" />
+                                SELECCIONADO
+                              </>
+                            ) : 'SELECCIONAR PAQUETE'}
+                          </button>
                         </div>
                       </div>
                     </motion.div>
@@ -388,8 +445,8 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                     disabled={!selectedProduct}
                     className={`
                       inline-flex items-center gap-3 px-12 py-4 text-sm tracking-wider transition-all
-                      ${selectedProduct 
-                        ? 'bg-black text-white hover:bg-gray-800' 
+                      ${selectedProduct
+                        ? 'bg-black text-white hover:bg-gray-800'
                         : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                       }
                     `}
@@ -419,14 +476,14 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                 <p className="text-gray-600">
                   Elige {getPhotoSelectionCount()} fotos individuales para tu carpeta
                 </p>
-                
+
                 {/* Selection counter */}
                 <div className="mt-4 p-4 bg-gray-50 rounded-lg">
                   <p className="text-sm">
                     <span className="font-semibold">{getCurrentProductPhotos().size}</span> de {getPhotoSelectionCount()} fotos seleccionadas
                   </p>
                   <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
-                    <div 
+                    <div
                       className="bg-black h-2 rounded-full transition-all"
                       style={{ width: `${(getCurrentProductPhotos().size / getPhotoSelectionCount()) * 100}%` }}
                     />
@@ -451,12 +508,12 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                         alt=""
                         className="w-full h-full object-cover"
                       />
-                      
+
                       {/* Selection Overlay */}
                       <div className={`
                         absolute inset-0 transition-all flex items-center justify-center
-                        ${getCurrentProductPhotos().has(photo.id) 
-                          ? 'bg-black/60' 
+                        ${getCurrentProductPhotos().has(photo.id)
+                          ? 'bg-black/60'
                           : 'bg-black/0 group-hover:bg-black/30'
                         }
                       `}>
@@ -501,7 +558,7 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                   className={`
                     inline-flex items-center gap-3 px-12 py-4 text-sm tracking-wider transition-all
                     ${getCurrentProductPhotos().size === getPhotoSelectionCount()
-                      ? 'bg-black text-white hover:bg-gray-800' 
+                      ? 'bg-black text-white hover:bg-gray-800'
                       : 'bg-gray-200 text-gray-400 cursor-not-allowed'
                     }
                   `}
@@ -530,7 +587,7 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                 <p className="text-gray-600">
                   ¿Quieres copias adicionales de alguna foto? Aprovecha el descuento especial
                 </p>
-                
+
                 {getSelectedProduct()?.config?.additional_copies_discount && (
                   <div className="mt-4 inline-flex items-center gap-2 bg-green-50 text-green-700 px-4 py-2 rounded-lg">
                     <Sparkles className="w-4 h-4" />
@@ -561,7 +618,7 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                 {Array.from(getCurrentProductPhotos()).map((photoId) => {
                   const photo = photos.find(p => p.id === photoId);
                   if (!photo) return null;
-                  
+
                   return (
                     <div key={photoId} className="flex gap-4 p-4 border rounded-lg">
                       <img
@@ -597,12 +654,12 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                     {additionalCopies.get(selectedProduct || '')?.map((copy, i) => {
                       const print = printPrices.find(p => p.size === copy.size);
                       if (!print) return null;
-                      
+
                       const price = print.price * copy.quantity;
-                      const discountedPrice = getSelectedProduct()?.config?.additional_copies_discount 
+                      const discountedPrice = getSelectedProduct()?.config?.additional_copies_discount
                         ? price * (1 - getSelectedProduct()!.config.additional_copies_discount)
                         : price;
-                      
+
                       return (
                         <div key={i} className="flex justify-between">
                           <span>{copy.quantity}x {print.dimensions}</span>
@@ -659,9 +716,9 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                       {getSelectedProduct()?.config?.includes?.map((item: any, i: number) => (
                         <div key={i} className="flex justify-between text-sm">
                           <span className="text-gray-600">
-                            {item.quantity}x {item.type === 'individual_photo' ? 'Foto Individual' : 
-                             item.type === 'small_copies' ? `Copias ${item.size}` : 
-                             item.type === 'group_photo' ? 'Foto Grupal' : item.type}
+                            {item.quantity}x {item.type === 'individual_photo' ? 'Foto Individual' :
+                              item.type === 'small_copies' ? `Copias ${item.size}` :
+                                item.type === 'group_photo' ? 'Foto Grupal' : item.type}
                           </span>
                           <span>Incluido</span>
                         </div>
@@ -680,12 +737,12 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                       {additionalCopies.get(selectedProduct || '')?.map((copy, i) => {
                         const print = printPrices.find(p => p.size === copy.size);
                         if (!print) return null;
-                        
+
                         const price = print.price * copy.quantity;
-                        const discountedPrice = getSelectedProduct()?.config?.additional_copies_discount 
+                        const discountedPrice = getSelectedProduct()?.config?.additional_copies_discount
                           ? price * (1 - getSelectedProduct()!.config.additional_copies_discount)
                           : price;
-                        
+
                         return (
                           <div key={i} className="flex justify-between text-sm mb-2">
                             <span className="text-gray-600">{copy.quantity}x {print.dimensions}</span>
@@ -718,7 +775,7 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
               <div className="col-span-5">
                 <div className="bg-white border border-gray-200 p-8">
                   <h3 className="text-xl font-semibold mb-6">Información de contacto</h3>
-                  
+
                   <form className="space-y-5" onSubmit={(e) => {
                     e.preventDefault();
                     handleCheckout();
@@ -759,7 +816,7 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                       >
                         PROCEDER CON MERCADO PAGO
                       </button>
-                      
+
                       <p className="text-xs text-center text-gray-500 mt-4">
                         Serás redirigido a Mercado Pago para completar el pago de forma segura
                       </p>
@@ -812,9 +869,9 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                   >
                     <X className="w-5 h-5" />
                   </button>
-                  
+
                   <h3 className="text-xl font-semibold mb-6">Detalles de la foto</h3>
-                  
+
                   <div className="space-y-4 mb-8">
                     <div className="flex items-center justify-between py-3 border-b">
                       <span className="text-sm text-gray-600">Resolución</span>
@@ -833,14 +890,14 @@ export default function ProductBasedStore({ shareData }: ProductBasedStoreProps)
                     }}
                     className={`
                       w-full py-3 text-sm tracking-wider transition-all
-                      ${getCurrentProductPhotos().has(showPhotoDetail) 
-                        ? 'bg-black text-white' 
+                      ${getCurrentProductPhotos().has(showPhotoDetail)
+                        ? 'bg-black text-white'
                         : 'bg-white text-black border border-black hover:bg-gray-50'
                       }
                     `}
                   >
-                    {getCurrentProductPhotos().has(showPhotoDetail) 
-                      ? 'QUITAR DE LA SELECCIÓN' 
+                    {getCurrentProductPhotos().has(showPhotoDetail)
+                      ? 'QUITAR DE LA SELECCIÓN'
                       : 'AGREGAR A LA SELECCIÓN'
                     }
                   </button>

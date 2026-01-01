@@ -1,0 +1,26 @@
+<svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="warmBg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#fef3e2"/>
+      <stop offset="100%" style="stop-color:#fce7c8"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo circular -->
+  <circle cx="40" cy="40" r="40" fill="url(#warmBg)"/>
+
+  <!-- Cabeza -->
+  <ellipse cx="40" cy="32" rx="14" ry="15" fill="#e8d4c0"/>
+
+  <!-- Cabello -->
+  <path d="M26 28C26 20 32 14 40 14C48 14 54 20 54 28C54 28 52 22 40 22C28 22 26 28 26 28Z"
+        fill="#8b7355"/>
+
+  <!-- Cuello y hombros -->
+  <path d="M32 46C32 46 28 52 20 56C20 56 25 70 40 70C55 70 60 56 60 56C52 52 48 46 48 46"
+        fill="#d4af37" opacity="0.3"/>
+  <ellipse cx="40" cy="54" rx="12" ry="6" fill="#e8d4c0"/>
+
+  <!-- Ropa/hombros -->
+  <path d="M20 80C20 65 28 58 40 58C52 58 60 65 60 80" fill="#d4af37" opacity="0.4"/>
+</svg>

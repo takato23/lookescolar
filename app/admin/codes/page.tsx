@@ -99,7 +99,7 @@ export default function CodesPage() {
     } catch (error: any) {
       console.error('[CodesPage] Failed to load tokens', error);
       toast.error(
-        error?.message || 'Error al cargar los tokens de acceso familiar'
+        error?.message || 'Error al cargar los tokens de acceso para clientes'
       );
     } finally {
       setLoading(false);
@@ -179,7 +179,7 @@ export default function CodesPage() {
           <html>
             <head>
               <meta charset="utf-8" />
-              <title>Flyer familiar - ${alias.alias}</title>
+              <title>Flyer para clientes - ${alias.alias}</title>
               <style>
                 body {
                   font-family: 'Helvetica Neue', Arial, sans-serif;
@@ -250,7 +250,7 @@ export default function CodesPage() {
                   Alias: ${alias.alias.toUpperCase()}<br />
                   Código corto: ${alias.short_code}
                 </div>
-                <img src="${qrDataUrl}" alt="QR acceso familiar" />
+                <img src="${qrDataUrl}" alt="QR acceso para clientes" />
                 <div class="instructions">
                   <strong>Cómo usar este acceso</strong>
                   <ol>
@@ -286,7 +286,7 @@ export default function CodesPage() {
       return (
         <div className="rounded-lg border border-dashed border-gray-300 p-12 text-center">
           <p className="text-sm text-gray-600">
-            Todavía no hay tokens mejorados generados. Creá accesos familiares
+            Todavía no hay tokens mejorados generados. Creá accesos para clientes
             desde la sección de eventos o estudiantes.
           </p>
         </div>
@@ -421,11 +421,11 @@ export default function CodesPage() {
       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">
-            Alias familiares
+            Alias para clientes
           </h1>
           <p className="text-sm text-muted-foreground">
             Gestioná alias cortos, imprime flyers y controla los intentos de
-            acceso a las galerías familiares.
+            acceso a las galerías para clientes.
           </p>
         </div>
         <Button

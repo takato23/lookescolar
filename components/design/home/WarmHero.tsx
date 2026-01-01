@@ -48,13 +48,13 @@ export interface WarmHeroProps {
 
 const DEFAULT_FILTERS: WarmHeroFilter[] = [
   { label: 'Modo galería', icon: Camera, active: true },
-  { label: 'Familias', icon: HeartHandshake },
+  { label: 'Clientes', icon: HeartHandshake },
   { label: 'Docentes', icon: Users },
 ];
 
 const DEFAULT_HIGHLIGHTS: WarmHeroHighlight[] = [
   { label: 'Salas en vivo', value: '12', helper: 'Monitor real-time', icon: Camera, tone: 'warm' },
-  { label: 'Familias conectadas', value: '268', helper: 'Participación diaria', icon: Users, tone: 'neutral' },
+  { label: 'Clientes conectados', value: '268', helper: 'Participación diaria', icon: Users, tone: 'neutral' },
   { label: 'Nivel de alegría', value: '96%', helper: 'Encuestas positivas', icon: Sparkles, tone: 'cool' },
 ];
 
@@ -166,7 +166,7 @@ export function WarmHero({
           </span>
           <span className={clsx('flex items-center gap-2', accentText)}>
             <Sparkles className="h-4 w-4" />
-            Experiencia inmersiva para familias
+            Experiencia inmersiva para clientes
           </span>
         </footer>
       </div>

@@ -8,8 +8,11 @@ import type { RouteContext } from '@/types/next-route';
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
 import { z } from 'zod';
-import { validateShareTokenPassword } from '@/lib/middleware/password-validation.middleware';
-import { photoClassificationService } from '@/lib/services/photo-classification.service';
+import {
+  validateShareTokenPassword,
+  validateStorePassword,
+  type PasswordValidationResult,
+} from '@/lib/middleware/password-validation.middleware';
 import {
   galleryService,
   GalleryServiceError,
@@ -19,6 +22,7 @@ import {
   buildPublicConfig,
   fetchFallbackStoreConfig,
 } from '@/lib/services/store-config-utils';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
 
 const QuerySchema = z.object({
   include_assets: z
@@ -31,6 +35,48 @@ const QuerySchema = z.object({
   folder_id: z.string().optional(),
 });
 
+type ScheduleStatus = {
+  withinSchedule: boolean;
+  message?: string;
+  openDate?: string;
+  closedDate?: string;
+};
+
+function resolveScheduleStatus(storeConfig: any): ScheduleStatus {
+  if (!storeConfig?.store_schedule?.enabled) {
+    return { withinSchedule: true };
+  }
+
+  const now = new Date();
+  const startDate = storeConfig.store_schedule.start_date
+    ? new Date(storeConfig.store_schedule.start_date)
+    : null;
+  const endDate = storeConfig.store_schedule.end_date
+    ? new Date(storeConfig.store_schedule.end_date)
+    : null;
+  const message =
+    storeConfig.store_schedule.maintenance_message ||
+    'La tienda no está disponible en este momento';
+
+  if (startDate && now < startDate) {
+    return {
+      withinSchedule: false,
+      message,
+      openDate: startDate.toISOString(),
+    };
+  }
+
+  if (endDate && now > endDate) {
+    return {
+      withinSchedule: false,
+      message,
+      closedDate: endDate.toISOString(),
+    };
+  }
+
+  return { withinSchedule: true };
+}
+
 // GET - Obtener datos de la tienda
 export async function GET(
   request: NextRequest,
@@ -41,19 +87,22 @@ export async function GET(
     const { token } = params;
     const { searchParams } = new URL(request.url);
     const queryParams = Object.fromEntries(searchParams.entries());
-    const { include_assets, limit, offset, password, folder_id } = QuerySchema.parse(queryParams);
+    const { include_assets, limit, offset, password, folder_id } =
+      QuerySchema.parse(queryParams);
+    const previewParam =
+      typeof queryParams.preview === 'string' ? queryParams.preview : undefined;
 
     // Get client IP for rate limiting
     const clientIp = request.headers.get('x-forwarded-for') ||
-                     request.headers.get('x-real-ip') ||
-                     'unknown';
+      request.headers.get('x-real-ip') ||
+      'unknown';
 
     // Check for password in header as alternative to query param
     const passwordFromHeader = request.headers.get('X-Store-Password');
     const passwordToValidate = password || passwordFromHeader;
 
-    // Validar formato del token (permitir guiones para tokens de prueba)
-    if (!token || token.length < 8 || !/^[a-z0-9-]+$/.test(token)) {
+    // Validar formato del token (permitir guiones y underscores)
+    if (!token || token.length < 8 || !/^[A-Za-z0-9_-]+$/.test(token)) {
       return NextResponse.json(
         { error: 'Invalid store token format' },
         { status: 400 }
@@ -61,94 +110,123 @@ export async function GET(
     }
 
     const supabase = await createServerSupabaseServiceClient();
+    const { tenantId } = resolveTenantFromHeaders(request.headers);
 
-    // Primero intentar buscar en share_tokens (tokens de 64 caracteres)
-    const _shareTokenData = null;
-    let storeData = null;
+    // Primero intentar resolver tokens de preview (admin)
+    let storeData: any = null;
     let selectedPhotoIds: string[] = [];
-    
-    if (token.length === 64) {
-      // Es probable que sea un share_token
+    let previewContext: { folderId?: string | null; eventId?: string | null } | null = null;
+    let shareTokenPasswordValidation: PasswordValidationResult | null = null;
+    let shareTokenRequiresPassword = false;
+
+    const previewRequested = previewParam === 'true' || token.startsWith('preview_');
+    // family_tokens logic removed - using share_tokens unified approach
+    if (previewRequested) {
+      // We let it fall through to share_tokens or regular store_settings lookup
+    }
+
+    // Luego intentar buscar en share_tokens
+    if (!storeData) {
       const { data: shareToken } = await supabase
         .from('share_tokens')
         .select('*, events(name, date)')
         .eq('token', token)
         .eq('is_active', true)
         .single();
-      
+
       if (shareToken) {
+        // Check for expiration
+        if (shareToken.expires_at && new Date(shareToken.expires_at) < new Date()) {
+          return NextResponse.json(
+            { error: 'Token expirado' },
+            { status: 410 }
+          );
+        }
+
         const _shareTokenData = shareToken;
 
         // Validate password if required
-        const passwordValidation = await validateShareTokenPassword(
+        shareTokenPasswordValidation = await validateShareTokenPassword(
           token,
           passwordToValidate,
           clientIp
         );
+        shareTokenRequiresPassword =
+          shareTokenPasswordValidation?.requiresPassword ?? false;
 
-        if (!passwordValidation.isValid) {
+        if (!shareTokenPasswordValidation.isValid) {
           return NextResponse.json(
             {
-              error: passwordValidation.error || 'Authentication required',
-              requiresPassword: passwordValidation.requiresPassword
+              error:
+                shareTokenPasswordValidation.error || 'Authentication required',
+              passwordRequired: shareTokenRequiresPassword,
+              requiresPassword: shareTokenRequiresPassword,
             },
-            { status: passwordValidation.statusCode || 401 }
+            { status: shareTokenPasswordValidation.statusCode || 401 }
           );
         }
 
-        // Handle folder navigation for share_token
-        const _targetFolderId = folder_id !== undefined ? folder_id : shareToken.folder_id;
-
-        // If navigating to a different folder, fetch its data
-        if (folder_id !== undefined && folder_id !== shareToken.folder_id) {
-          // Verify this folder is accessible from the share token
-          const { data: navigationData } = await supabase
-            .rpc('get_folder_navigation_data', {
-              p_token: token,
-              p_folder_id: folder_id || null
-            })
-            .single();
-
-          if (navigationData) {
-            storeData = navigationData;
-          }
-        } else {
-          // Si tiene photo_ids específicos, guardarlos
-          if (shareToken.photo_ids && shareToken.photo_ids.length > 0) {
-            selectedPhotoIds = shareToken.photo_ids;
-          }
+        // Si el share_token tiene photo_ids específicos, guardarlos.
+        // (La navegación por subcarpetas via RPC legacy fue removida: la función no existe en la DB actual.)
+        if (shareToken.photo_ids && shareToken.photo_ids.length > 0) {
+          selectedPhotoIds = shareToken.photo_ids;
         }
 
         // Incrementar contador de vistas (only after successful authentication)
         await supabase
           .from('share_tokens')
-          .update({ view_count: shareToken.view_count + 1 })
+          .update({ view_count: (shareToken.view_count ?? 0) + 1 })
           .eq('id', shareToken.id);
 
-        // Only build storeData if not already set by navigation
-        if (!storeData) {
-          // Construir storeData compatible con jerarquía
-          storeData = {
-            folder_id: shareToken.folder_id,
-            folder_name: shareToken.title || 'Fotos Compartidas',
-            folder_path: shareToken.folder_path || shareToken.title || 'Fotos Compartidas',
-            parent_id: shareToken.parent_id || null,
-            parent_name: shareToken.parent_name || null,
-            depth: shareToken.depth || 0,
-            event_id: shareToken.event_id,
-            event_name: shareToken.events?.name || 'Evento',
-            event_date: shareToken.events?.date,
-            store_settings: shareToken.metadata || {},
-            view_count: shareToken.view_count + 1,
-            asset_count: selectedPhotoIds.length || 0,
-            share_type: shareToken.share_type,
-            selected_photo_ids: selectedPhotoIds,
-            child_folders: shareToken.child_folders || []
+        // Construir storeData compatible con jerarquía usando la carpeta real (si aplica)
+        let folderInfo: any = null;
+        if (shareToken.folder_id) {
+          const { data: folderData } = await supabase
+            .from('folders')
+            .select('id, name, path, parent_id, depth, event_id, store_settings, photo_count')
+            .eq('id', shareToken.folder_id)
+            .maybeSingle();
+          folderInfo = folderData;
+        }
+
+        storeData = {
+          folder_id: folderInfo?.id ?? shareToken.folder_id,
+          folder_name:
+            folderInfo?.name ?? shareToken.title ?? 'Fotos Compartidas',
+          folder_path:
+            folderInfo?.path ?? shareToken.title ?? 'Fotos Compartidas',
+          parent_id: folderInfo?.parent_id ?? null,
+          parent_name: null,
+          depth: folderInfo?.depth ?? 0,
+          event_id: shareToken.event_id,
+          event_name: shareToken.events?.name || 'Evento',
+          event_date: shareToken.events?.date,
+          store_settings: folderInfo?.store_settings ?? shareToken.metadata ?? {},
+          view_count: (shareToken.view_count ?? 0) + 1,
+          asset_count: selectedPhotoIds.length || folderInfo?.photo_count || 0,
+          share_type: shareToken.share_type,
+          selected_photo_ids: selectedPhotoIds,
+          child_folders: [],
+        };
+
+        const shareMetadata =
+          (shareToken.metadata as Record<string, any> | null) ?? {};
+        const isAdminPreview =
+          shareToken.share_type === 'admin_preview' ||
+          shareMetadata.is_preview === true ||
+          shareMetadata.purpose === 'admin_preview' ||
+          token.startsWith('preview_');
+
+        // If this is an admin preview, set the preview context to bypass restrictions
+        if (isAdminPreview) {
+          previewContext = {
+            folderId: shareToken.folder_id,
+            eventId: shareToken.event_id
           };
         }
       }
     }
-    
+
     // Si no se encontró en share_tokens, buscar en folders (tokens de 16 caracteres)
     if (!storeData) {
       // Usar get_store_data para tokens de folder
@@ -166,11 +244,115 @@ export async function GET(
       storeData = folderData;
     }
 
-    let assets = [];
+    let storeConfig: any = null;
+    let usedFallback = false;
+
+    if (previewContext) {
+      if (previewContext.folderId) {
+        const { data: folderConfig } = await supabase
+          .from('store_settings')
+          .select('*')
+          .eq('folder_id', previewContext.folderId)
+          .maybeSingle();
+        storeConfig = folderConfig ?? null;
+      }
+
+      if (!storeConfig && previewContext.eventId) {
+        const { data: eventConfig } = await supabase
+          .from('store_settings')
+          .select('*')
+          .eq('event_id', previewContext.eventId)
+          .maybeSingle();
+        storeConfig = eventConfig ?? null;
+      }
+
+      if (!storeConfig) {
+        storeConfig = await fetchFallbackStoreConfig(supabase);
+        usedFallback = true;
+      }
+    } else {
+      const { data: configData, error: configError } = await supabase
+        .rpc('get_public_store_config', { store_token: token })
+        .single();
+
+      storeConfig = configData;
+      if (configError || !storeConfig) {
+        const fallback = await fetchFallbackStoreConfig(supabase);
+        storeConfig = fallback;
+        usedFallback = true;
+      }
+    }
+
+    const storeSettings = storeConfig ? buildPublicConfig(storeConfig) : null;
+    const mercadoPagoConnected = Boolean(
+      storeConfig?.mercado_pago_connected ??
+      storeConfig?.mercadoPagoConnected ??
+      true
+    );
+
+    const scheduleStatus = resolveScheduleStatus(storeConfig);
+    const effectiveScheduleStatus = previewContext
+      ? { withinSchedule: true }
+      : scheduleStatus;
+    const storeEnabled = storeConfig?.enabled ?? true;
+    const available = Boolean(storeEnabled) && scheduleStatus.withinSchedule;
+    const effectiveAvailable = previewContext ? true : available;
+
+    const passwordProtectionEnabled =
+      !previewContext && !usedFallback && Boolean(storeConfig?.password_protection);
+    const passwordProtected = Boolean(
+      shareTokenRequiresPassword || passwordProtectionEnabled
+    );
+
+    if (passwordProtectionEnabled && !shareTokenRequiresPassword) {
+      if (!passwordToValidate) {
+        return NextResponse.json(
+          {
+            error: 'Esta tienda requiere una contraseña para acceder',
+            passwordRequired: true,
+            requiresPassword: true,
+          },
+          { status: 401 }
+        );
+      }
+
+      const storePasswordValidation = await validateStorePassword(
+        token,
+        passwordToValidate
+      );
+
+      if (!storePasswordValidation.isValid) {
+        return NextResponse.json(
+          {
+            error: storePasswordValidation.error || 'Contraseña incorrecta',
+            passwordRequired: true,
+            requiresPassword: true,
+          },
+          { status: storePasswordValidation.statusCode || 401 }
+        );
+      }
+    }
+
+    if (!previewContext && !available) {
+      const availabilityMessage = storeEnabled
+        ? scheduleStatus.message || 'La tienda no está disponible en este momento'
+        : 'La tienda se encuentra temporalmente deshabilitada.';
+
+      return NextResponse.json(
+        {
+          error: availabilityMessage,
+          available: false,
+          schedule: scheduleStatus,
+        },
+        { status: 403 }
+      );
+    }
+
+    let assets: any[] = [];
     let pagination: any = null;
     let galleryPayload: GalleryResult | null = null;
 
-    if (include_assets) {
+    if (include_assets && !previewContext) {
       try {
         const pageFromOffset = Math.floor(offset / limit) + 1;
         galleryPayload = await galleryService.getGallery({
@@ -280,6 +462,32 @@ export async function GET(
               count = photosResult.count || photosResult.data.length;
             }
           }
+        } else if (storeData.event_id) {
+          // Fallback para previews basados en evento (sin folder_id)
+          const assetsResult = await supabase
+            .from('assets')
+            .select('*', { count: 'exact' })
+            .eq('event_id', storeData.event_id)
+            .eq('status', 'ready')
+            .order('created_at', { ascending: false })
+            .range(offset, offset + limit - 1);
+
+          if (assetsResult.data && assetsResult.data.length > 0) {
+            assetsData = assetsResult.data;
+            count = assetsResult.count || assetsResult.data.length;
+          } else {
+            const photosResult = await supabase
+              .from('photos')
+              .select('*', { count: 'exact' })
+              .eq('event_id', storeData.event_id)
+              .order('created_at', { ascending: false })
+              .range(offset, offset + limit - 1);
+
+            if (photosResult.data) {
+              assetsData = photosResult.data;
+              count = photosResult.count || photosResult.data.length;
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching assets/photos:', error);
@@ -304,8 +512,8 @@ export async function GET(
             // Handle different path formats
             const normalized = path.replace(/^\/+/, '');
 
-            // If path already includes 'previews/' or 'watermarks/', use it directly
-            if (normalized.includes('previews/') || normalized.includes('watermarks/')) {
+            // If path already includes 'previews/', 'watermarks/', or 'originals/', use it directly
+            if (normalized.includes('previews/') || normalized.includes('watermarks/') || normalized.includes('originals/')) {
               return `/api/public/preview/${normalized}`;
             }
 
@@ -313,104 +521,9 @@ export async function GET(
             return `/api/public/preview/previews/${normalized}`;
           };
 
-        // Get photo assignments in batch for better performance
-        const photoIds = assetsData.map((item) => item.id);
-
-        let studentPhotoMap = new Set<string>();
-        let coursePhotoMap = new Set<string>();
-        let legacyPhotoMap = new Set<string>();
-
-        if (photoIds.length > 0) {
-          const [{ data: photoAssignments, error: photoAssignmentsError }, { data: courseAssignments, error: courseAssignmentsError }, { data: legacyAssignments, error: legacyAssignmentsError }] = await Promise.all([
-            supabase
-              .from('photo_students')
-              .select('photo_id, student_id')
-              .in('photo_id', photoIds),
-            supabase
-              .from('photo_courses')
-              .select('photo_id, course_id')
-              .in('photo_id', photoIds),
-            supabase
-              .from('photo_assignments')
-              .select('photo_id, subject_id')
-              .in('photo_id', photoIds),
-          ]);
-
-          if (photoAssignmentsError) {
-            console.warn('Error fetching photo_students assignments', photoAssignmentsError);
-          } else if (photoAssignments) {
-            studentPhotoMap = new Set(photoAssignments.map((pa) => pa.photo_id));
-          }
-
-          if (courseAssignmentsError) {
-            console.warn('Error fetching photo_courses assignments', courseAssignmentsError);
-          } else if (courseAssignments) {
-            coursePhotoMap = new Set(courseAssignments.map((ca) => ca.photo_id));
-          }
-
-          if (legacyAssignmentsError) {
-            console.warn('Error fetching legacy photo assignments', legacyAssignmentsError);
-          } else if (legacyAssignments) {
-            legacyPhotoMap = new Set(legacyAssignments.map((la) => la.photo_id));
-          }
-        }
-
-        // Load photo metadata for file size / created at details
-        const photoMetaMap = new Map<string, { file_size?: number | null; created_at?: string | null }>();
-        if (photoIds.length > 0) {
-          const { data: photoMeta, error: photoMetaError } = await supabase
-            .from('photos')
-            .select('id, file_size, created_at')
-            .in('id', photoIds);
-
-          if (photoMetaError) {
-            console.warn('Error fetching photo metadata', photoMetaError);
-          } else if (photoMeta) {
-            photoMeta.forEach((meta) => {
-              photoMetaMap.set(meta.id, { file_size: meta.file_size, created_at: meta.created_at });
-            });
-          }
-        }
-
-          // Get unassigned photos for AI classification
-          const unassignedPhotos = assetsData.filter(item =>
-            !coursePhotoMap.has(item.id) &&
-            !studentPhotoMap.has(item.id) &&
-            !legacyPhotoMap.has(item.id)
-          );
-
-          // Classify unassigned photos
-          const classificationPromises = unassignedPhotos.map(async (item) => {
-            try {
-              const classification = await photoClassificationService.classifyPhoto(item.id);
-              return {
-                id: item.id,
-                isGroupPhoto: classification.isGroupPhoto && classification.confidence > 0.7,
-                confidence: classification.confidence,
-                reason: classification.reason
-              };
-            } catch (error) {
-              console.error(`Error classifying photo ${item.id}:`, error);
-              return {
-                id: item.id,
-                isGroupPhoto: false,
-                confidence: 0,
-                reason: 'Classification failed'
-              };
-            }
-          });
-
-          const classifications = await Promise.all(classificationPromises);
-
-          // Create classification map
-          const classificationMap = new Map(classifications.map(c => [c.id, c]));
-
-          // Log classifications
-          classifications.forEach(
-            ({ id, isGroupPhoto, confidence, reason }) => {
-              console.log(`AI Classification for ${id}: ${isGroupPhoto ? 'GROUP' : 'INDIVIDUAL'} (${confidence.toFixed(2)} confidence) - ${reason}`);
-            }
-          );
+          // Nota: Las tablas de asignación/clasificación (photo_students/photo_courses/...) pertenecen
+          // a un esquema legacy que no está presente en la DB actual.
+          // Para el fallback, devolvemos assets con heurística simple de \"grupal\" por nombre/metadata.
 
           assets = assetsData.map((item: any) => {
             // Try different URL patterns for watermarked previews
@@ -425,8 +538,8 @@ export async function GET(
             if (!previewUrl && item.storage_path) {
               const storagePath = item.storage_path.replace(/^\/+/, '');
 
-              // If storage path already includes previews/ or watermarks/, use it directly
-              if (storagePath.includes('previews/') || storagePath.includes('watermarks/')) {
+              // If storage path already includes previews/, watermarks/, or originals/, use it directly
+              if (storagePath.includes('previews/') || storagePath.includes('watermarks/') || storagePath.includes('originals/')) {
                 previewUrl = `/api/public/preview/${storagePath}`;
               } else {
                 // Otherwise, assume it's in previews directory
@@ -439,36 +552,28 @@ export async function GET(
               buildPublicUrl(item.watermark_url) ||
               previewUrl;
 
-            // Determine if this is a group photo using the pre-fetched data
-            let isGroupPhoto = false;
+            const filename =
+              item.filename ||
+              item.original_filename ||
+              item.storage_path?.split('/').pop() ||
+              'foto';
 
-            if (coursePhotoMap.has(item.id)) {
-              // Photo is assigned to a course → group photo
-              isGroupPhoto = true;
-            } else if (studentPhotoMap.has(item.id) || legacyPhotoMap.has(item.id)) {
-              // Photo is assigned to students → individual photo
-              isGroupPhoto = false;
-            } else {
-              // Photo is not assigned anywhere - use AI classification
-              const classification = classificationMap.get(item.id);
-              if (classification) {
-                isGroupPhoto = classification.isGroupPhoto;
-              }
-            }
-
-            const meta = photoMetaMap.get(item.id);
+            const isGroupPhoto = Boolean(
+              item.is_group_photo ||
+              item.isGroupPhoto ||
+              item.metadata?.isGroupPhoto ||
+              item.metadata?.is_group_photo ||
+              /grupal|group/i.test(filename)
+            );
 
             return {
               id: item.id,
-              filename:
-                item.filename ||
-                item.original_filename ||
-                item.storage_path?.split('/').pop() ||
-                'foto',
+              filename,
               preview_url: previewUrl,
               watermark_url: wmUrl,
-              file_size: meta?.file_size ?? item.file_size ?? item.file_size_bytes ?? 0,
-              created_at: meta?.created_at || item.created_at || item.uploaded_at || new Date().toISOString(),
+              file_size: item.file_size ?? item.file_size_bytes ?? 0,
+              created_at:
+                item.created_at || item.uploaded_at || new Date().toISOString(),
               storage_path: item.storage_path || null,
               status: item.status || 'ready',
               is_group_photo: isGroupPhoto,
@@ -489,23 +594,6 @@ export async function GET(
         };
       }
     }
-
-    const { data: configData, error: configError } = await supabase
-      .rpc('get_public_store_config', { store_token: token })
-      .single();
-
-    let storeConfig = configData;
-    if (configError || !storeConfig) {
-      const fallback = await fetchFallbackStoreConfig(supabase);
-      storeConfig = fallback;
-    }
-
-    const storeSettings = storeConfig ? buildPublicConfig(storeConfig) : null;
-    const mercadoPagoConnected = Boolean(
-      storeConfig?.mercado_pago_connected ??
-        storeConfig?.mercadoPagoConnected ??
-        true
-    );
 
     // Formatear respuesta con información de jerarquía
     const storeResponse = {
@@ -543,13 +631,21 @@ export async function GET(
       settings: storeSettings,
       catalog: storeConfig?.catalog ?? null,
       mercadoPagoConnected,
+      available: effectiveAvailable,
+      schedule: effectiveScheduleStatus,
+      passwordProtected,
     };
 
     // Headers para cache público
-    const headers = {
-      'Cache-Control': 'public, max-age=300, s-maxage=600', // 5 min browser, 10 min CDN
-      Vary: 'Accept-Encoding',
-    };
+    const headers = previewContext || passwordProtected
+      ? {
+        'Cache-Control': 'no-store, no-cache, must-revalidate',
+        Vary: 'Accept-Encoding',
+      }
+      : {
+        'Cache-Control': 'public, max-age=300, s-maxage=600', // 5 min browser, 10 min CDN
+        Vary: 'Accept-Encoding',
+      };
 
     return NextResponse.json(storeResponse, { headers });
   } catch (error) {
@@ -602,10 +698,17 @@ export async function POST(
     const { token } = params;
 
     // Validar formato del token
-    if (!token || token.length < 8 || !/^[a-z0-9-]+$/.test(token)) {
+    if (!token || token.length < 8 || !/^[A-Za-z0-9_-]+$/.test(token)) {
       return NextResponse.json(
         { error: 'Invalid store token format' },
         { status: 400 }
+      );
+    }
+
+    if (token.startsWith('preview_')) {
+      return NextResponse.json(
+        { error: 'Preview tokens cannot create orders' },
+        { status: 403 }
       );
     }
 

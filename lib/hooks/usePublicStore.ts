@@ -2,23 +2,23 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useSearchParams } from 'next/navigation';
 
 interface StoreConfig {
-  isValid: boolean;
-  passwordRequired: boolean;
+  isValid?: boolean;
+  passwordRequired?: boolean;
+  passwordProtected?: boolean;
   attemptsRemaining?: number;
   lockoutUntil?: string;
-  store?: {
-    id: string;
-    name: string;
-    description?: string;
-    theme?: string;
-    settings?: any;
+  available?: boolean;
+  schedule?: {
+    withinSchedule: boolean;
+    message?: string;
+    openDate?: string;
+    closedDate?: string;
   };
-  folder?: {
-    id: string;
-    name: string;
-    path: string;
-  };
-  photos?: any[];
+  store?: Record<string, any>;
+  event?: Record<string, any>;
+  settings?: any;
+  assets?: any[];
+  pagination?: any;
   error?: string;
 }
 
@@ -163,18 +163,22 @@ export function usePublicStore(options: UsePublicStoreOptions) {
       setLoadingState(isRetry ? 'retrying' : (password ? 'verifying' : 'initial'));
       setError(null);
 
-      const url = new URL(`/api/public/store/config`, window.location.origin);
-      url.searchParams.set('token', token);
+      const url = new URL(`/api/store/${token}`, window.location.origin);
+      url.searchParams.set('include_assets', 'false');
       if (folderId) {
-        url.searchParams.set('folder', folderId);
+        url.searchParams.set('folder_id', folderId);
+      }
+
+      const headers: HeadersInit = {
+        'Content-Type': 'application/json',
+      };
+      if (password) {
+        headers['X-Store-Password'] = password;
       }
 
       const response = await fetch(url.toString(), {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: password ? JSON.stringify({ password }) : '{}',
+        method: 'GET',
+        headers,
         signal: abortControllerRef.current.signal,
         // Add cache control to prevent stale data
         cache: 'no-store'
@@ -196,7 +200,7 @@ export function usePublicStore(options: UsePublicStoreOptions) {
             passwordRequired: true,
             attemptsRemaining: data.attemptsRemaining,
             lockoutUntil: data.lockoutUntil,
-            error: data.message
+            error: data.error || data.message
           });
           onPasswordRequired?.();
           setError(error);
@@ -208,7 +212,11 @@ export function usePublicStore(options: UsePublicStoreOptions) {
         throw error;
       }
 
-      setConfig(data);
+      setConfig({
+        ...(data || {}),
+        isValid: true,
+        passwordRequired: false,
+      });
       setError(null);
       setRetryCount(0);
       setNextRetryTime(null);

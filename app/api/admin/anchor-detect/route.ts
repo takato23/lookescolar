@@ -4,6 +4,8 @@ import { detectAnchorsRun } from '@/lib/photos/batchAnchors';
 import { AuthMiddleware } from '@/lib/middleware/auth.middleware';
 import { RateLimitMiddleware } from '@/lib/middleware/rate-limit.middleware';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
+import { getQrTaggingStatus } from '@/lib/qr/feature';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
 
 type AnchorDetectSuccess = {
   success: true;
@@ -44,6 +46,23 @@ export const POST = RateLimitMiddleware.withRateLimit(
     }
 
     try {
+      const { tenantId } = resolveTenantFromHeaders(req.headers);
+      const featureStatus = await getQrTaggingStatus({
+        tenantId,
+        eventId,
+      });
+      if (!featureStatus.enabled) {
+        return NextResponse.json({
+          success: true,
+          qr_detection_disabled: true,
+          reason: 'qr_tagging_disabled',
+          detected: [],
+          unmatched: [],
+          errors: [],
+          updatedExif: 0,
+        });
+      }
+
       const sb = await createServerSupabaseServiceClient();
       const probe = await (sb as any).from('codes').select('id').limit(1);
       if (probe.error) {

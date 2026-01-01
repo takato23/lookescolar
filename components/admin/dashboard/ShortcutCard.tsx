@@ -1,5 +1,7 @@
 import Link from 'next/link';
+import { ArrowRight } from 'lucide-react';
 import { ShortcutCardProps } from '@/types/dashboard';
+import { cn } from '@/lib/utils';
 
 export function ShortcutCard({
     id,
@@ -9,64 +11,90 @@ export function ShortcutCard({
     icon: Icon,
     index = 0,
 }: ShortcutCardProps & { index?: number }) {
-    const gradients = [
-        'from-[#d4af37] to-[#f2d06b]', // Gold
-        'from-[#44aaff] to-[#00ffff]', // Cyan
-        'from-[#cd7f32] to-[#e69b5c]', // Bronze
-        'from-[#a0a0a0] to-[#e0e0e0]', // Silver
+    // Paleta de marca más controlada (azules/violetas)
+    const colorSchemes = [
+        {
+            gradient: 'from-indigo-600 via-violet-500 to-blue-600',
+            bg: 'from-indigo-500/15 to-blue-500/10',
+            iconBg: 'bg-gradient-to-br from-indigo-500 to-violet-600',
+            iconColor: 'text-white',
+            glow: 'shadow-indigo-500/25',
+            hoverGlow: 'group-hover:shadow-indigo-500/40',
+        },
+        {
+            gradient: 'from-blue-600 via-indigo-500 to-sky-500',
+            bg: 'from-blue-500/15 to-sky-500/10',
+            iconBg: 'bg-gradient-to-br from-blue-600 to-indigo-500',
+            iconColor: 'text-white',
+            glow: 'shadow-blue-500/25',
+            hoverGlow: 'group-hover:shadow-blue-500/40',
+        },
+        {
+            gradient: 'from-violet-600 via-indigo-500 to-blue-500',
+            bg: 'from-violet-500/15 to-blue-500/10',
+            iconBg: 'bg-gradient-to-br from-violet-500 to-indigo-600',
+            iconColor: 'text-white',
+            glow: 'shadow-violet-500/25',
+            hoverGlow: 'group-hover:shadow-violet-500/40',
+        },
+        {
+            gradient: 'from-sky-500 via-blue-500 to-indigo-600',
+            bg: 'from-sky-500/15 to-indigo-500/10',
+            iconBg: 'bg-gradient-to-br from-sky-500 to-blue-600',
+            iconColor: 'text-white',
+            glow: 'shadow-sky-500/25',
+            hoverGlow: 'group-hover:shadow-sky-500/40',
+        },
     ];
-    const gradient = gradients[index % gradients.length];
+    const colors = colorSchemes[index % colorSchemes.length];
 
     return (
         <Link
             href={href}
-            className="liquid-glass group relative overflow-hidden rounded-2xl border border-white/10 bg-black/20 p-6 shadow-lg backdrop-blur-xl transition-all duration-300 hover:-translate-y-1 hover:shadow-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#d4af37] focus-visible:ring-offset-2"
+            className={cn(
+                'group relative overflow-hidden rounded-2xl border p-6 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-violet-500 focus-visible:ring-offset-2',
+                `border-slate-200/80 bg-white shadow-lg ${colors.glow} hover:-translate-y-1.5 hover:shadow-xl ${colors.hoverGlow} dark:border-slate-700/50 dark:bg-slate-900`
+            )}
         >
-            {/* Animated gradient background */}
+            {/* Gradient background on hover */}
             <div
-                className={`absolute inset-0 bg-gradient-to-br ${gradient} opacity-0 transition-opacity duration-300 group-hover:opacity-10`}
-            ></div>
+                className={`absolute inset-0 bg-gradient-to-br ${colors.bg} opacity-0 transition-opacity duration-300 group-hover:opacity-100`}
+            />
 
-            {/* Icon with glow effect */}
-            <div className="relative mb-4">
+            {/* Decorative corner accent */}
+            <div
+                className={`absolute -right-8 -top-8 h-24 w-24 rounded-full bg-gradient-to-br ${colors.gradient} opacity-10 blur-2xl transition-all duration-500 group-hover:opacity-25 group-hover:scale-150`}
+            />
+
+            {/* Icon container */}
+            <div className="relative mb-5">
                 <div
-                    className={`absolute inset-0 rounded-xl bg-gradient-to-br ${gradient} opacity-20 blur-xl transition-all duration-300 group-hover:opacity-40 group-hover:blur-2xl`}
-                ></div>
-                <div
-                    className={`liquid-glass relative flex h-14 w-14 items-center justify-center rounded-xl bg-gradient-to-br ${gradient} p-0.5`}
+                    className={cn(
+                        'relative flex h-14 w-14 items-center justify-center rounded-xl shadow-lg transition-all duration-300 group-hover:scale-110',
+                        `${colors.iconBg} ${colors.glow} group-hover:shadow-xl ${colors.hoverGlow}`
+                    )}
                 >
-                    <div className="flex h-full w-full items-center justify-center rounded-[0.6rem] bg-white/90 dark:bg-slate-900/90">
-                        <Icon
-                            className={`h-6 w-6 bg-gradient-to-br ${gradient} bg-clip-text text-transparent transition-transform duration-300 group-hover:scale-110`}
-                        />
-                    </div>
+                    <Icon
+                        className={cn('h-6 w-6 drop-shadow-sm', colors.iconColor)}
+                        strokeWidth={2}
+                    />
                 </div>
             </div>
 
             <div className="relative">
-                <h3 className="text-lg font-bold text-slate-100 transition-colors duration-300 group-hover:text-[#d4af37]">
+                <h3 className="text-lg font-bold text-slate-900 transition-colors duration-300 dark:text-white">
                     {title}
                 </h3>
-                <p className="mt-1 text-sm text-slate-400">
+                <p className="mt-1.5 text-sm text-slate-600 dark:text-slate-400">
                     {description}
                 </p>
             </div>
 
-            {/* Arrow indicator */}
-            <div className="absolute bottom-6 right-6 opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-1">
-                <svg
-                    className="h-5 w-5 text-slate-400 dark:text-slate-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                >
-                    <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                        d="M9 5l7 7-7 7"
-                    />
-                </svg>
+            {/* Arrow indicator with animation */}
+            <div
+                className="absolute bottom-6 right-6 flex h-8 w-8 items-center justify-center rounded-full opacity-0 transition-all duration-300 group-hover:opacity-100 group-hover:translate-x-0.5 bg-slate-100 dark:bg-slate-800"
+            >
+                <ArrowRight className="h-4 w-4 text-slate-600 dark:text-slate-300" />
             </div>
         </Link>
     );

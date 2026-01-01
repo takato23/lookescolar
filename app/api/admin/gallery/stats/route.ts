@@ -13,7 +13,7 @@ import { createClient } from '@/lib/supabase/server';
 export async function GET(request: NextRequest) {
   try {
     // Create Supabase client
-    const supabase = createClient();
+    const supabase = await createClient();
 
     // Check admin authentication
     const {

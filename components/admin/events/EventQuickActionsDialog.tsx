@@ -109,7 +109,7 @@ export const EventQuickActionsDialog = ({
         typeof normalizedCompletionRate === 'number' && normalizedCompletionRate > 0
           ? `${Math.round(normalizedCompletionRate)}%`
           : 'Sin datos',
-      helper: 'Porcentaje de estudiantes que completaron su flujo',
+    helper: 'Porcentaje de invitados que completaron su flujo',
     },
     {
       label: 'Conversión a compra',
@@ -117,7 +117,7 @@ export const EventQuickActionsDialog = ({
         typeof normalizedConversionRate === 'number' && normalizedConversionRate > 0
           ? `${Math.round(normalizedConversionRate * 10) / 10}%`
           : 'Próximamente',
-      helper: 'Pendiente de sincronizar con analytics',
+      helper: 'Pendiente de sincronizar métricas',
     },
     {
       label: 'Pedidos totales',
@@ -253,7 +253,7 @@ export const EventQuickActionsDialog = ({
                 <div>
                   <p className="font-semibold">Este evento contiene contenido publicado</p>
                   <p className="text-sm text-amber-700/90 dark:text-amber-200/80">
-                    Hay {totalPhotos.toLocaleString('es-AR')} fotos y {totalSubjects.toLocaleString('es-AR')} estudiantes vinculados. Al eliminarlo, se perderán todos los recursos asociados.
+                    Hay {totalPhotos.toLocaleString('es-AR')} fotos y {totalSubjects.toLocaleString('es-AR')} invitados vinculados. Al eliminarlo, se perderán todos los recursos asociados.
                   </p>
                 </div>
               </div>

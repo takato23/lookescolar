@@ -57,7 +57,7 @@ const phaseConfig: Record<
   },
   [EventPhase.ACTIVE_SALES]: {
     title: 'Ventas activas',
-    description: 'Impulsá la participación de las familias',
+    description: 'Impulsá la participación de los clientes',
     accent: 'text-amber-500',
   },
   [EventPhase.FULFILLMENT]: {

@@ -1,31 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createServerSupabaseServiceClient } from '@/lib/supabase/server';
-import { getSignedUrl } from '@/lib/services/watermark.service';
 import { SecurityLogger, generateRequestId, withAuth } from '@/lib/middleware/auth.middleware';
-import { decodeQR, normalizeCode } from '@/lib/qr/decoder';
-import { tokenService } from '@/lib/services/token.service';
+import { getQrTaggingStatus } from '@/lib/qr/feature';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
 import { FreeTierOptimizer } from '@/lib/services/free-tier-optimizer';
-import sharp from 'sharp';
+import { qrDetectionService } from '@/lib/services/qr-detection.service';
+import { getAppSettings } from '@/lib/settings';
+import { buildQrDetectionOptions } from '@/lib/qr/settings';
 import crypto from 'crypto';
 export const runtime = 'nodejs';
-
-// Expected QR format: STUDENT:ID:NAME:EVENT_ID
-const QR_PATTERN = /^STUDENT:([a-f0-9-]{36}):([^:]+):([a-f0-9-]{36})$/i;
-
-/**
- * Parse QR code and extract student information
- */
-function parseStudentQR(qrText: string): { studentId: string; studentName: string; eventId: string } | null {
-  const match = qrText.match(QR_PATTERN);
-  if (!match) return null;
-  
-  const [, studentId, studentName, eventId] = match;
-  
-  // Ensure all values are strings (they should be from regex match)
-  if (!studentId || !studentName || !eventId) return null;
-  
-  return { studentId, studentName, eventId };
-}
 
 /**
  * Validate UUID format
@@ -46,45 +29,81 @@ async function assignPhotoToStudent(
   requestId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    // Verify student exists and belongs to the event
-    const { data: student, error: studentError } = await supabase
-      .from('subjects')
+    // En el esquema actual (assets + folders), la asignación de una foto a un alumno
+    // se resuelve por estructura de carpetas o metadata del asset (no por tabla join).
+    // Validamos que el sujeto exista y guardamos la info en `assets.metadata`.
+
+    // Verify student exists and belongs to the event (students first, then subjects)
+    let student = null;
+    let studentSource: 'students' | 'subjects' = 'students';
+
+    const { data: studentRow, error: studentError } = await supabase
+      .from('students')
       .select('id, name, event_id')
       .eq('id', studentId)
       .eq('event_id', eventId)
-      .single();
+      .maybeSingle();
 
-    if (studentError || !student) {
-      console.log(`[${requestId}] Student not found:`, { studentId: `${studentId.substring(0, 8)}***`, eventId: `${eventId.substring(0, 8)}***` });
+    if (!studentError && studentRow) {
+      student = studentRow;
+    } else {
+      const { data: subjectRow, error: subjectError } = await supabase
+        .from('subjects')
+        .select('id, name, event_id')
+        .eq('id', studentId)
+        .eq('event_id', eventId)
+        .maybeSingle();
+
+      if (!subjectError && subjectRow) {
+        student = subjectRow;
+        studentSource = 'subjects';
+      }
+    }
+
+    if (!student) {
+      console.log(`[${requestId}] Student not found:`, {
+        studentId: `${studentId.substring(0, 8)}***`,
+        eventId: `${eventId.substring(0, 8)}***`,
+      });
       return { success: false, error: 'Student not found' };
     }
 
-    // Check if assignment already exists
-    const { data: existing } = await supabase
-      .from('photo_subjects')
-      .select('id')
-      .eq('photo_id', photoId)
-      .eq('subject_id', studentId)
+    const { data: asset, error: assetReadError } = await supabase
+      .from('assets')
+      .select('id, metadata')
+      .eq('id', photoId)
       .single();
 
-    if (existing) {
-      console.log(`[${requestId}] Photo already assigned to student`);
-      return { success: true };
+    if (assetReadError || !asset) {
+      console.warn(`[${requestId}] Asset not found for QR assignment`, {
+        photoId: `${photoId.substring(0, 8)}***`,
+      });
+      return { success: false, error: 'Asset not found' };
     }
 
-    // Create photo-student assignment
-    const { error: assignError } = await supabase
-      .from('photo_subjects')
-      .insert({
-        photo_id: photoId,
-        subject_id: studentId,
-        tagged_at: new Date().toISOString(),
-        tagged_by: null // Automatic assignment
-      });
+    const previousMetadata = (asset.metadata ?? {}) as Record<string, any>;
+    const previousQr = (previousMetadata.qr_detection ?? {}) as Record<string, any>;
 
-    if (assignError) {
-      console.error(`[${requestId}] Error assigning photo to student:`, assignError.message);
-      return { success: false, error: assignError.message };
+    const nextMetadata = {
+      ...previousMetadata,
+      qr_detection: {
+        ...previousQr,
+        subject_id: student.id,
+        subject_name: student.name,
+        subject_source: studentSource,
+        assigned: true,
+        assigned_at: new Date().toISOString(),
+      },
+    };
+
+    const { error: assetUpdateError } = await supabase
+      .from('assets')
+      .update({ metadata: nextMetadata, updated_at: new Date().toISOString() } as any)
+      .eq('id', photoId);
+
+    if (assetUpdateError) {
+      console.error(`[${requestId}] Error updating asset metadata for QR assignment:`, assetUpdateError.message);
+      return { success: false, error: assetUpdateError.message };
     }
 
     console.log(`[${requestId}] Photo successfully assigned to student:`, { 
@@ -116,6 +135,24 @@ async function handlePOST(request: NextRequest) {
     const photoType = typeof photoTypeRaw === 'string' && ['private', 'public', 'classroom'].includes(photoTypeRaw) 
       ? photoTypeRaw 
       : 'private';
+
+    const { tenantId } = resolveTenantFromHeaders(request.headers);
+    const initialEventId = formEventId && isValidUUID(formEventId)
+      ? formEventId
+      : queryEventId && isValidUUID(queryEventId)
+        ? queryEventId
+        : null;
+    const qrFeature = await getQrTaggingStatus({
+      tenantId,
+      eventId: initialEventId,
+    });
+    const appSettings = await getAppSettings();
+    const qrAutoTagOnUpload = appSettings.qrAutoTagOnUpload ?? true;
+    const detectionOptions = buildQrDetectionOptions({
+      sensitivity: appSettings.qrDetectionSensitivity,
+      maxWidth: 1920,
+      maxHeight: 1080,
+    });
 
     console.log('[simple-upload] Event ID detection:', {
       formEventId: formEventId ? `${formEventId.substring(0, 8)}***` : null,
@@ -158,8 +195,9 @@ async function handlePOST(request: NextRequest) {
       );
     }
 
-    const validFiles = [];
-    const invalidFiles = [];
+    type InvalidFile = { name: string; reason: string };
+    const validFiles: File[] = [];
+    const invalidFiles: InvalidFile[] = [];
 
     for (const file of files) {
       if (!(file instanceof File) || file.size === 0) {
@@ -280,14 +318,21 @@ async function handlePOST(request: NextRequest) {
       },
       'info'
     );
-    const results = [];
-    const errors = [];
+    const results: any[] = [];
+    const errors: Array<{ filename: string; error: string; details?: string }> = [];
 
     console.log('[simple-upload] Processing', validFiles.length, 'valid files');
 
     for (const file of validFiles) {
       console.log('[simple-upload] Processing file:', file.name, 'size:', file.size, 'type:', file.type);
-      let qrDetectionResult = null;
+      type QrDetectionResult = {
+        qrText: string;
+        studentId: string;
+        studentName: string;
+        eventId: string;
+        codeId: string;
+      };
+      let qrDetectionResult: QrDetectionResult | null = null;
       
       try {
         // Convertir File a Buffer
@@ -295,34 +340,44 @@ async function handlePOST(request: NextRequest) {
         const buffer = Buffer.from(arrayBuffer);
 
         // ===== AUTOMATIC QR DETECTION =====
-        console.log(`[${requestId}] Attempting QR detection for file: ${file.name}`);
-        
-        try {
-          const qrResult = await decodeQR(buffer);
-          if (qrResult?.text) {
-            const normalizedQR = normalizeCode(qrResult.text);
-            console.log(`[${requestId}] QR detected in ${file.name}:`, { qr: `${normalizedQR?.substring(0, 20)}...` });
-            
-            if (normalizedQR) {
-              const parsedQR = parseStudentQR(normalizedQR);
-              if (parsedQR && isValidUUID(parsedQR.studentId) && isValidUUID(parsedQR.eventId)) {
+        console.log(
+          `[${requestId}] Attempting QR detection for file: ${file.name}`
+        );
+
+        if (qrFeature.enabled && qrAutoTagOnUpload) {
+          try {
+            const scopeEventId = formEventId ?? queryEventId ?? undefined;
+            const qrResults = await qrDetectionService.detectQRCodesInImage(
+              buffer,
+              scopeEventId,
+              detectionOptions
+            );
+
+            if (qrResults.length > 0) {
+              const topQR = qrResults[0];
+              if (topQR.data) {
                 qrDetectionResult = {
-                  qrText: normalizedQR,
-                  studentId: parsedQR.studentId,
-                  studentName: parsedQR.studentName,
-                  eventId: parsedQR.eventId
+                  qrText: topQR.data.codeValue,
+                  studentId: topQR.data.studentId,
+                  studentName:
+                    topQR.data.metadata?.studentName ?? 'Estudiante',
+                  eventId: topQR.data.eventId,
+                  codeId: topQR.data.id,
                 };
-                console.log(`[${requestId}] Valid student QR detected for ${parsedQR.studentName}`);
-              } else {
-                console.log(`[${requestId}] QR detected but not valid student format`);
+                console.log(
+                  `[${requestId}] Valid student QR detected for ${qrDetectionResult.studentName}`
+                );
               }
+            } else {
+              console.log(`[${requestId}] No QR code detected in ${file.name}`);
             }
-          } else {
-            console.log(`[${requestId}] No QR code detected in ${file.name}`);
+          } catch (qrError) {
+            console.log(
+              `[${requestId}] QR detection failed for ${file.name}:`,
+              qrError instanceof Error ? qrError.message : 'Unknown error'
+            );
+            // Continue with upload even if QR detection fails
           }
-        } catch (qrError) {
-          console.log(`[${requestId}] QR detection failed for ${file.name}:`, qrError instanceof Error ? qrError.message : 'Unknown error');
-          // Continue with upload even if QR detection fails
         }
 
         // Prefer eventId enviado por el cliente (form), luego query param, luego QR si existe
@@ -492,7 +547,7 @@ async function handlePOST(request: NextRequest) {
 
           const { data: asset, error: assetError } = await supabase
             .from('assets')
-            .insert(assetData)
+            .insert(assetData as any)
             .select()
             .single();
 
@@ -514,8 +569,7 @@ async function handlePOST(request: NextRequest) {
 
 
           // ===== AUTOMATIC STUDENT ASSIGNMENT =====
-          let assignmentResult = null;
-          let tokenGenerationResult = null;
+          let assignmentResult: { success: boolean; error?: string } | null = null;
           if (qrDetectionResult) {
             console.log(`[${requestId}] 🔥 UNIFIED QR: Attempting to assign asset ${photoId} to student from QR`);
             assignmentResult = await assignPhotoToStudent(
@@ -525,28 +579,6 @@ async function handlePOST(request: NextRequest) {
               qrDetectionResult.eventId,
               requestId
             );
-
-            // ===== AUTOMATIC TOKEN GENERATION =====
-            if (assignmentResult?.success) {
-              console.log(`[${requestId}] Photo assigned successfully, generating token for student`);
-              try {
-                tokenGenerationResult = await tokenService.generateTokenForSubject(
-                  qrDetectionResult.studentId,
-                  { expiryDays: 30 } // Default 30 days expiry
-                );
-                console.log(`[${requestId}] Token generated for student:`, {
-                  studentId: `${qrDetectionResult.studentId.substring(0, 8)}***`,
-                  tokenExists: !tokenGenerationResult.isNew,
-                  expiresAt: tokenGenerationResult.expiresAt.toISOString()
-                });
-              } catch (tokenError) {
-                console.error(`[${requestId}] Error generating token for student:`, {
-                  studentId: `${qrDetectionResult.studentId.substring(0, 8)}***`,
-                  error: tokenError instanceof Error ? tokenError.message : 'Unknown error'
-                });
-                // Don't fail the upload if token generation fails, just log it
-              }
-            }
           }
 
            results.push({
@@ -565,11 +597,7 @@ async function handlePOST(request: NextRequest) {
               event_id: `${qrDetectionResult.eventId.substring(0, 8)}***`,
               assignment_success: assignmentResult?.success || false,
               assignment_error: assignmentResult?.error || null,
-              token_generated: tokenGenerationResult ? {
-                is_new: tokenGenerationResult.isNew,
-                expires_at: tokenGenerationResult.expiresAt.toISOString(),
-                portal_ready: true
-              } : null
+              token_generated: null
             } : null,
           });
 
@@ -586,8 +614,8 @@ async function handlePOST(request: NextRequest) {
               qrDetected: qrDetectionResult ? true : false,
               qrStudentName: qrDetectionResult?.studentName || null,
               autoAssigned: assignmentResult?.success || false,
-              tokenGenerated: tokenGenerationResult ? true : false,
-              tokenIsNew: tokenGenerationResult?.isNew || false,
+              tokenGenerated: false,
+              tokenIsNew: false,
               eventId: finalEventId ? `${finalEventId.substring(0, 8)}***` : null,
             },
             'info'

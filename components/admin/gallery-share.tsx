@@ -173,7 +173,7 @@ export default function GalleryShare({
             Compartir Galería
           </DialogTitle>
           <DialogDescription>
-            Crea un enlace para compartir esta galería con familiares y amigos.
+            Crea un enlace para compartir esta galería con invitados y amigos.
           </DialogDescription>
         </DialogHeader>
 

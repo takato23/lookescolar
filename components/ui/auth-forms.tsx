@@ -163,7 +163,7 @@ export function ClientAccessForm({ onSubmit }: ClientAccessFormProps) {
           <Key className="h-8 w-8 text-white" />
         </div>
         <CardTitle className="text-2xl font-bold text-slate-800">
-          Acceso Familiar
+          Acceso de Clientes
         </CardTitle>
         <p className="mt-2 text-slate-600">
           Ingresá tu código para ver las fotos

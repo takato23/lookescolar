@@ -1,8 +1,65 @@
-import { describe, test, expect } from 'vitest';
+import { describe, test, expect, vi, beforeEach } from 'vitest';
 import { NextRequest } from 'next/server';
 import { POST as QRDecode } from '@/app/api/admin/qr/decode/route';
 import { GET as StudentLookup } from '@/app/api/admin/students/[id]/route';
 import { POST as BatchTagging } from '@/app/api/admin/tagging/batch/route';
+import { qrService } from '@/lib/services/qr.service';
+
+vi.mock('@/lib/services/qr.service', () => ({
+  qrService: {
+    validateStudentQRCode: vi.fn(),
+  },
+}));
+
+vi.mock('@/lib/middleware/auth.middleware', () => ({
+  withAuth:
+    (handler: any) =>
+    (request: NextRequest, ...args: any[]) =>
+      handler(request, ...args),
+}));
+
+const mockPhotoIdsForSupabase = [
+  'photo123-4567-8901-2345-678901234567',
+  'photo456-7890-1234-5678-901234567890',
+];
+const mockEventIdForSupabase = 'event123-4567-8901-2345-678901234567';
+
+const createMockQuery = (table: string) => {
+  const builder: any = {
+    select: () => builder,
+    eq: () => builder,
+    in: () => builder,
+    insert: () => ({ error: null }),
+    update: () => ({ error: null }),
+    then: (resolve: (value: any) => void) => {
+      if (table === 'photos') {
+        resolve({
+          data: mockPhotoIdsForSupabase.map((id) => ({
+            id,
+            approved: true,
+            event_id: mockEventIdForSupabase,
+            subject_id: null,
+          })),
+          error: null,
+        });
+        return;
+      }
+
+      resolve({
+        data: table === 'photo_subjects' ? [] : [],
+        error: null,
+      });
+    },
+  };
+
+  return builder;
+};
+
+vi.mock('@/lib/supabase/server', () => ({
+  createServerSupabaseServiceClient: async () => ({
+    from: (table: string) => createMockQuery(table),
+  }),
+}));
 
 describe('QR Tagging Workflow API Endpoints', () => {
   const mockStudentId = 'a1b2c3d4-e5f6-7890-abcd-ef1234567890';
@@ -13,8 +70,22 @@ describe('QR Tagging Workflow API Endpoints', () => {
   ];
 
   describe('QR Decode Endpoint', () => {
+    beforeEach(() => {
+      vi.clearAllMocks();
+    });
+
     test('should decode valid QR code format', async () => {
-      const validQR = `STUDENT:${mockStudentId}:John Doe:${mockEventId}`;
+      const validQR = 'LKSTUDENT_ValidToken123';
+      vi.mocked(qrService.validateStudentQRCode).mockResolvedValue({
+        id: 'code-123',
+        eventId: mockEventId,
+        courseId: undefined,
+        studentId: mockStudentId,
+        codeValue: validQR,
+        token: 'ValidToken123',
+        type: 'student_identification',
+        metadata: { studentName: 'John Doe' },
+      });
       const request = new NextRequest(
         'http://localhost:3000/api/admin/qr/decode',
         {
@@ -31,7 +102,7 @@ describe('QR Tagging Workflow API Endpoints', () => {
       expect(data.success).toBe(true);
       expect(data.student).toBeDefined();
       expect(data.student.id).toBe(mockStudentId);
-      expect(data.metadata.qr_format).toBe('valid');
+      expect(data.metadata.qr_format).toBe('canonical');
     });
 
     test('should reject invalid QR code format', async () => {
@@ -50,7 +121,6 @@ describe('QR Tagging Workflow API Endpoints', () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toBe('Invalid QR code format');
-      expect(data.details).toContain('Expected format');
     });
 
     test('should reject empty QR code', async () => {
@@ -86,12 +156,12 @@ describe('QR Tagging Workflow API Endpoints', () => {
 
       expect(response.status).toBe(400);
       expect(data.error).toBe('Invalid QR code format');
-      expect(data.details).toContain('valid UUIDs');
+      expect(data.details).toContain('LKSTUDENT_');
     });
   });
 
   describe('Student Lookup Endpoint', () => {
-    test('should return student details with valid UUID', async () => {
+    test('should return deprecation response', async () => {
       const request = new NextRequest(
         `http://localhost:3000/api/admin/students/${mockStudentId}`,
         {
@@ -104,16 +174,11 @@ describe('QR Tagging Workflow API Endpoints', () => {
       });
       const data = await response.json();
 
-      expect(response.status).toBe(200);
-      expect(data.success).toBe(true);
-      expect(data.student).toBeDefined();
-      expect(data.student.id).toBe(mockStudentId);
-      expect(data.student.photo_stats).toBeDefined();
-      expect(data.student.token_info).toBeDefined();
-      expect(data.metadata).toBeDefined();
+      expect(response.status).toBe(410);
+      expect(data.success).toBe(false);
     });
 
-    test('should reject invalid UUID format', async () => {
+    test('should return deprecation response for invalid UUID', async () => {
       const invalidId = 'invalid-uuid-format';
       const request = new NextRequest(
         `http://localhost:3000/api/admin/students/${invalidId}`,
@@ -127,9 +192,8 @@ describe('QR Tagging Workflow API Endpoints', () => {
       });
       const data = await response.json();
 
-      expect(response.status).toBe(400);
-      expect(data.error).toBe('Invalid request');
-      expect(data.message).toContain('valid UUID');
+      expect(response.status).toBe(410);
+      expect(data.success).toBe(false);
     });
   });
 
@@ -271,7 +335,17 @@ describe('QR Tagging Workflow API Endpoints', () => {
   describe('Integration Flow', () => {
     test('should handle complete QR tagging workflow', async () => {
       // Step 1: Decode QR
-      const validQR = `STUDENT:${mockStudentId}:Jane Smith:${mockEventId}`;
+      const validQR = 'LKSTUDENT_IntegrationToken456';
+      vi.mocked(qrService.validateStudentQRCode).mockResolvedValue({
+        id: 'code-456',
+        eventId: mockEventId,
+        courseId: undefined,
+        studentId: mockStudentId,
+        codeValue: validQR,
+        token: 'IntegrationToken456',
+        type: 'student_identification',
+        metadata: { studentName: 'Jane Smith' },
+      });
       const qrRequest = new NextRequest(
         'http://localhost:3000/api/admin/qr/decode',
         {
@@ -321,9 +395,8 @@ describe('QR Tagging Workflow API Endpoints', () => {
       });
       const lookupData = await lookupResponse.json();
 
-      expect(lookupResponse.status).toBe(200);
-      expect(lookupData.success).toBe(true);
-      expect(lookupData.student.photo_stats).toBeDefined();
+      expect(lookupResponse.status).toBe(410);
+      expect(lookupData.success).toBe(false);
     });
   });
 });

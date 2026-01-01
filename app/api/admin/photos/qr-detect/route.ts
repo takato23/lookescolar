@@ -3,7 +3,11 @@ import { z } from 'zod';
 import { verifyAuthAdmin } from '@/lib/security/auth';
 import { applyRateLimit } from '@/lib/security/rate-limit';
 import { supabaseAdmin } from '@/lib/supabase/admin';
-import sharp from 'sharp';
+import { qrDetectionService } from '@/lib/services/qr-detection.service';
+import { getQrTaggingStatus } from '@/lib/qr/feature';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
+import { getAppSettings } from '@/lib/settings';
+import { buildQrDetectionOptions } from '@/lib/qr/settings';
 
 // QR Detection schema
 const QrDetectionSchema = z.object({
@@ -13,81 +17,24 @@ const QrDetectionSchema = z.object({
   updateExisting: z.boolean().default(false), // Re-process photos that already have QR data
 });
 
-// Mock QR detection function - in production, use a proper QR detection library
-async function detectQrCodesInImage(imageBuffer: Buffer): Promise<string[]> {
-  try {
-    // This is a placeholder implementation
-    // In production, you would use libraries like:
-    // - jsQR (client-side)
-    // - node-qrcode-decoder
-    // - zxing-js (server-side)
-    // - Computer vision APIs (Google Vision, AWS Rekognition)
-
-    const qrCodes: string[] = [];
-
-    // For demonstration, we'll create a simple pattern matcher
-    // Real implementation would scan the actual image pixels
-
-    // Example: Look for QR-like patterns in image metadata or EXIF data
-    const metadata = await sharp(imageBuffer).metadata();
-
-    // Simulate QR detection based on image characteristics
-    // This is just for testing - replace with real QR detection
-    if (
-      metadata.width &&
-      metadata.height &&
-      metadata.width > 200 &&
-      metadata.height > 200
-    ) {
-      // Simulate finding QR codes based on image size and characteristics
-      // In reality, this would scan the actual image for QR patterns
-
-      // Example QR code patterns that might be detected
-      const simulatedQrCodes = [
-        'STU-' + Math.random().toString(36).substr(2, 8),
-        'STUDENT-' + Math.random().toString(36).substr(2, 10),
-      ];
-
-      // Randomly detect 0-2 QR codes for simulation
-      const detectedCount = Math.floor(Math.random() * 3);
-      qrCodes.push(...simulatedQrCodes.slice(0, detectedCount));
-    }
-
-    return qrCodes.filter((code) => code.length > 5); // Filter valid codes
-  } catch (error) {
-    console.error('QR detection error:', error);
-    return [];
-  }
-}
-
-// Match QR codes to students
-async function matchQrCodesToStudents(qrCodes: string[], eventId: string) {
-  if (qrCodes.length === 0) return [];
-
-  const { data: students, error } = await supabaseAdmin
-    .from('students')
-    .select('id, name, qr_code')
-    .eq('event_id', eventId)
-    .in('qr_code', qrCodes);
-
-  if (error) {
-    console.error('Error matching QR codes to students:', error);
-    return [];
-  }
-
-  return students || [];
-}
 
 // Process QR detection for a single photo
 async function processPhotoQrDetection(
   photoId: string,
   autoMatch: boolean,
-  eventId?: string
+  eventId?: string,
+  detectionOptions?: Parameters<typeof qrDetectionService.detectQRCodesInImage>[2]
 ): Promise<{
   photoId: string;
   status: 'success' | 'error';
   detectedQrCodes: string[];
-  matchedStudents: Array<{ id: string; name: string; qr_code: string }>;
+  matchedStudents: Array<{
+    id: string;
+    name: string;
+    qr_code: string;
+    confidence?: number;
+    qr_source?: string;
+  }>;
   error?: string;
 }> {
   try {
@@ -126,8 +73,22 @@ async function processPhotoQrDetection(
     // Convert to buffer
     const imageBuffer = Buffer.from(await imageData.arrayBuffer());
 
-    // Detect QR codes
-    const detectedQrCodes = await detectQrCodesInImage(imageBuffer);
+    const resolvedEventId = eventId || photo.event_id || undefined;
+
+    // Detect QR codes using unified pipeline
+    const detectionResults = await qrDetectionService.detectQRCodesInImage(
+      imageBuffer,
+      resolvedEventId,
+      detectionOptions
+    );
+
+    const detectedQrCodes = Array.from(
+      new Set(
+        detectionResults
+          .map((result) => result.data?.codeValue ?? result.qrCode)
+          .filter((code): code is string => Boolean(code))
+      )
+    );
 
     // Update photo with detected QR codes
     await supabaseAdmin
@@ -135,28 +96,50 @@ async function processPhotoQrDetection(
       .update({ detected_qr_codes: JSON.stringify(detectedQrCodes) })
       .eq('id', photoId);
 
-    let matchedStudents: Array<{ id: string; name: string; qr_code: string }> =
-      [];
+    let matchedStudents: Array<{
+      id: string;
+      name: string;
+      qr_code: string;
+      confidence: number;
+      qr_source?: string;
+    }> = [];
 
-    // Auto-match to students if enabled
-    if (autoMatch && detectedQrCodes.length > 0) {
-      matchedStudents = await matchQrCodesToStudents(
-        detectedQrCodes,
-        eventId || photo.event_id
-      );
+    if (autoMatch && detectionResults.length > 0) {
+      const byStudent = new Map<string, typeof matchedStudents[number]>();
 
-      // Create photo-student associations for matched students
+      for (const result of detectionResults) {
+        if (!result.data) continue;
+        const existing = byStudent.get(result.data.studentId);
+        const candidate = {
+          id: result.data.studentId,
+          name: result.data.metadata?.studentName ?? 'Sin nombre',
+          qr_code: result.data.codeValue,
+          confidence: result.confidence,
+          qr_source: result.data.metadata?.qr_source,
+        };
+
+        if (!existing || candidate.confidence > existing.confidence) {
+          byStudent.set(result.data.studentId, candidate);
+        }
+      }
+
+      matchedStudents = Array.from(byStudent.values());
+
       if (matchedStudents.length > 0) {
         const photoStudentData = matchedStudents.map((student) => ({
           photo_id: photoId,
           student_id: student.id,
-          confidence_score: 0.9, // High confidence for QR matches
-          manual_review: false,
+          detection_metadata: {
+            source: 'qr_detection',
+            confidence: student.confidence,
+            qr_code: student.qr_code,
+            qr_source: student.qr_source ?? null,
+            detected_at: new Date().toISOString(),
+          },
         }));
 
         await supabaseAdmin.from('photo_students').upsert(photoStudentData, {
           onConflict: 'photo_id,student_id',
-          ignoreDuplicates: true,
         });
 
         // Update photo type to individual if students matched
@@ -205,6 +188,57 @@ export async function POST(req: NextRequest) {
     // Parse request body
     const body = await req.json();
     const validatedData = QrDetectionSchema.parse(body);
+    const { tenantId } = resolveTenantFromHeaders(req.headers);
+
+    const tenantFeature = await getQrTaggingStatus({
+      supabase: supabaseAdmin,
+      tenantId,
+    });
+    if (!tenantFeature.enabled) {
+      return NextResponse.json({
+        success: true,
+        qr_detection_disabled: true,
+        reason: 'qr_tagging_disabled',
+        summary: {
+          total: 0,
+          successful: 0,
+          failed: 0,
+          qr_codes_detected: 0,
+          students_matched: 0,
+        },
+        results: [],
+      });
+    }
+
+    if (validatedData.eventId) {
+      const eventFeature = await getQrTaggingStatus({
+        supabase: supabaseAdmin,
+        tenantId,
+        eventId: validatedData.eventId,
+      });
+      if (!eventFeature.enabled) {
+        return NextResponse.json({
+          success: true,
+          qr_detection_disabled: true,
+          reason: 'qr_tagging_disabled',
+          summary: {
+            total: 0,
+            successful: 0,
+            failed: 0,
+            qr_codes_detected: 0,
+            students_matched: 0,
+          },
+          results: [],
+        });
+      }
+    }
+
+    const appSettings = await getAppSettings();
+    const detectionOptions = buildQrDetectionOptions({
+      sensitivity: appSettings.qrDetectionSensitivity,
+      maxWidth: 1920,
+      maxHeight: 1080,
+    });
 
     let photoIds: string[] = [];
 
@@ -253,23 +287,79 @@ export async function POST(req: NextRequest) {
       });
     }
 
+    const photoEventMap = new Map<string, string | null>();
+    const disabledPhotoIds = new Set<string>();
+
+    if (!validatedData.eventId) {
+      const { data: photoEvents, error: photoEventsError } = await supabaseAdmin
+        .from('photos')
+        .select('id, event_id')
+        .in('id', photoIds);
+
+      if (photoEventsError) {
+        throw photoEventsError;
+      }
+
+      const eventStatusCache = new Map<string, boolean>();
+
+      for (const photo of photoEvents || []) {
+        photoEventMap.set(photo.id, photo.event_id ?? null);
+      }
+
+      for (const [photoId, eventId] of photoEventMap.entries()) {
+        if (!eventId) continue;
+        if (!eventStatusCache.has(eventId)) {
+          const status = await getQrTaggingStatus({
+            supabase: supabaseAdmin,
+            tenantId,
+            eventId,
+          });
+          eventStatusCache.set(eventId, status.enabled);
+        }
+        if (!eventStatusCache.get(eventId)) {
+          disabledPhotoIds.add(photoId);
+        }
+      }
+    }
+
     // Process photos in batches to avoid overwhelming the system
     const batchSize = 5;
     const results: Array<{
       photoId: string;
       status: 'success' | 'error';
       detectedQrCodes: string[];
-      matchedStudents: Array<{ id: string; name: string; qr_code: string }>;
+      matchedStudents: Array<{
+        id: string;
+        name: string;
+        qr_code: string;
+        confidence?: number;
+        qr_source?: string;
+      }>;
       error?: string;
     }> = [];
 
-    for (let i = 0; i < photoIds.length; i += batchSize) {
-      const batch = photoIds.slice(i, i + batchSize);
+    for (const photoId of disabledPhotoIds) {
+      results.push({
+        photoId,
+        status: 'error',
+        detectedQrCodes: [],
+        matchedStudents: [],
+        error: 'qr_tagging_disabled',
+      });
+    }
+
+    const photosToProcess = photoIds.filter(
+      (photoId) => !disabledPhotoIds.has(photoId)
+    );
+
+    for (let i = 0; i < photosToProcess.length; i += batchSize) {
+      const batch = photosToProcess.slice(i, i + batchSize);
       const batchPromises = batch.map((photoId) =>
         processPhotoQrDetection(
           photoId,
           validatedData.autoMatch,
-          validatedData.eventId
+          validatedData.eventId || photoEventMap.get(photoId) || undefined,
+          detectionOptions
         )
       );
 

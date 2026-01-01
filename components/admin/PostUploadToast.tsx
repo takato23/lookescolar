@@ -36,7 +36,7 @@ export default function PostUploadToast({
 
   const photoTypeConfig = {
     private: {
-      label: 'Familiares',
+      label: 'Clientes',
       icon: '👨‍👩‍👧‍👦',
       bgColor: 'bg-blue-50 dark:bg-blue-900/20',
       borderColor: 'border-blue-200 dark:border-blue-700',

@@ -30,12 +30,16 @@ import {
   MoreVertical,
   Edit,
   Trash2,
-  Copy
+  Copy,
+  ExternalLink
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { StoreConfig, StoreProduct } from '@/lib/validations/store-config';
 import { getDefaultConfig } from '@/lib/services/store-config.mappers';
 import { ProductEditor } from './ProductEditor';
+import { TemplateSelector } from '@/components/store/TemplateSelector';
+import StoreDesignPanel from '@/components/admin/store-settings/StoreDesignPanel';
+import { StorePreview } from '@/components/admin/preview';
 import { nanoid } from 'nanoid';
 
 type StoreConfigMode = 'event' | 'global';
@@ -103,6 +107,9 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
   // Product Editor State
   const [isEditorOpen, setIsEditorOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<StoreProduct | null>(null);
+
+  // Preview Modal State
+  const [isPreviewOpen, setIsPreviewOpen] = useState(false);
 
   const isEventMode = mode === 'event';
   const targetEventId = isEventMode ? eventId : undefined;
@@ -270,7 +277,7 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
 
   if (initialLoading) {
     return (
-      <div className={cn('max-w-4xl mx-auto space-y-6', className)}>
+      <div className={cn('max-w-6xl mx-auto space-y-6', className)}>
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500" />
           <span className="ml-3 text-gray-600">Cargando configuración...</span>
@@ -281,7 +288,7 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
 
   if (fetchError) {
     return (
-      <div className={cn('max-w-4xl mx-auto space-y-6', className)}>
+      <div className={cn('max-w-6xl mx-auto space-y-6', className)}>
         <Card>
           <CardContent className="py-10 text-center space-y-4">
             <h3 className="text-lg font-semibold text-destructive">No se pudo cargar la configuración</h3>
@@ -303,7 +310,7 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
   }
 
   return (
-    <div className={cn('max-w-4xl mx-auto space-y-6', className)}>
+    <div className={cn('max-w-6xl mx-auto space-y-6', className)}>
       <div className="flex items-center justify-between">
         <div>
           <h3 className="text-xl font-semibold text-foreground">
@@ -320,6 +327,16 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
             <Badge variant="outline" className="text-primary-600 border-primary-200">
               Cambios sin guardar
             </Badge>
+          )}
+          {isEventMode && targetEventId && (
+            <Button
+              variant="outline"
+              onClick={() => setIsPreviewOpen(true)}
+              className="gap-2"
+            >
+              <Eye className="h-4 w-4" />
+              Vista Previa
+            </Button>
           )}
           <Button onClick={handleSave} disabled={!hasChanges || loading} className="bg-blue-600 hover:bg-blue-700">
             <Save className="h-4 w-4 mr-2" />
@@ -342,6 +359,16 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
               <p className="text-sm text-gray-500">Permite que los usuarios compren fotos</p>
             </div>
             <Switch checked={config.enabled} onCheckedChange={(enabled) => updateConfig({ enabled })} />
+          </div>
+
+          <Separator />
+
+          <div className="space-y-2">
+            <Label className="text-base">Plantilla de tienda</Label>
+            <TemplateSelector
+              currentTemplate={config.template}
+              onTemplateChange={(template) => updateConfig({ template })}
+            />
           </div>
 
           <Separator />
@@ -369,6 +396,13 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
           </div>
         </CardContent>
       </Card>
+
+      <StoreDesignPanel
+        design={config.design}
+        bannerUrl={config.banner_url}
+        logoUrl={config.logo_url}
+        onChange={(design) => updateConfig({ design })}
+      />
 
       <Card>
         <CardHeader className="flex flex-row items-center justify-between">
@@ -517,6 +551,18 @@ export function StoreConfigPanel({ mode, eventId, className, onSave }: StoreConf
         product={editingProduct}
         onSave={handleSaveProduct}
       />
+
+      {/* Store Preview Modal */}
+      {isEventMode && targetEventId && (
+        <StorePreview
+          open={isPreviewOpen}
+          onClose={() => setIsPreviewOpen(false)}
+          eventId={targetEventId}
+          variant="modal"
+          title="Vista Previa de Tienda"
+          subtitle={isEventMode ? 'Configuracion del evento' : 'Configuracion global'}
+        />
+      )}
     </div>
   );
 }

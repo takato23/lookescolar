@@ -14,6 +14,7 @@ import React, {
 import { FixedSizeGrid as Grid } from 'react-window';
 import { useWindowSize } from '@/hooks/useWindowSize';
 import { QRScanner } from './QRScanner';
+import { useQrTagging } from '@/lib/hooks/useQrTagging';
 import {
   Search,
   Filter,
@@ -231,6 +232,8 @@ export function PhotoTaggerEnhanced({
   const [showFilters, setShowFilters] = useState(false);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [processing, setProcessing] = useState(false);
+  const qrTaggingStatus = useQrTagging(eventId);
+  const qrTaggingEnabled = qrTaggingStatus.enabled;
 
   // Refs for performance
   const gridRef = useRef<Grid>(null);
@@ -240,6 +243,12 @@ export function PhotoTaggerEnhanced({
   useEffect(() => {
     loadTaggingData();
   }, [eventId]);
+
+  useEffect(() => {
+    if (!qrTaggingEnabled && showQRScanner) {
+      setShowQRScanner(false);
+    }
+  }, [qrTaggingEnabled, showQRScanner]);
 
   // Generate smart suggestions when photos or assignments change
   useEffect(() => {
@@ -875,16 +884,18 @@ export function PhotoTaggerEnhanced({
           showQRScanner={showQRScanner}
           showFilters={showFilters}
           showSuggestions={showSuggestions}
+          qrTaggingEnabled={qrTaggingEnabled}
         />
 
         {/* QR Scanner Section */}
-        {showQRScanner && (
+        {showQRScanner && qrTaggingEnabled && (
           <QRScanner
             onScan={handleQRScan}
             onSubjectFound={handleSubjectFound}
             autoConfirm={selectedPhotos.size > 0}
             scanMode="continuous"
             className="mb-6"
+            eventId={eventId}
           />
         )}
 
@@ -942,6 +953,7 @@ function PhotoTaggerHeader({
   showQRScanner,
   showFilters,
   showSuggestions,
+  qrTaggingEnabled,
 }: {
   onToggleQRScanner: () => void;
   onToggleFilters: () => void;
@@ -949,6 +961,7 @@ function PhotoTaggerHeader({
   showQRScanner: boolean;
   showFilters: boolean;
   showSuggestions: boolean;
+  qrTaggingEnabled: boolean;
 }) {
   const { stats, selectedPhotos, suggestions } = usePhotoTagger();
 
@@ -968,16 +981,18 @@ function PhotoTaggerHeader({
           </CardTitle>
 
           <div className="flex items-center gap-2">
-            <AccessibleButton
-              onClick={onToggleQRScanner}
-              variant={showQRScanner ? 'primary' : 'outline'}
-              size="sm"
-              ariaLabel="Toggle QR Scanner"
-              className="relative"
-            >
-              <Camera className="mr-1 h-4 w-4" />
-              QR Scanner
-            </AccessibleButton>
+            {qrTaggingEnabled && (
+              <AccessibleButton
+                onClick={onToggleQRScanner}
+                variant={showQRScanner ? 'primary' : 'outline'}
+                size="sm"
+                ariaLabel="Toggle QR Scanner"
+                className="relative"
+              >
+                <Camera className="mr-1 h-4 w-4" />
+                QR Scanner
+              </AccessibleButton>
+            )}
 
             <AccessibleButton
               onClick={onToggleFilters}

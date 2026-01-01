@@ -1,0 +1,78 @@
+<svg width="1800" height="600" viewBox="0 0 1800 600" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Gradient minimalista moderno -->
+    <linearGradient id="modernGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f8f9fa"/>
+      <stop offset="50%" style="stop-color:#e9ecef"/>
+      <stop offset="100%" style="stop-color:#dee2e6"/>
+    </linearGradient>
+
+    <!-- Gradient para el retrato -->
+    <linearGradient id="portraitLight" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#ffecd2"/>
+      <stop offset="100%" style="stop-color:#fcb69f"/>
+    </linearGradient>
+
+    <!-- Sombra suave -->
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="10" stdDeviation="20" flood-color="rgba(0,0,0,0.1)"/>
+    </filter>
+  </defs>
+
+  <!-- Fondo -->
+  <rect width="1800" height="600" fill="url(#modernGradient)"/>
+
+  <!-- Textura sutil de ladrillo abstracto -->
+  <g opacity="0.03">
+    <rect x="0" y="0" width="120" height="50" rx="2" fill="#000" transform="translate(0, 0)"/>
+    <rect x="130" y="0" width="120" height="50" rx="2" fill="#000" transform="translate(0, 0)"/>
+    <rect x="260" y="0" width="120" height="50" rx="2" fill="#000" transform="translate(0, 0)"/>
+    <rect x="65" y="60" width="120" height="50" rx="2" fill="#000"/>
+    <rect x="195" y="60" width="120" height="50" rx="2" fill="#000"/>
+  </g>
+
+  <!-- Marco del retrato centrado -->
+  <g transform="translate(750, 80)" filter="url(#softShadow)">
+    <!-- Marco blanco -->
+    <rect x="0" y="0" width="300" height="440" rx="8" fill="white"/>
+
+    <!-- Área de la foto -->
+    <rect x="20" y="20" width="260" height="350" rx="4" fill="#f5f0eb"/>
+
+    <!-- Silueta del estudiante -->
+    <g transform="translate(150, 100)">
+      <!-- Cabeza -->
+      <circle cx="0" cy="0" r="70" fill="#d4b896"/>
+      <!-- Cabello -->
+      <ellipse cx="0" cy="-30" rx="65" ry="50" fill="#5a4a3a"/>
+      <!-- Cuello -->
+      <rect x="-25" y="60" width="50" height="40" fill="#d4b896"/>
+      <!-- Hombros/Uniforme -->
+      <ellipse cx="0" cy="130" rx="100" ry="60" fill="#4a5568"/>
+      <!-- Collar blanco -->
+      <path d="M-30 85 L0 110 L30 85" stroke="white" stroke-width="8" fill="none"/>
+    </g>
+
+    <!-- Nombre placeholder -->
+    <rect x="60" y="390" width="180" height="12" rx="6" fill="#e2e8f0"/>
+    <rect x="90" y="410" width="120" height="8" rx="4" fill="#e2e8f0" opacity="0.6"/>
+  </g>
+
+  <!-- Elementos decorativos laterales -->
+  <g opacity="0.15">
+    <!-- Líneas geométricas -->
+    <line x1="100" y1="150" x2="300" y2="150" stroke="#6b7280" stroke-width="1"/>
+    <line x1="100" y1="170" x2="250" y2="170" stroke="#6b7280" stroke-width="1"/>
+    <line x1="100" y1="190" x2="200" y2="190" stroke="#6b7280" stroke-width="1"/>
+
+    <line x1="1500" y1="400" x2="1700" y2="400" stroke="#6b7280" stroke-width="1"/>
+    <line x1="1550" y1="420" x2="1700" y2="420" stroke="#6b7280" stroke-width="1"/>
+    <line x1="1600" y1="440" x2="1700" y2="440" stroke="#6b7280" stroke-width="1"/>
+  </g>
+
+  <!-- Badge "GRADUATION 2025" -->
+  <g transform="translate(100, 480)">
+    <rect x="0" y="0" width="180" height="40" rx="20" fill="rgba(0,0,0,0.05)"/>
+    <text x="90" y="26" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" font-weight="600" letter-spacing="2" fill="#6b7280">GRADUATION 2025</text>
+  </g>
+</svg>

@@ -174,7 +174,7 @@ export function TempPhotoTagger({
                 </Label>
                 <Input
                   id="tempName"
-                  placeholder="Nombre del estudiante o familia"
+                  placeholder="Nombre del invitado o cliente"
                   value={formData.tempName}
                   onChange={(e) =>
                     setFormData({ ...formData, tempName: e.target.value })

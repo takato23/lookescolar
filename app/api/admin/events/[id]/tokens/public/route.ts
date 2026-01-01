@@ -10,7 +10,7 @@ import type { RouteContext } from '@/types/next-route';
 /**
  * POST /api/admin/events/[id]/tokens/public
  * Genera un token público de corta duración para acceso a la tienda desde la galería
- * Este token permite acceso temporal a la tienda unificada sin requerir datos de familia
+ * Este token permite acceso temporal a la tienda unificada sin requerir datos de cliente
  */
 export async function POST(
   request: NextRequest,
@@ -130,6 +130,5 @@ export async function POST(
     );
   }
 }
-
 
 

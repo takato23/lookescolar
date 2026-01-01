@@ -37,6 +37,21 @@ async function handleGET(request: NextRequest) {
   const requestId = generateRequestId();
 
   try {
+    const buildPreviewProxyUrl = (path?: string | null) => {
+      if (!path || typeof path !== 'string') return null;
+      if (path.startsWith('http')) return path;
+      const normalized = path.replace(/^\/+/, '').trim();
+      if (!normalized) return null;
+      if (!/\.(png|jpg|jpeg|webp|gif|avif)$/i.test(normalized)) return null;
+      if (
+        normalized.includes('/') &&
+        !/(^|\/)(previews|watermarks|watermarked|originals)\//i.test(normalized)
+      ) {
+        return null;
+      }
+      return `/admin/previews/${normalized}`;
+    };
+
     const url = new URL(request.url);
 
     // Parse/normalize query params
@@ -189,7 +204,8 @@ async function handleGET(request: NextRequest) {
             preview_url = null;
           }
         }
-        return { ...a, preview_url };
+        const proxyPreview = preview_url ?? buildPreviewProxyUrl(a.preview_path);
+        return { ...a, preview_url: proxyPreview };
       })
     );
     const hasMore = offset + assets.length < totalCount;

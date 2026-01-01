@@ -121,7 +121,7 @@ export function FamilyCartDrawer({
 
   const handleWizardCheckout = () => {
     closeCart();
-    window.open(`/f/${token}/checkout`, '_blank');
+    window.open(`/store-unified/${token}`, '_blank');
   };
 
   return (

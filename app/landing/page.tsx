@@ -8,9 +8,12 @@ import {
   BellRing,
   DownloadCloud,
   HeartHandshake,
+  Menu,
+  Loader2,
   MessageSquareHeart,
   ShieldCheck,
   Sparkles,
+  X,
 } from 'lucide-react';
 import { motion, useMotionValue, useSpring, useTransform } from 'framer-motion';
 import { HowItWorksSection } from '@/components/landing/how-it-works-section';
@@ -25,6 +28,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { LookEscolarLogo } from '@/components/ui/branding/LookEscolarLogo';
 import { MagneticButton } from '@/components/ui/magnetic-button';
+import { toast } from 'sonner';
 
 // Dynamic import to avoid Vercel issues
 const ProductGrid = dynamic(
@@ -54,6 +58,10 @@ const NAV_ITEMS = [
 export default function LandingPage() {
   const [email, setEmail] = useState('');
   const [isScrolled, setIsScrolled] = useState(false);
+  const [newsletterStatus, setNewsletterStatus] = useState<
+    'idle' | 'loading' | 'success' | 'error'
+  >('idle');
+  const [newsletterMessage, setNewsletterMessage] = useState('');
 
   useEffect(() => {
     const handleScroll = () => {
@@ -67,15 +75,37 @@ export default function LandingPage() {
 
   const handleNewsletterSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!email) return;
+    if (!email) {
+      toast.error('Ingresa un email válido');
+      return;
+    }
+
+    const isValidEmail = /\S+@\S+\.\S+/.test(email);
+    if (!isValidEmail) {
+      toast.error('Ingresa un email válido');
+      return;
+    }
+
+    setNewsletterStatus('loading');
+    setNewsletterMessage('');
 
     try {
-      console.log('Newsletter signup:', email);
-      alert('¡Gracias por suscribirte! Te mantendremos informado.');
+      // Simulación rápida de envío; en producción reemplace por API real.
+      await new Promise((resolve) => setTimeout(resolve, 450));
+      const successText =
+        '¡Gracias por suscribirte! Te avisaremos cuando haya novedades.';
+
+      setNewsletterStatus('success');
+      setNewsletterMessage(successText);
+      toast.success('¡Listo! Te sumamos a la lista.');
       setEmail('');
     } catch (error) {
       console.error('Newsletter signup error:', error);
-      alert('Error al suscribirse. Por favor intenta nuevamente.');
+      const errorText =
+        'No pudimos suscribirte ahora. Intenta nuevamente en unos segundos.';
+      setNewsletterStatus('error');
+      setNewsletterMessage(errorText);
+      toast.error(errorText);
     }
   };
 
@@ -103,6 +133,9 @@ export default function LandingPage() {
           email={email}
           onEmailChange={setEmail}
           onSubmit={handleNewsletterSubmit}
+          status={newsletterStatus}
+          statusMessage={newsletterMessage}
+          isSubmitting={newsletterStatus === 'loading'}
         />
         <FooterCTA />
       </main>
@@ -119,6 +152,30 @@ function LandingNavigation({
   isScrolled: boolean;
   onAdminLogin: (email: string, password: string) => void;
 }) {
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  useEffect(() => {
+    if (!isMenuOpen) return;
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        setIsMenuOpen(false);
+      }
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [isMenuOpen]);
+
+  useEffect(() => {
+    if (isMenuOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isMenuOpen]);
+
   return (
     <header
       className={clsx(
@@ -198,8 +255,62 @@ function LandingNavigation({
               </MagneticButton>
             </Link>
             <AdminLoginModal onLogin={onAdminLogin} />
+
+            <button
+              type="button"
+              onClick={() => setIsMenuOpen((prev) => !prev)}
+              className={clsx(
+                'md:hidden inline-flex h-10 w-10 items-center justify-center rounded-full border transition-all duration-200',
+                isScrolled
+                  ? 'border-slate-200 bg-white shadow-sm'
+                  : 'border-white/40 bg-white/80'
+              )}
+              aria-expanded={isMenuOpen}
+              aria-label="Abrir menú de navegación"
+            >
+              {isMenuOpen ? (
+                <X className="h-5 w-5 text-slate-800" aria-hidden />
+              ) : (
+                <Menu className="h-5 w-5 text-slate-800" aria-hidden />
+              )}
+            </button>
           </div>
         </div>
+        {isMenuOpen && (
+          <div className="mt-3 block rounded-2xl border border-white/20 bg-white/95 p-4 shadow-lg backdrop-blur md:hidden">
+            <nav className="flex flex-col divide-y divide-slate-100">
+              {NAV_ITEMS.map((item) => (
+                <a
+                  key={item.href}
+                  href={item.href}
+                  onClick={() => setIsMenuOpen(false)}
+                  className="py-3 text-sm font-semibold uppercase tracking-[0.14em] text-slate-700 transition-colors hover:text-slate-900"
+                >
+                  {item.label}
+                </a>
+              ))}
+              <div className="flex flex-col gap-3 py-3">
+                <Link
+                  href="/demo"
+                  onClick={() => setIsMenuOpen(false)}
+                  className="flex items-center justify-center rounded-full bg-slate-900 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+                >
+                  Ver demo
+                </Link>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setIsMenuOpen(false);
+                    onAdminLogin('', '');
+                  }}
+                  className="flex items-center justify-center rounded-full border border-slate-200 px-4 py-2 text-sm font-semibold text-slate-800 transition hover:bg-slate-100"
+                >
+                  Acceso admin
+                </button>
+              </div>
+            </nav>
+          </div>
+        )}
       </div>
     </header>
   );
@@ -487,7 +598,7 @@ function FamiliesHighlightsSection() {
       icon: HeartHandshake,
       title: 'Galerías privadas',
       description:
-        'Cada aula o evento tiene su espacio exclusivo. Solo vos y tu familia pueden verlo.',
+        'Cada aula o evento tiene su espacio exclusivo. Solo vos y tus clientes pueden verlo.',
     },
     {
       icon: BellRing,
@@ -504,7 +615,7 @@ function FamiliesHighlightsSection() {
   ];
 
   return (
-    <section id="familias" className="relative overflow-hidden px-6 py-28">
+    <section id="clientes" className="relative overflow-hidden px-6 py-28">
       <div className="pointer-events-none absolute inset-0 bg-gradient-to-br from-slate-50 via-white to-slate-100" />
       <div className="pointer-events-none absolute -left-24 -top-20 h-72 w-72 rounded-full bg-rose-200/35 blur-[130px]" />
       <div className="pointer-events-none absolute -right-16 bottom-[-80px] h-80 w-80 rounded-full bg-sky-200/35 blur-[150px]" />
@@ -517,7 +628,7 @@ function FamiliesHighlightsSection() {
             viewport={{ once: true }}
             className="font-display text-4xl font-bold tracking-tight text-slate-900 lg:text-5xl"
           >
-            Diseñado para que las familias <br className="hidden md:block" />
+            Diseñado para que tus clientes <br className="hidden md:block" />
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-rose-500 to-orange-500">disfruten el proceso</span>
           </motion.h2>
           <motion.p
@@ -568,10 +679,16 @@ function NewsletterSection({
   email,
   onEmailChange,
   onSubmit,
+  status,
+  statusMessage,
+  isSubmitting,
 }: {
   email: string;
   onEmailChange: (value: string) => void;
   onSubmit: (event: FormEvent<HTMLFormElement>) => Promise<void> | void;
+  status: 'idle' | 'loading' | 'success' | 'error';
+  statusMessage: string;
+  isSubmitting: boolean;
 }) {
   return (
     <section id="newsletter" className="relative overflow-hidden px-6 py-28">
@@ -585,7 +702,7 @@ function NewsletterSection({
             Mantente al día con <span className="text-white/80">novedades</span>
           </h2>
           <p className="mx-auto max-w-2xl text-lg text-white/80">
-            Historias de familias, nuevas funciones y guías prácticas para
+            Historias de clientes, nuevas funciones y guías prácticas para
             aprovechar LookEscolar al máximo.
           </p>
         </div>
@@ -599,16 +716,38 @@ function NewsletterSection({
             placeholder="tu@email.com"
             value={email}
             onChange={(event) => onEmailChange(event.target.value)}
+            autoComplete="email"
+            aria-label="Correo electrónico para novedades"
             className="h-12 flex-1 rounded-full border border-white/40 bg-white/90 text-center text-base text-slate-900 focus:border-white focus:outline-none focus:ring-2 focus:ring-white/60"
             required
           />
           <Button
             type="submit"
-            className="h-12 rounded-full bg-[#FF9F6A] px-8 text-sm font-semibold uppercase tracking-[0.25em] text-[#101428] transition-transform hover:-translate-y-0.5 hover:bg-[#FF8B4A]"
+            disabled={isSubmitting}
+            className="h-12 rounded-full bg-[#FF9F6A] px-8 text-sm font-semibold uppercase tracking-[0.25em] text-[#101428] transition-transform hover:-translate-y-0.5 hover:bg-[#FF8B4A] disabled:cursor-not-allowed disabled:opacity-80"
           >
-            Suscribirme
+            {isSubmitting ? (
+              <span className="flex items-center gap-2">
+                <Loader2 className="h-4 w-4 animate-spin" aria-hidden />
+                Enviando...
+              </span>
+            ) : (
+              'Suscribirme'
+            )}
           </Button>
         </form>
+        <div
+          className="mt-3 text-center text-sm"
+          aria-live="polite"
+          role="status"
+        >
+          {status === 'success' && (
+            <span className="text-emerald-200">{statusMessage}</span>
+          )}
+          {status === 'error' && (
+            <span className="text-amber-200">{statusMessage}</span>
+          )}
+        </div>
       </div>
     </section>
   );
@@ -637,8 +776,8 @@ function LandingFooter() {
             <a href="#ecosistema" className="hover:text-slate-600">
               Ecosistema
             </a>
-            <a href="#familias" className="hover:text-slate-600">
-              Familias
+            <a href="#clientes" className="hover:text-slate-600">
+              Clientes
             </a>
             <a href="#pricing" className="hover:text-slate-600">
               Precios

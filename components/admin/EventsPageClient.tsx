@@ -250,7 +250,7 @@ export function EventsPageClient({ events, error }: EventsPageClientProps) {
           confirmMessage += `• ${event.stats.totalPhotos} fotos (se borrarán del almacenamiento)\n`;
         }
         if (hasSubjects) {
-          confirmMessage += `• ${event.stats.totalSubjects} estudiantes/familias\n`;
+          confirmMessage += `• ${event.stats.totalSubjects} invitados/clientes\n`;
         }
         confirmMessage += '\n';
       }

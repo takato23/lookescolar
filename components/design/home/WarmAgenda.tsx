@@ -26,7 +26,7 @@ type AgendaItem = {
 
 const SUMMARY_STATS: SummaryStat[] = [
   { label: 'Aulas activas', value: '18', helper: '+3 esta semana', icon: GraduationCap },
-  { label: 'Participación familiar', value: '92%', helper: 'Promedio últimos 7 días', icon: HeartHandshake },
+  { label: 'Participación de clientes', value: '92%', helper: 'Promedio últimos 7 días', icon: HeartHandshake },
   { label: 'Eventos agendados', value: '14', helper: 'Octubre 2025', icon: CalendarClock },
 ];
 

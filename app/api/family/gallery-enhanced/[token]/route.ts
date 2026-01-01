@@ -121,6 +121,13 @@ export async function GET(
 
   try {
     const { token } = params;
+    const canonicalUrl = new URL(`/api/store/${token}`, request.url);
+    const existingParams = new URL(request.url).searchParams;
+    canonicalUrl.search = existingParams.toString();
+    if (!canonicalUrl.searchParams.has('include_assets')) {
+      canonicalUrl.searchParams.set('include_assets', 'true');
+    }
+    return NextResponse.redirect(canonicalUrl, 307);
     const { searchParams } = new URL(request.url);
 
     console.log(`[${requestId}] Enhanced gallery request:`, {
@@ -705,6 +712,16 @@ export async function POST(
 
   try {
     const { token } = params;
+    return NextResponse.json(
+      {
+        success: false,
+        error: 'Endpoint deprecado',
+        message: 'Usá /api/store/[token] para la tienda unificada.',
+        canonical: `/api/store/${token}`,
+        public: `/store-unified/${token}`,
+      },
+      { status: 410, headers: { 'Cache-Control': 'no-store' } }
+    );
     const body = await request.json();
 
     const {

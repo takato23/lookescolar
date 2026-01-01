@@ -1,0 +1,21 @@
+<svg width="200" height="20" viewBox="0 0 200 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Trazo de pincel orgánico -->
+  <path
+    d="M2 12C8 10 15 14 25 11C35 8 45 13 58 10C71 7 82 15 95 11C108 7 120 14 135 10C150 6 165 13 180 9C188 7 195 11 198 10"
+    stroke="currentColor"
+    stroke-width="4"
+    stroke-linecap="round"
+    stroke-linejoin="round"
+    fill="none"
+    opacity="0.8"
+  />
+  <!-- Segunda línea más fina para efecto de pincel seco -->
+  <path
+    d="M5 14C12 13 20 15 32 13C44 11 55 14 68 12C81 10 92 15 105 12C118 9 130 14 145 11C160 8 175 13 195 11"
+    stroke="currentColor"
+    stroke-width="1.5"
+    stroke-linecap="round"
+    fill="none"
+    opacity="0.4"
+  />
+</svg>

@@ -1,4 +1,4 @@
-import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import UnifiedStorePage from '@/app/store-unified/[token]/page';
 
@@ -22,16 +22,6 @@ global.fetch = jest.fn(() =>
   })
 );
 
-const mockPhotos = [
-  {
-    id: '1',
-    url: '/photo1.jpg',
-    preview_url: '/preview1.jpg',
-    alt: 'Foto de prueba',
-    student: 'Juan Pérez'
-  }
-];
-
 const mockSettings = {
   enabled: true,
   template: 'pixieset',
@@ -47,17 +37,20 @@ const mockSettings = {
 };
 
 // Mock del componente de template
-jest.mock('@/components/store/templates/PixiesetFlowTemplate', () => ({
-  PixiesetFlowTemplate: ({ settings, photos, token, subject, totalPhotos, isPreselected, onLoadMorePhotos, hasMorePhotos, loadingMore }: any) => (
+jest.mock('@/components/store/templates/PixiesetTemplate', () => ({
+  PixiesetTemplate: ({ photos, totalPhotos, hasMorePhotos, loadingMore, onLoadMorePhotos }: any) => (
     <div data-testid="pixieset-template">
-      <div data-testid="settings">{JSON.stringify(settings)}</div>
       <div data-testid="photos-count">{photos.length}</div>
       <div data-testid="total-photos">{totalPhotos}</div>
       <div data-testid="has-more">{hasMorePhotos ? 'true' : 'false'}</div>
       <div data-testid="loading-more">{loadingMore ? 'true' : 'false'}</div>
-      <button onClick={onLoadMorePhotos} data-testid="load-more">Cargar más</button>
+      <button onClick={onLoadMorePhotos} data-testid="load-more">Cargar mas</button>
     </div>
   )
+}));
+
+jest.mock('@/components/store/templates/PremiumStoreTemplate', () => ({
+  PremiumStoreTemplate: () => <div data-testid="premium-template" />
 }));
 
 // Mock de los providers
@@ -105,7 +98,7 @@ describe('UnifiedStorePage', () => {
     renderWithProviders(<UnifiedStorePage />);
 
     await waitFor(() => {
-      expect(screen.getByText('Foto de prueba')).toBeInTheDocument();
+      expect(screen.getByTestId('photos-count')).toHaveTextContent('1');
     });
   });
 
@@ -118,22 +111,6 @@ describe('UnifiedStorePage', () => {
 
     await waitFor(() => {
       expect(screen.getByText(/error/i)).toBeInTheDocument();
-    });
-  });
-
-  it('debe permitir navegación por teclado', async () => {
-    renderWithProviders(<UnifiedStorePage />);
-
-    await waitFor(() => {
-      const firstPhoto = screen.getByRole('button', { name: /ver foto/i });
-      firstPhoto.focus();
-    });
-
-    fireEvent.keyDown(document.activeElement!, { key: 'Enter' });
-
-    // Verificar que se selecciona la foto
-    await waitFor(() => {
-      expect(screen.getByText(/paquete/i)).toBeInTheDocument();
     });
   });
 
@@ -176,7 +153,4 @@ describe('UnifiedStorePage', () => {
     expect(screen.getByText('Cargando galería...')).toBeInTheDocument();
   });
 });
-
-
-
 

@@ -401,7 +401,7 @@ export function PricingManagement() {
             </h4>
             <ul className="space-y-1 text-sm text-blue-800 dark:text-blue-200">
               <li>
-                • Los precios se muestran automáticamente a las familias en la
+                • Los precios se muestran automáticamente a los clientes en la
                 galería
               </li>
               <li>• Los cambios se aplican inmediatamente a nuevos pedidos</li>

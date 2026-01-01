@@ -4,7 +4,7 @@ import { logger } from '@/lib/utils/logger';
 
 export async function GET() {
   try {
-    const supabase = createServerClient();
+    const supabase = await createServerClient();
     const startTime = performance.now();
 
     // Test query to measure database performance

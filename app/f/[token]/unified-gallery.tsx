@@ -1,24 +1,35 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { useParams } from 'next/navigation';
-import dynamic from 'next/dynamic';
+type SearchParams = Record<string, string | string[] | undefined>;
 
-// Dynamic import to avoid SSR issues
-const UnifiedGalleryPage = dynamic(
-  () => import('@/components/gallery/UnifiedGalleryPage'),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="flex h-screen items-center justify-center">
-        Loading...
-      </div>
-    ),
-  }
-);
+function buildRedirectUrl(token: string, searchParams: SearchParams) {
+  const queryString = new URLSearchParams();
 
-export default function UnifiedGallery() {
-  const params = useParams();
-  const token = params?.token as string;
+  Object.entries(searchParams).forEach(([key, value]) => {
+    if (value === undefined) return;
+    if (Array.isArray(value)) {
+      value.forEach((v) => queryString.append(key, v));
+    } else {
+      queryString.append(key, value);
+    }
+  });
 
-  return <UnifiedGalleryPage token={token} />;
+  const qs = queryString.toString();
+  return qs ? `/store-unified/${token}?${qs}` : `/store-unified/${token}`;
+}
+
+export default async function UnifiedGallery({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ token: string }>;
+  searchParams?: Promise<SearchParams> | SearchParams;
+}) {
+  const { token } = await params;
+  const resolvedSearchParams =
+    searchParams && typeof (searchParams as any).then === 'function'
+      ? await (searchParams as Promise<SearchParams>)
+      : (searchParams ?? {});
+
+  redirect(buildRedirectUrl(token, resolvedSearchParams));
 }

@@ -3,6 +3,8 @@ import { qrService } from '@/lib/services/qr.service';
 import { withAdminAuth } from '@/lib/middleware/admin-auth.middleware';
 import { logger } from '@/lib/utils/logger';
 import { z } from 'zod';
+import { getQrTaggingStatus } from '@/lib/qr/feature';
+import { resolveTenantFromHeaders } from '@/lib/multitenant/tenant-resolver';
 
 const generateQRSchema = z.object({
   eventId: z.string().uuid('Invalid event ID'),
@@ -63,6 +65,15 @@ export const POST = withAdminAuth(async (request: NextRequest) => {
 
     const { eventId, studentId, studentName, courseId, options } =
       validation.data;
+
+    const { tenantId } = resolveTenantFromHeaders(request.headers);
+    const featureStatus = await getQrTaggingStatus({ tenantId, eventId });
+    if (!featureStatus.enabled) {
+      return NextResponse.json(
+        { error: 'QR tagging disabled for this event' },
+        { status: 403 }
+      );
+    }
 
     // Generate QR code for student identification
     const result = await qrService.generateStudentIdentificationQR(
@@ -129,6 +140,15 @@ export const PUT = withAdminAuth(async (request: NextRequest) => {
     }
 
     const { eventId, students, options } = validation.data;
+
+    const { tenantId } = resolveTenantFromHeaders(request.headers);
+    const featureStatus = await getQrTaggingStatus({ tenantId, eventId });
+    if (!featureStatus.enabled) {
+      return NextResponse.json(
+        { error: 'QR tagging disabled for this event' },
+        { status: 403 }
+      );
+    }
 
     // Generate QR codes in batch
     const results = await qrService.generateBatchStudentQRCodes({

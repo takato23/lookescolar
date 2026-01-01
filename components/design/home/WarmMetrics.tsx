@@ -28,7 +28,7 @@ const METRICS: QuickMetric[] = [
     status: { label: 'Estable', tone: 'neutral' },
   },
   {
-    title: 'Familias en vivo',
+    title: 'Clientes en vivo',
     value: '42',
     helper: '8 en espera',
     icon: HeartHandshake,

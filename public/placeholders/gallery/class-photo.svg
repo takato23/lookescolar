@@ -1,0 +1,192 @@
+<svg width="1800" height="1200" viewBox="0 0 1800 1200" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <!-- Fondo de gimnasio/salón -->
+    <linearGradient id="gymBackground" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#d8d0c8"/>
+      <stop offset="50%" style="stop-color:#c8c0b8"/>
+      <stop offset="100%" style="stop-color:#a89888"/>
+    </linearGradient>
+
+    <!-- Piso de madera -->
+    <linearGradient id="woodFloor" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#c4a070"/>
+      <stop offset="100%" style="stop-color:#a08050"/>
+    </linearGradient>
+
+    <!-- Tonos de piel variados -->
+    <linearGradient id="skin1" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#e8d0b8"/>
+      <stop offset="100%" style="stop-color:#d4b8a0"/>
+    </linearGradient>
+    <linearGradient id="skin2" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#d4c0a8"/>
+      <stop offset="100%" style="stop-color:#c0a890"/>
+    </linearGradient>
+    <linearGradient id="skin3" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#c4a888"/>
+      <stop offset="100%" style="stop-color:#b09070"/>
+    </linearGradient>
+    <linearGradient id="skin4" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" style="stop-color:#a08060"/>
+      <stop offset="100%" style="stop-color:#8c6c4c"/>
+    </linearGradient>
+  </defs>
+
+  <!-- Fondo -->
+  <rect width="1800" height="1200" fill="url(#gymBackground)"/>
+
+  <!-- Piso -->
+  <rect x="0" y="900" width="1800" height="300" fill="url(#woodFloor)"/>
+  <!-- Líneas del piso -->
+  <g opacity="0.1">
+    <line x1="0" y1="950" x2="1800" y2="950" stroke="#000" stroke-width="2"/>
+    <line x1="0" y1="1000" x2="1800" y2="1000" stroke="#000" stroke-width="2"/>
+    <line x1="0" y1="1050" x2="1800" y2="1050" stroke="#000" stroke-width="2"/>
+    <line x1="0" y1="1100" x2="1800" y2="1100" stroke="#000" stroke-width="2"/>
+    <line x1="0" y1="1150" x2="1800" y2="1150" stroke="#000" stroke-width="2"/>
+  </g>
+
+  <!-- Banner del colegio arriba -->
+  <g transform="translate(600, 50)">
+    <rect x="0" y="0" width="600" height="80" rx="4" fill="#3a5a7a"/>
+    <text x="300" y="52" text-anchor="middle" font-family="serif" font-size="32" font-weight="bold" fill="white" letter-spacing="4">COLEGIO EJEMPLO</text>
+  </g>
+
+  <!-- FILA 3 (atrás, parados en grada/banco) -->
+  <g transform="translate(200, 200)">
+    <!-- 7 estudiantes en fila de atrás -->
+    <g transform="translate(0, 0)">
+      <circle cx="0" cy="0" r="55" fill="url(#skin1)"/>
+      <ellipse cx="0" cy="-25" rx="50" ry="40" fill="#3a2a1a"/>
+      <ellipse cx="0" cy="120" rx="70" ry="60" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(200, 0)">
+      <circle cx="0" cy="0" r="55" fill="url(#skin2)"/>
+      <ellipse cx="0" cy="-25" rx="50" ry="40" fill="#5a4030"/>
+      <ellipse cx="0" cy="120" rx="70" ry="60" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(400, 0)">
+      <circle cx="0" cy="0" r="55" fill="url(#skin3)"/>
+      <ellipse cx="0" cy="-25" rx="50" ry="40" fill="#2a1a0a"/>
+      <ellipse cx="0" cy="120" rx="70" ry="60" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(600, 0)">
+      <circle cx="0" cy="0" r="55" fill="url(#skin4)"/>
+      <ellipse cx="0" cy="-25" rx="50" ry="40" fill="#1a0a00"/>
+      <ellipse cx="0" cy="120" rx="70" ry="60" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(800, 0)">
+      <circle cx="0" cy="0" r="55" fill="url(#skin1)"/>
+      <ellipse cx="0" cy="-25" rx="50" ry="40" fill="#4a3020"/>
+      <ellipse cx="0" cy="120" rx="70" ry="60" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(1000, 0)">
+      <circle cx="0" cy="0" r="55" fill="url(#skin2)"/>
+      <ellipse cx="0" cy="-25" rx="50" ry="40" fill="#3a2a1a"/>
+      <ellipse cx="0" cy="120" rx="70" ry="60" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(1200, 0)">
+      <circle cx="0" cy="0" r="55" fill="url(#skin3)"/>
+      <ellipse cx="0" cy="-25" rx="50" ry="40" fill="#2a1a0a"/>
+      <ellipse cx="0" cy="120" rx="70" ry="60" fill="#2d4a6a"/>
+    </g>
+  </g>
+
+  <!-- FILA 2 (medio, parados) -->
+  <g transform="translate(100, 420)">
+    <!-- 8 estudiantes -->
+    <g transform="translate(0, 0)">
+      <circle cx="0" cy="0" r="60" fill="url(#skin2)"/>
+      <ellipse cx="0" cy="-30" rx="55" ry="45" fill="#5a4030"/>
+      <ellipse cx="0" cy="140" rx="80" ry="70" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(180, 0)">
+      <circle cx="0" cy="0" r="60" fill="url(#skin3)"/>
+      <ellipse cx="0" cy="-30" rx="55" ry="45" fill="#3a2a1a"/>
+      <ellipse cx="0" cy="140" rx="80" ry="70" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(360, 0)">
+      <circle cx="0" cy="0" r="60" fill="url(#skin1)"/>
+      <ellipse cx="0" cy="-30" rx="55" ry="45" fill="#2a1a0a"/>
+      <ellipse cx="0" cy="140" rx="80" ry="70" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(540, 0)">
+      <circle cx="0" cy="0" r="60" fill="url(#skin4)"/>
+      <ellipse cx="0" cy="-30" rx="55" ry="45" fill="#1a0a00"/>
+      <ellipse cx="0" cy="140" rx="80" ry="70" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(720, 0)">
+      <circle cx="0" cy="0" r="60" fill="url(#skin1)"/>
+      <ellipse cx="0" cy="-30" rx="55" ry="45" fill="#4a3828"/>
+      <ellipse cx="0" cy="140" rx="80" ry="70" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(900, 0)">
+      <circle cx="0" cy="0" r="60" fill="url(#skin2)"/>
+      <ellipse cx="0" cy="-30" rx="55" ry="45" fill="#5a4838"/>
+      <ellipse cx="0" cy="140" rx="80" ry="70" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(1080, 0)">
+      <circle cx="0" cy="0" r="60" fill="url(#skin3)"/>
+      <ellipse cx="0" cy="-30" rx="55" ry="45" fill="#3a2818"/>
+      <ellipse cx="0" cy="140" rx="80" ry="70" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(1260, 0)">
+      <circle cx="0" cy="0" r="60" fill="url(#skin4)"/>
+      <ellipse cx="0" cy="-30" rx="55" ry="45" fill="#2a1808"/>
+      <ellipse cx="0" cy="140" rx="80" ry="70" fill="#2d4a6a"/>
+    </g>
+  </g>
+
+  <!-- FILA 1 (frente, sentados) -->
+  <g transform="translate(150, 700)">
+    <!-- 6 estudiantes sentados -->
+    <g transform="translate(0, 0)">
+      <circle cx="0" cy="0" r="65" fill="url(#skin1)"/>
+      <ellipse cx="0" cy="-30" rx="60" ry="48" fill="#4a3020"/>
+      <ellipse cx="0" cy="100" rx="90" ry="50" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(220, 0)">
+      <circle cx="0" cy="0" r="65" fill="url(#skin3)"/>
+      <ellipse cx="0" cy="-30" rx="60" ry="48" fill="#2a1a0a"/>
+      <ellipse cx="0" cy="100" rx="90" ry="50" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(440, 0)">
+      <circle cx="0" cy="0" r="65" fill="url(#skin2)"/>
+      <ellipse cx="0" cy="-30" rx="60" ry="48" fill="#5a4030"/>
+      <ellipse cx="0" cy="100" rx="90" ry="50" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(660, 0)">
+      <circle cx="0" cy="0" r="65" fill="url(#skin4)"/>
+      <ellipse cx="0" cy="-30" rx="60" ry="48" fill="#1a0a00"/>
+      <ellipse cx="0" cy="100" rx="90" ry="50" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(880, 0)">
+      <circle cx="0" cy="0" r="65" fill="url(#skin1)"/>
+      <ellipse cx="0" cy="-30" rx="60" ry="48" fill="#3a2818"/>
+      <ellipse cx="0" cy="100" rx="90" ry="50" fill="#2d4a6a"/>
+    </g>
+    <g transform="translate(1100, 0)">
+      <circle cx="0" cy="0" r="65" fill="url(#skin2)"/>
+      <ellipse cx="0" cy="-30" rx="60" ry="48" fill="#4a3828"/>
+      <ellipse cx="0" cy="100" rx="90" ry="50" fill="#2d4a6a"/>
+    </g>
+  </g>
+
+  <!-- Docente a un lado -->
+  <g transform="translate(1550, 500)">
+    <circle cx="0" cy="0" r="70" fill="url(#skin2)"/>
+    <ellipse cx="0" cy="-35" rx="65" ry="50" fill="#3a2a1a"/>
+    <ellipse cx="0" cy="150" rx="100" ry="80" fill="#6a4a5a"/>
+    <!-- Lentes -->
+    <ellipse cx="-25" cy="-5" rx="22" ry="18" fill="none" stroke="#4a4a4a" stroke-width="3"/>
+    <ellipse cx="25" cy="-5" rx="22" ry="18" fill="none" stroke="#4a4a4a" stroke-width="3"/>
+    <line x1="3" y1="-5" x2="-3" y2="-5" stroke="#4a4a4a" stroke-width="3"/>
+  </g>
+
+  <!-- Cartel con año y división -->
+  <g transform="translate(750, 1050)">
+    <rect x="0" y="0" width="300" height="80" rx="4" fill="white" stroke="#c8c0b8" stroke-width="2"/>
+    <text x="150" y="35" text-anchor="middle" font-family="system-ui, sans-serif" font-size="18" font-weight="bold" fill="#3a3a3a">6to GRADO "A"</text>
+    <text x="150" y="60" text-anchor="middle" font-family="system-ui, sans-serif" font-size="14" fill="#6b7280">Ciclo Lectivo 2025</text>
+  </g>
+</svg>

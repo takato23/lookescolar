@@ -25,8 +25,8 @@ const navItems = [
   { href: '/admin', icon: LayoutDashboard, label: 'Dashboard', shortLabel: 'Home' },
   { href: '/admin/events', icon: Calendar, label: 'Eventos' },
   { href: '/admin/photos', icon: ImageIcon, label: 'Fotos' },
-  { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
   { href: '/admin/publish', icon: Share2, label: 'Publicar' },
+  { href: '/admin/orders', icon: ShoppingCart, label: 'Pedidos' },
 ];
 
 interface AdminHeaderProps {
@@ -65,10 +65,8 @@ export default function AdminHeader({
     if (pathname === '/admin') return 'Dashboard Principal';
     if (pathname.startsWith('/admin/events')) return 'Gestión de Eventos';
     if (pathname.startsWith('/admin/photos')) return 'Biblioteca de Fotos';
-    if (pathname.startsWith('/admin/subjects')) return 'Base de Estudiantes';
     if (pathname.startsWith('/admin/orders')) return 'Seguimiento de Pedidos';
     if (pathname.startsWith('/admin/publish')) return 'Publicación y Compartir';
-    if (pathname.startsWith('/admin/tagging')) return 'Etiquetado Inteligente';
     return 'Panel de Control';
   };
 

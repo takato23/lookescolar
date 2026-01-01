@@ -73,9 +73,11 @@ export const POST = RateLimitMiddleware.withRateLimit(
 
       const orderId_ = orderData.id as string;
       const currency = (orderData.currency as string) || 'ARS';
-      const totalPrice = orderData.total_price as number;
+      const totalPrice = (orderData.total_price as number) || (orderData.total_amount as number) || 0;
       const couponDiscountCents = (orderData.coupon_discount_cents as number) || 0;
-      const hasDigitalItems = (orderData.has_digital_items as boolean) || false;
+      // Check if order has digital items by examining order_items or metadata
+      const metadata = (orderData.metadata as Record<string, unknown>) || {};
+      const hasDigitalItems = (orderData.has_digital_items as boolean) || (metadata.has_digital_items as boolean) || false;
       const eventInfo = orderData.event as { name?: string } | null;
 
       // Build email data
@@ -106,20 +108,23 @@ export const POST = RateLimitMiddleware.withRateLimit(
         hasPhysicalItems: true, // Default to true for physical
       };
 
-      // If download_ready, fetch download links
+      // If download_ready, fetch download links from order_items or metadata
       if (emailType === 'download_ready') {
-        const { data: downloads } = await supabase
-          .from('downloads')
-          .select('photo_id, token, expires_at, download_count, max_downloads')
+        // Try to get download links from order_items or use metadata
+        const { data: orderItems } = await supabase
+          .from('order_items')
+          .select('photo_id')
           .eq('order_id', orderId);
 
-        if (downloads && downloads.length > 0) {
+        // Generate download links from order items or metadata
+        const downloadLinksFromMetadata = (metadata.download_links as Array<Record<string, unknown>>) || [];
+        if (downloadLinksFromMetadata.length > 0 || (orderItems && orderItems.length > 0)) {
           const baseUrl = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
-          emailData.downloadLinks = downloads.map((d: Record<string, unknown>) => ({
+          emailData.downloadLinks = downloadLinksFromMetadata.map((d: Record<string, unknown>) => ({
             photoId: d.photo_id as string,
             downloadUrl: `${baseUrl}/download/${d.token as string}`,
-            expiresAt: d.expires_at as string,
-            remainingDownloads: (d.max_downloads as number) - (d.download_count as number),
+            expiresAt: (d.expires_at as string) || '',
+            remainingDownloads: ((d.max_downloads as number) || 0) - ((d.download_count as number) || 0),
           }));
         }
       }

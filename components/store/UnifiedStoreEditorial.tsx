@@ -195,7 +195,7 @@ export default function UnifiedStoreEditorial({ shareData, studentInfo }: Unifie
     };
     
     sessionStorage.setItem('checkoutData', JSON.stringify(checkoutData));
-    router.push(`/f/${shareData.token}/checkout`);
+    router.push(`/store-unified/${shareData.token}`);
   };
 
   const getPhotoUrl = (photo: any) => {
@@ -324,7 +324,7 @@ export default function UnifiedStoreEditorial({ shareData, studentInfo }: Unifie
                         {[
                           { icon: Download, text: 'Descarga inmediata' },
                           { icon: Camera, text: 'Calidad profesional' },
-                          { icon: Users, text: 'Para toda la familia' },
+                          { icon: Users, text: 'Para todos los invitados' },
                           { icon: Calendar, text: 'Acceso extendido' }
                         ].map((feature, i) => (
                           <div key={i} className="flex items-center gap-3">

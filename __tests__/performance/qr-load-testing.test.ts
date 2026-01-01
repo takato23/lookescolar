@@ -286,7 +286,9 @@ describe('QR Workflow Load Testing', () => {
     );
 
     studentIds = students.map((s) => s.id);
-    qrCodes = students.map((s) => `STUDENT:${s.id}:${s.name}:${eventId}`);
+    qrCodes = students.map(
+      () => `LKSTUDENT_${TestHelpers.generateSecureToken(24)}`
+    );
 
     // Create 200 photos for batch testing
     const photos = await Promise.all(

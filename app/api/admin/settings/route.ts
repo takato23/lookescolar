@@ -44,6 +44,11 @@ const SettingsSchema = z.object({
 
   autoCleanupPreviews: z.boolean().default(true),
   cleanupPreviewDays: z.number().int().min(1).default(90),
+
+  qrDefaultSize: z.enum(['small', 'medium', 'large']).default('medium'),
+  qrDetectionSensitivity: z.enum(['low', 'medium', 'high']).default('medium'),
+  qrAutoTagOnUpload: z.boolean().default(true),
+  qrShowInGallery: z.boolean().default(false),
 });
 
 const SettingsPatchSchema = SettingsSchema.deepPartial();
@@ -85,6 +90,11 @@ function fromDb(row: any): Settings {
 
     autoCleanupPreviews: row.auto_cleanup_previews,
     cleanupPreviewDays: row.cleanup_preview_days,
+
+    qrDefaultSize: row.qr_default_size,
+    qrDetectionSensitivity: row.qr_detection_sensitivity,
+    qrAutoTagOnUpload: row.qr_auto_tag_on_upload,
+    qrShowInGallery: row.qr_show_in_gallery,
   } as Settings;
 }
 
@@ -139,6 +149,12 @@ function toDb(patch: SettingsPatch): Record<string, any> {
   // System settings
   mapField('autoCleanupPreviews', 'auto_cleanup_previews');
   mapField('cleanupPreviewDays', 'cleanup_preview_days');
+
+  // QR settings
+  mapField('qrDefaultSize', 'qr_default_size');
+  mapField('qrDetectionSensitivity', 'qr_detection_sensitivity');
+  mapField('qrAutoTagOnUpload', 'qr_auto_tag_on_upload');
+  mapField('qrShowInGallery', 'qr_show_in_gallery');
 
   return dbFields;
 }
@@ -206,7 +222,31 @@ export async function GET(req: NextRequest) {
 export async function PATCH(req: NextRequest) {
   try {
     const body = await req.json();
-    const parsed = SettingsPatchSchema.safeParse(body);
+    const normalizedBody = { ...body };
+
+    if (typeof normalizedBody.businessEmail === 'string') {
+      const email = normalizedBody.businessEmail.trim();
+      normalizedBody.businessEmail = email.length === 0 ? null : email;
+    }
+
+    if (typeof normalizedBody.businessWebsite === 'string') {
+      const website = normalizedBody.businessWebsite.trim();
+      if (website.length === 0) {
+        normalizedBody.businessWebsite = null;
+      } else if (!/^https?:\/\//i.test(website)) {
+        normalizedBody.businessWebsite = `https://${website}`;
+      } else {
+        normalizedBody.businessWebsite = website;
+      }
+    }
+
+    if (typeof normalizedBody.uploadMaxResolution === 'number') {
+      normalizedBody.uploadMaxResolution = String(
+        normalizedBody.uploadMaxResolution
+      );
+    }
+
+    const parsed = SettingsPatchSchema.safeParse(normalizedBody);
 
     if (!parsed.success) {
       console.error('Settings validation error:', parsed.error);

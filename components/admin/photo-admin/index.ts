@@ -8,6 +8,8 @@ export { default as FolderTreePanel } from './components/FolderTreePanel';
 export { PhotoCard } from './components/PhotoCard';
 export { PhotoGrid } from './components/PhotoGrid';
 export { InspectorPanel } from './components/InspectorPanel';
+export { BulkOperationZones, BulkOperationSidebar, OPERATION_ZONES } from './components/BulkOperationZones';
+export type { OperationZone } from './components/BulkOperationZones';
 export { getPreviewUrl } from './services/preview-url.service';
 export { EgressMonitor, egressMonitor } from './services/egress-monitor.service';
 export { photoAdminApi } from './services/photo-admin-api.service';
