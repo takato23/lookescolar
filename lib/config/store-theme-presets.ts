@@ -32,7 +32,9 @@ function deepMerge<T>(target: T, source: DeepPartial<T>): T {
     return source === undefined ? target : (source as T);
   }
 
-  const output: Record<string, unknown> = { ...(target as Record<string, unknown>) };
+  const output: Record<string, unknown> = {
+    ...(target as Record<string, unknown>),
+  };
 
   Object.entries(source as Record<string, unknown>).forEach(([key, value]) => {
     if (value === undefined) {
@@ -42,7 +44,10 @@ function deepMerge<T>(target: T, source: DeepPartial<T>): T {
     const currentValue = output[key];
 
     if (isPlainObject(currentValue) && isPlainObject(value)) {
-      output[key] = deepMerge(currentValue, value as DeepPartial<typeof currentValue>);
+      output[key] = deepMerge(
+        currentValue,
+        value as DeepPartial<typeof currentValue>
+      );
     } else {
       output[key] = value;
     }
@@ -51,12 +56,18 @@ function deepMerge<T>(target: T, source: DeepPartial<T>): T {
   return output as T;
 }
 
-export function applyThemePreset(settings: StoreSettings, preset: StoreThemePreset): StoreSettings {
+export function applyThemePreset(
+  settings: StoreSettings,
+  preset: StoreThemePreset
+): StoreSettings {
   if (!preset?.overrides) {
     return settings;
   }
 
-  const cloned = deepMerge({} as StoreSettings, settings as unknown as DeepPartial<StoreSettings>);
+  const cloned = deepMerge(
+    {} as StoreSettings,
+    settings as unknown as DeepPartial<StoreSettings>
+  );
   return deepMerge(cloned, preset.overrides);
 }
 
@@ -65,22 +76,31 @@ export const STORE_THEME_PRESETS: Record<string, StoreThemePreset> = {
     meta: {
       id: 'default',
       name: 'Estilo Predeterminado',
-      description: 'La configuración global de la tienda sin ajustes adicionales.',
+      description:
+        'La configuración global de la tienda sin ajustes adicionales.',
       audience: 'default',
       tone: 'neutral',
-      highlights: ['Respeta los colores configurados', 'Ideal para un estilo consistente'],
+      highlights: [
+        'Respeta los colores configurados',
+        'Ideal para un estilo consistente',
+      ],
       previewGradient: 'from-gray-100 via-white to-gray-200',
     },
     overrides: {},
   },
-  kids: {
+  celebration: {
     meta: {
-      id: 'kids',
-      name: 'Infantil & Divertido',
-      description: 'Paleta vibrante y mensajes cercanos pensados para familias con niños pequeños.',
+      id: 'celebration',
+      name: 'Celebracion & Fiesta',
+      description:
+        'Paleta vibrante y energetica para eventos festivos y celebraciones.',
       audience: 'kids',
       tone: 'playful',
-      highlights: ['Colores brillantes', 'Tipografía amigable', 'Mensajes cercanos'],
+      highlights: [
+        'Colores brillantes',
+        'Energia festiva',
+        'Mensajes cercanos',
+      ],
       previewGradient: 'from-pink-400 via-orange-300 to-yellow-300',
     },
     overrides: {
@@ -95,17 +115,18 @@ export const STORE_THEME_PRESETS: Record<string, StoreThemePreset> = {
         text_secondary: '#4b5563',
       },
       texts: {
-        hero_title: '¡Bienvenidos a la Aventura Escolar!',
-        hero_subtitle: 'Descubrí las fotos más tiernas y divertidas del jardín',
-        footer_text: 'Con amor desde LookEscolar · Recuerdos que contagian sonrisas',
+        hero_title: 'Momentos para Celebrar',
+        hero_subtitle: 'Revive los mejores momentos de tu evento especial',
+        footer_text: 'Recuerdos que iluminan',
       },
       custom_branding: {
-        brand_tagline: 'Momentos que abrazan',
+        brand_tagline: 'Momentos que brillan',
         accent_color: '#f97316',
         secondary_color: '#fb7185',
-        font_family: '"Comic Sans MS", "Comic Neue", cursive',
+        font_family: '"Nunito", sans-serif',
       },
-      welcome_message: '¡Hola familia! Elegimos un estilo súper alegre para que disfruten estas fotos llenas de sonrisas.',
+      welcome_message:
+        'Bienvenidos a tu galeria de fotos. Disfruta reviviendo cada momento especial.',
       theme_customization: {
         header_style: 'bold',
         gallery_layout: 'grid',
@@ -119,10 +140,15 @@ export const STORE_THEME_PRESETS: Record<string, StoreThemePreset> = {
     meta: {
       id: 'teen',
       name: 'Joven & Creativo',
-      description: 'Combinación moderna con contraste sutil, ideal para adolescentes y eventos artísticos.',
+      description:
+        'Combinación moderna con contraste sutil, ideal para adolescentes y eventos artísticos.',
       audience: 'teens',
       tone: 'minimal',
-      highlights: ['Aires modernos', 'Tipografía equilibrada', 'Contraste alto'],
+      highlights: [
+        'Aires modernos',
+        'Tipografía equilibrada',
+        'Contraste alto',
+      ],
       previewGradient: 'from-slate-800 via-slate-700 to-blue-500',
     },
     overrides: {
@@ -138,8 +164,8 @@ export const STORE_THEME_PRESETS: Record<string, StoreThemePreset> = {
       },
       texts: {
         hero_title: 'Tu historia, tu estilo',
-        hero_subtitle: 'Explorá una galería curada con lo mejor del evento',
-        footer_text: 'LookEscolar · Experiencias que inspiran',
+        hero_subtitle: 'Explora una galeria curada con lo mejor del evento',
+        footer_text: 'Fotografia profesional · Experiencias que inspiran',
       },
       custom_branding: {
         brand_tagline: 'Fotografía con actitud',
@@ -161,7 +187,8 @@ export const STORE_THEME_PRESETS: Record<string, StoreThemePreset> = {
     meta: {
       id: 'elegant',
       name: 'Elegante & Premium',
-      description: 'Un look sofisticado y sobrio ideal para reuniones, eventos formales o fotografías de adultos.',
+      description:
+        'Un look sofisticado y sobrio ideal para reuniones, eventos formales o fotografías de adultos.',
       audience: 'premium',
       tone: 'elegant',
       highlights: ['Modo oscuro', 'Tipografía serif', 'Experiencia boutique'],
@@ -179,9 +206,10 @@ export const STORE_THEME_PRESETS: Record<string, StoreThemePreset> = {
         text_secondary: '#c5c6c7',
       },
       texts: {
-        hero_title: 'Colección Exclusiva',
-        hero_subtitle: 'Una experiencia premium para revivir momentos inolvidables',
-        footer_text: 'LookEscolar · Edición Premium',
+        hero_title: 'Coleccion Exclusiva',
+        hero_subtitle:
+          'Una experiencia premium para revivir momentos inolvidables',
+        footer_text: 'Fotografia de autor · Edicion Premium',
       },
       custom_branding: {
         brand_tagline: 'Elegancia en cada detalle',
@@ -190,7 +218,8 @@ export const STORE_THEME_PRESETS: Record<string, StoreThemePreset> = {
         accent_color: '#f97316',
         font_family: '"Georgia", serif',
       },
-      welcome_message: 'Gracias por acompañarnos. Esta galería exclusiva está diseñada para ofrecerte una experiencia distinguida.',
+      welcome_message:
+        'Gracias por acompañarnos. Esta galería exclusiva está diseñada para ofrecerte una experiencia distinguida.',
       theme_customization: {
         header_style: 'default',
         gallery_layout: 'grid',
@@ -202,4 +231,6 @@ export const STORE_THEME_PRESETS: Record<string, StoreThemePreset> = {
   },
 };
 
-export const STORE_THEME_PRESET_LIST = Object.values(STORE_THEME_PRESETS).map((preset) => preset.meta);
+export const STORE_THEME_PRESET_LIST = Object.values(STORE_THEME_PRESETS).map(
+  (preset) => preset.meta
+);

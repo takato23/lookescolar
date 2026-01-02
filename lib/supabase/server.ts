@@ -80,6 +80,12 @@ async function buildSupabaseClient(
       );
     }
 
+    if (options.serviceRole && !serviceRoleKey) {
+      console.warn(
+        '[Supabase] Warning: Requesting serviceRole client but SUPABASE_SERVICE_ROLE_KEY is not set. Falling back to anon key. This may cause RLS errors.'
+      );
+    }
+
     const client = createSupabaseClient<Database>(supabaseUrl, keyToUse, {
       auth: { autoRefreshToken: false, persistSession: false },
       global: globalHeaders,

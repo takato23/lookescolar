@@ -20,12 +20,14 @@ import {
   useRealTimeNotifications,
 } from '@/components/ui/NotificationSystem';
 import { KeyboardProvider } from '@/components/ui/KeyboardShortcuts';
-import { AdminLayoutProvider, useAdminLayout } from '@/components/admin/admin-layout-context';
+import {
+  AdminLayoutProvider,
+  useAdminLayout,
+} from '@/components/admin/admin-layout-context';
 import { cn } from '@/lib/utils';
 import '@/styles/admin-dark-mode-fixes.css';
 import '@/styles/dashboard-animations.css';
 import '@/styles/admin-contrast.css';
-import Script from 'next/script';
 
 export default function AdminLayout({
   children,
@@ -153,10 +155,8 @@ export default function AdminLayout({
       <AdminLayoutProvider>
         <KeyboardProvider>
           {/* Force dark mode application script */}
-          <Script
-            src="/scripts/force-dark-mode.js"
-            strategy="afterInteractive"
-          />
+          {/* Force dark mode application script - using standard script tag to avoid React hydration issues with ThemeProvider */}
+          <script src="/scripts/force-dark-mode.js" async />
           <AdminLayoutContent user={user}>{children}</AdminLayoutContent>
         </KeyboardProvider>
       </AdminLayoutProvider>
@@ -212,17 +212,17 @@ function AdminLayoutContent({
           <>
             {/* Background Texture */}
             <div
-              className="absolute inset-0 opacity-20 pointer-events-none z-0"
+              className="pointer-events-none absolute inset-0 z-0 opacity-20"
               style={{
                 backgroundImage: "url('/images/background-texture.png')",
-                backgroundSize: "cover",
-                backgroundPosition: "center",
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
               }}
             />
 
             {/* Cinematic Gradient Overlay */}
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_right,_rgba(68,170,255,0.08),_transparent_50%)] z-0" />
-            <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(212,175,55,0.05),_transparent_50%)] z-0" />
+            <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_top_right,_rgba(68,170,255,0.08),_transparent_50%)]" />
+            <div className="pointer-events-none absolute inset-0 z-0 bg-[radial-gradient(circle_at_top_left,_rgba(212,175,55,0.05),_transparent_50%)]" />
           </>
         )}
 
@@ -232,9 +232,9 @@ function AdminLayoutContent({
             user={
               user && user.email
                 ? {
-                  name: user.email.split('@')[0],
-                  email: user.email,
-                }
+                    name: user.email.split('@')[0],
+                    email: user.email,
+                  }
                 : null
             }
             onLogout={async () => {
@@ -248,7 +248,10 @@ function AdminLayoutContent({
 
         {isImmersive ? (
           <div
-            className={cn('relative flex min-h-screen flex-col', config.contentClassName)}
+            className={cn(
+              'relative flex min-h-screen flex-col',
+              config.contentClassName
+            )}
           >
             {renderFloatingNav()}
             <main
@@ -271,7 +274,9 @@ function AdminLayoutContent({
               {/* Clean Header - Simplified on mobile */}
               <CleanHeader
                 user={user}
-                onMobileMenuToggle={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                onMobileMenuToggle={() =>
+                  setIsMobileMenuOpen(!isMobileMenuOpen)
+                }
               />
 
               {/* Page Content */}
@@ -279,7 +284,8 @@ function AdminLayoutContent({
                 <div
                   className={cn(
                     'clean-content',
-                    (pathname === '/admin' || pathname.startsWith('/admin/dashboard-pro')) &&
+                    (pathname === '/admin' ||
+                      pathname.startsWith('/admin/dashboard-pro')) &&
                       'clean-content--dashboard'
                   )}
                 >
@@ -297,7 +303,7 @@ function AdminLayoutContent({
             {/* Desktop Sidebar */}
             {config.showSidebar && (
               <div className="hidden lg:block">
-                <AdminSidebar isMobileOpen={false} onMobileToggle={() => { }} />
+                <AdminSidebar isMobileOpen={false} onMobileToggle={() => {}} />
               </div>
             )}
 
@@ -306,7 +312,7 @@ function AdminLayoutContent({
               {/* Desktop Header */}
               {config.showHeader && (
                 <div className="hidden lg:block">
-                  <AdminHeader user={user} onMobileMenuToggle={() => { }} />
+                  <AdminHeader user={user} onMobileMenuToggle={() => {}} />
                 </div>
               )}
 

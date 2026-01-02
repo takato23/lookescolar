@@ -6,6 +6,7 @@ import {
   createServerSupabaseClient,
   createServerSupabaseServiceClient,
 } from '@/lib/supabase/server';
+import type { Json } from '@/types/database';
 import {
   AuthMiddleware,
   SecurityLogger,
@@ -36,7 +37,8 @@ export const GET = RateLimitMiddleware.withRateLimit(
         console.error('[Service] Falta NEXT_PUBLIC_SUPABASE_URL');
         return NextResponse.json(
           {
-            error: 'Configuración de servidor incompleta. Verifica NEXT_PUBLIC_SUPABASE_URL.',
+            error:
+              'Configuración de servidor incompleta. Verifica NEXT_PUBLIC_SUPABASE_URL.',
           },
           { status: 500 }
         );
@@ -62,17 +64,31 @@ export const GET = RateLimitMiddleware.withRateLimit(
       // Obtener parámetros de query
       const { searchParams } = new URL(request.url);
       const status = searchParams.get('status'); // 'active', 'inactive', 'all'
-      const allowedSortFields = new Set(['created_at', 'date', 'name', 'status']);
+      const allowedSortFields = new Set([
+        'created_at',
+        'date',
+        'name',
+        'status',
+      ]);
       const requestedSortBy = searchParams.get('sort_by') || 'created_at';
-      const sortBy = allowedSortFields.has(requestedSortBy) ? requestedSortBy : 'created_at';
-      const sortOrderParam = (searchParams.get('sort_order') || 'desc').toLowerCase();
-      const sortOrder = sortOrderParam === 'asc' || sortOrderParam === 'desc' ? sortOrderParam : 'desc';
+      const sortBy = allowedSortFields.has(requestedSortBy)
+        ? requestedSortBy
+        : 'created_at';
+      const sortOrderParam = (
+        searchParams.get('sort_order') || 'desc'
+      ).toLowerCase();
+      const sortOrder =
+        sortOrderParam === 'asc' || sortOrderParam === 'desc'
+          ? sortOrderParam
+          : 'desc';
       const includeStats = searchParams.get('include_stats') === 'true';
       const { page, limit, offset } = parsePaginationParams(searchParams);
       const paginated = searchParams.has('page') || searchParams.has('limit');
 
-      let query = dbClient.from('events').select(
-        `
+      let query = dbClient
+        .from('events')
+        .select(
+          `
       id,
       name,
       location,
@@ -83,9 +99,9 @@ export const GET = RateLimitMiddleware.withRateLimit(
       created_at,
       updated_at
     `,
-        { count: 'exact' }
-      )
-      .eq('tenant_id', tenantId);
+          { count: 'exact' }
+        )
+        .eq('tenant_id', tenantId);
 
       // Aplicar filtros
       if (status === 'active') {
@@ -105,7 +121,10 @@ export const GET = RateLimitMiddleware.withRateLimit(
       let { data: events, error, count } = (await query) as any;
 
       // Fallback: si hay error de auth/clave, reintentar con SSR anon
-      if (error && (!('code' in error) || ['401', '403'].includes((error as any).code))) {
+      if (
+        error &&
+        (!('code' in error) || ['401', '403'].includes((error as any).code))
+      ) {
         try {
           dbClient = await createServerSupabaseClient();
           // reconstruir query con nuevo cliente
@@ -123,11 +142,14 @@ export const GET = RateLimitMiddleware.withRateLimit(
           `,
             { count: 'exact' }
           );
-          if (status === 'active') retryQuery = retryQuery.eq('status', 'active');
-          else if (status === 'inactive') retryQuery = retryQuery.eq('status', 'inactive');
+          if (status === 'active')
+            retryQuery = retryQuery.eq('status', 'active');
+          else if (status === 'inactive')
+            retryQuery = retryQuery.eq('status', 'inactive');
           const ascending = sortOrder === 'asc';
           retryQuery = retryQuery.order(sortBy, { ascending });
-          if (paginated) retryQuery = retryQuery.range(offset, offset + limit - 1);
+          if (paginated)
+            retryQuery = retryQuery.range(offset, offset + limit - 1);
           const retryRes: any = await retryQuery;
           events = retryRes.data;
           error = retryRes.error;
@@ -196,17 +218,18 @@ export const GET = RateLimitMiddleware.withRateLimit(
             const batch = events.slice(i, i + batchSize);
             const batchResults = await Promise.all(
               batch.map(async (event) => {
-                const [subjectsStats, photoCount, ordersStats] = await Promise.all([
-                  dbClient
-                    .from('subjects')
-                    .select('*', { count: 'exact', head: true })
-                    .eq('event_id', event.id),
-                  photoService.getEventPhotoCount(event.id),
-                  dbClient
-                    .from('orders')
-                    .select('id, status, total_amount, created_at')
-                    .eq('event_id', event.id),
-                ]);
+                const [subjectsStats, photoCount, ordersStats] =
+                  await Promise.all([
+                    dbClient
+                      .from('subjects')
+                      .select('*', { count: 'exact', head: true })
+                      .eq('event_id', event.id),
+                    photoService.getEventPhotoCount(event.id),
+                    dbClient
+                      .from('orders')
+                      .select('id, status, total_amount, created_at')
+                      .eq('event_id', event.id),
+                  ]);
 
                 const orders = ordersStats.data || [];
 
@@ -216,16 +239,22 @@ export const GET = RateLimitMiddleware.withRateLimit(
                   approvedPhotos: null,
                   untaggedPhotos: null,
                   totalOrders: orders.length,
-                  pendingOrders: orders.filter((o) => o.status === 'pending').length,
+                  pendingOrders: orders.filter((o) => o.status === 'pending')
+                    .length,
                   approvedOrders: orders.filter((o) => o.status === 'approved')
                     .length,
-                  deliveredOrders: orders.filter((o) => o.status === 'delivered')
-                    .length,
+                  deliveredOrders: orders.filter(
+                    (o) => o.status === 'delivered'
+                  ).length,
                   revenue: Math.round(
                     orders
-                      .filter((o) => ['approved', 'delivered'].includes(o.status))
-                      .reduce((sum, order) => sum + (order.total_amount || 0), 0) /
-                      100
+                      .filter((o) =>
+                        ['approved', 'delivered'].includes(o.status)
+                      )
+                      .reduce(
+                        (sum, order) => sum + (order.total_amount || 0),
+                        0
+                      ) / 100
                   ),
                   lastPhotoUploaded: null,
                   lastOrderCreated:
@@ -316,7 +345,29 @@ export const POST = RateLimitMiddleware.withRateLimit(
       // Log del acceso
       SecurityLogger.logResourceAccess('event_create', authContext, request);
 
-      let body: { name?: string; location?: string; date?: string } = {};
+      const toTrimmedString = (value: unknown): string | null => {
+        if (typeof value !== 'string') return null;
+        const trimmed = value.trim();
+        return trimmed.length > 0 ? trimmed : null;
+      };
+
+      const toNullableNumber = (value: unknown): number | null => {
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          return value;
+        }
+        if (typeof value === 'string' && value.trim() !== '') {
+          const parsed = Number(value);
+          if (Number.isFinite(parsed)) return parsed;
+        }
+        return null;
+      };
+
+      const toRecord = (value: unknown): Record<string, unknown> =>
+        typeof value === 'object' && value !== null
+          ? (value as Record<string, unknown>)
+          : {};
+
+      let body: Record<string, unknown> = {};
       try {
         body = await request.json();
       } catch (e) {
@@ -327,14 +378,118 @@ export const POST = RateLimitMiddleware.withRateLimit(
         );
       }
 
-      const { name, location, date } = body;
+      const name = toTrimmedString(body.name);
+      const date = toTrimmedString(body.date);
+      const location =
+        toTrimmedString(body.location) ??
+        toTrimmedString(body.school) ??
+        toTrimmedString(body.schoolName);
 
       // Validaciones básicas
-      if (!name || !date || !location) {
+      if (!name || !date) {
         return NextResponse.json(
-          { error: 'Se requieren name, location y date' },
+          { error: 'Se requieren name y date' },
           { status: 400 }
         );
+      }
+
+      const statusRaw = toTrimmedString(body.status);
+      const activeFlag =
+        typeof body.active === 'boolean' ? body.active : undefined;
+      const resolvedStatus =
+        statusRaw ??
+        (activeFlag === undefined
+          ? 'active'
+          : activeFlag
+            ? 'active'
+            : 'inactive');
+
+      const photoPriceRaw =
+        body.price_per_photo ?? body.photo_price ?? body.photoPrice;
+      const pricePerPhoto = toNullableNumber(photoPriceRaw) ?? 0;
+
+      const sharingModeRaw =
+        typeof body.sharing_mode === 'string'
+          ? body.sharing_mode
+          : typeof body.sharingMode === 'string'
+            ? body.sharingMode
+            : undefined;
+
+      const deliveryChannelRaw =
+        typeof body.delivery_channel === 'string'
+          ? body.delivery_channel
+          : typeof body.deliveryChannel === 'string'
+            ? body.deliveryChannel
+            : undefined;
+
+      const enableWatermark =
+        typeof body.enable_watermark === 'boolean'
+          ? body.enable_watermark
+          : typeof body.enableWatermark === 'boolean'
+            ? body.enableWatermark
+            : undefined;
+
+      const enableQrTagging =
+        typeof body.enable_qr_tagging === 'boolean'
+          ? body.enable_qr_tagging
+          : typeof body.enableQrTagging === 'boolean'
+            ? body.enableQrTagging
+            : undefined;
+
+      const autoPublish =
+        typeof body.auto_publish === 'boolean'
+          ? body.auto_publish
+          : typeof body.autoPublish === 'boolean'
+            ? body.autoPublish
+            : undefined;
+
+      const theme = typeof body.theme === 'string' ? body.theme : undefined;
+
+      const publicGalleryEnabled =
+        typeof body.public_gallery_enabled === 'boolean'
+          ? body.public_gallery_enabled
+          : sharingModeRaw === 'public'
+            ? true
+            : sharingModeRaw === 'private'
+              ? false
+              : undefined;
+
+      const metadataInput = toRecord(body.metadata);
+      const settingsInput = toRecord(metadataInput.settings);
+      const settings: Record<string, unknown> = {
+        ...settingsInput,
+      };
+
+      if (typeof sharingModeRaw === 'string') {
+        settings.sharingMode = sharingModeRaw;
+      }
+
+      if (typeof deliveryChannelRaw === 'string') {
+        settings.deliveryChannel = deliveryChannelRaw;
+      }
+
+      if (typeof enableQrTagging === 'boolean') {
+        settings.qrTaggingEnabled = enableQrTagging;
+      }
+
+      if (typeof autoPublish === 'boolean') {
+        settings.autoPublish = autoPublish;
+      }
+
+      const metadata: Record<string, unknown> = {
+        ...metadataInput,
+      };
+
+      if (Object.keys(settings).length > 0) {
+        metadata.settings = settings;
+      }
+
+      if (typeof enableWatermark === 'boolean') {
+        const watermarkInput = toRecord(metadataInput.watermark);
+        metadata.watermark = {
+          ...watermarkInput,
+          enabled: enableWatermark,
+        };
       }
 
       const serviceClient = await createServerSupabaseServiceClient();
@@ -343,14 +498,26 @@ export const POST = RateLimitMiddleware.withRateLimit(
       // Esto es válido según el esquema de la BD
       const created_by = null;
 
-      const eventData = {
+      const eventData: Record<string, unknown> = {
         name: name.trim(),
-        location: location.trim(),
+        location: (location ?? name).trim(),
         date,
-        status: 'active',
-        price_per_photo: 0,
+        status: resolvedStatus,
+        price_per_photo: pricePerPhoto,
         created_by, // Puede ser null según el esquema
       };
+
+      if (theme) {
+        eventData.theme = theme;
+      }
+
+      if (typeof publicGalleryEnabled === 'boolean') {
+        eventData.public_gallery_enabled = publicGalleryEnabled;
+      }
+
+      if (Object.keys(metadata).length > 0) {
+        eventData.metadata = metadata as Json;
+      }
 
       console.log('[Service] Intentando crear evento con datos:', eventData);
 

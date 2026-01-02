@@ -34,20 +34,23 @@ export const GET = withAuth(async (request: NextRequest) => {
     }
 
     // Simplified response - avoid complex stats that may fail
-    const eventsWithStats = (events || []).map((event: Record<string, unknown>) => {
-      return {
-        id: event.id as string,
-        name: (event.name as string) || 'Sin nombre',
-        school: (event.school as string) || (event.name as string) || 'Sin nombre',
-        location: (event.school as string) || '',
-        date: (event.date as string) || (event.created_at as string),
-        // Default to true to keep UI behavior simple across schema variations
-        active: true,
-        photo_price: 0, // Default value
-        created_at: event.created_at as string,
-        photo_count: 0, // We'll load this separately if needed
-      };
-    });
+    const eventsWithStats = (events || []).map(
+      (event: Record<string, unknown>) => {
+        return {
+          id: event.id as string,
+          name: (event.name as string) || 'Sin nombre',
+          school:
+            (event.school as string) || (event.name as string) || 'Sin nombre',
+          location: (event.school as string) || '',
+          date: (event.date as string) || (event.created_at as string),
+          // Default to true to keep UI behavior simple across schema variations
+          active: true,
+          photo_price: 0, // Default value
+          created_at: event.created_at as string,
+          photo_count: 0, // We'll load this separately if needed
+        };
+      }
+    );
 
     console.log(
       '[events-simple] Found events with stats:',
@@ -137,9 +140,11 @@ export const POST = withAuth(async (request: NextRequest) => {
       },
     });
   } catch (error) {
+    const errorMessage =
+      error instanceof Error ? error.message : 'Unknown error';
     console.error('[events-simple] Unexpected error:', error);
     return NextResponse.json(
-      { error: 'Internal server error' },
+      { error: 'Internal server error', details: errorMessage },
       { status: 500 }
     );
   }

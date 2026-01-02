@@ -4,63 +4,80 @@ import { motion } from 'framer-motion';
 import { Check } from 'lucide-react';
 
 interface WizardStepperProps {
-    currentStep: number;
+  currentStep: number;
+  steps: Array<{
+    num: number;
+    label: string;
+    description?: string;
+  }>;
 }
 
-const STEPS = [
-    { num: 1, label: 'Básicos' },
-    { num: 2, label: 'Distribución' },
-    { num: 3, label: 'Estilo' },
-];
+export function WizardStepper({ currentStep, steps }: WizardStepperProps) {
+  const totalSteps = Math.max(steps.length, 1);
+  const progress = totalSteps === 1 ? 1 : (currentStep - 1) / (totalSteps - 1);
 
-export function WizardStepper({ currentStep }: WizardStepperProps) {
-    return (
-        <div className="flex items-center justify-between relative max-w-lg mx-auto">
-            {/* Background line */}
-            <div className="absolute top-1/2 left-0 w-full h-1 bg-slate-100 -z-10 rounded-full" />
+  return (
+    <div className="relative">
+      <div className="absolute left-4 right-4 top-5 h-[2px] rounded-full bg-slate-200/80 dark:bg-slate-800" />
+      <motion.div
+        className="absolute left-4 top-5 h-[2px] rounded-full bg-gradient-to-r from-violet-500 via-indigo-500 to-cyan-500"
+        initial={{ scaleX: 0 }}
+        animate={{ scaleX: progress }}
+        transition={{ duration: 0.5, ease: 'easeInOut' }}
+        style={{ transformOrigin: 'left' }}
+      />
+      <div className="grid grid-cols-3 gap-4 md:grid-cols-[repeat(auto-fit,minmax(140px,1fr))]">
+        {steps.map((step) => {
+          const isActive = step.num === currentStep;
+          const isCompleted = step.num < currentStep;
 
-            {/* Progress line */}
-            <motion.div
-                className="absolute top-1/2 left-0 h-1 bg-violet-600 -z-0 rounded-full origin-left"
-                initial={{ scaleX: 0 }}
-                animate={{ scaleX: (currentStep - 1) / (STEPS.length - 1) }}
-                transition={{ duration: 0.5, ease: "easeInOut" }}
-            />
-
-            {STEPS.map((step) => {
-                const isActive = step.num <= currentStep;
-                const isCompleted = step.num < currentStep;
-
-                return (
-                    <div key={step.num} className="flex flex-col items-center gap-2">
-                        <motion.div
-                            initial={false}
-                            animate={{
-                                backgroundColor: isActive ? '#7c3aed' : '#ffffff',
-                                borderColor: isActive ? '#7c3aed' : '#e2e8f0',
-                                scale: isActive ? 1.1 : 1
-                            }}
-                            className={cn(
-                                "w-8 h-8 rounded-full border-2 flex items-center justify-center z-10 transition-colors duration-300 shadow-sm",
-                            )}
-                        >
-                            {isCompleted ? (
-                                <Check className="w-5 h-5 text-white" strokeWidth={3} />
-                            ) : (
-                                <span className={cn("text-xs font-bold", isActive ? "text-white" : "text-slate-400")}>
-                                    {step.num}
-                                </span>
-                            )}
-                        </motion.div>
-                        <span className={cn(
-                            "text-xs font-medium absolute top-10 w-20 text-center transition-colors duration-300",
-                            isActive ? "text-violet-700" : "text-slate-400"
-                        )}>
-                            {step.label}
-                        </span>
-                    </div>
-                )
-            })}
-        </div>
-    );
+          return (
+            <div
+              key={step.num}
+              className="flex flex-col items-start gap-2 text-left"
+            >
+              <motion.div
+                initial={false}
+                animate={{
+                  backgroundColor:
+                    isCompleted || isActive ? '#7c3aed' : '#f8fafc',
+                  borderColor: isCompleted || isActive ? '#7c3aed' : '#e2e8f0',
+                  scale: isActive ? 1.08 : 1,
+                }}
+                className={cn(
+                  'flex h-8 w-8 items-center justify-center rounded-full border text-xs font-bold shadow-sm transition-colors',
+                  isCompleted || isActive
+                    ? 'text-white shadow-violet-500/30'
+                    : 'text-slate-400 dark:border-slate-700 dark:bg-slate-900'
+                )}
+              >
+                {isCompleted ? (
+                  <Check className="h-4 w-4 text-white" strokeWidth={3} />
+                ) : (
+                  step.num
+                )}
+              </motion.div>
+              <div>
+                <p
+                  className={cn(
+                    'text-sm font-semibold',
+                    isActive || isCompleted
+                      ? 'text-slate-900 dark:text-white'
+                      : 'text-slate-500'
+                  )}
+                >
+                  {step.label}
+                </p>
+                {step.description && (
+                  <p className="text-xs text-slate-500 dark:text-slate-400">
+                    {step.description}
+                  </p>
+                )}
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
 }

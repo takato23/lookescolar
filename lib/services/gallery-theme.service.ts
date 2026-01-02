@@ -1,17 +1,26 @@
 /**
  * Gallery Theme System
  *
- * Provides different visual themes and motifs for different school levels:
- * - Kindergarten: Playful, colorful, animal motifs
- * - Primary: Bright colors, simple icons, friendly design
- * - Secondary: Modern, sophisticated, clean design
+ * Provides different visual themes for professional photography events:
+ * - Lumina: Premium luxury aesthetic with gold accents
+ * - Default: Clean professional look with violet tones
+ * - Vibrante: Colorful and energetic for celebrations
+ * - Moderno: Sleek and sophisticated for corporate/formal events
+ * - Celestial: Soft and elegant for ceremonies (baptisms, communions)
  */
 
-export type EventTheme = 'default' | 'jardin' | 'secundaria' | 'bautismo' | 'lumina';
+export type EventTheme =
+  | 'default'
+  | 'vibrante'
+  | 'moderno'
+  | 'celestial'
+  | 'lumina';
 
 export interface GalleryTheme {
   id: EventTheme;
   name: string;
+  description: string;
+  category: 'professional' | 'celebration' | 'ceremony' | 'premium';
   colors: {
     primary: string;
     secondary: string;
@@ -50,6 +59,9 @@ export const GALLERY_THEMES: Record<EventTheme, GalleryTheme> = {
   lumina: {
     id: 'lumina',
     name: 'Lumina Premium',
+    description:
+      'Lujo sofisticado con acentos dorados. Ideal para bodas y galas.',
+    category: 'premium',
     colors: {
       primary: '#2d2a26',
       secondary: '#6b5b73',
@@ -61,7 +73,8 @@ export const GALLERY_THEMES: Record<EventTheme, GalleryTheme> = {
       border: '#e8e6e3',
     },
     fonts: {
-      heading: "'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
+      heading:
+        "'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
       body: "'Inter', system-ui, -apple-system, Segoe UI, Roboto, sans-serif",
     },
     icons: {
@@ -79,8 +92,7 @@ export const GALLERY_THEMES: Record<EventTheme, GalleryTheme> = {
     animations: {
       cardHover:
         'transform: translateY(-2px); box-shadow: 0 10px 32px rgba(45,42,38,0.08), 0 4px 12px rgba(212,175,55,0.10);',
-      buttonHover:
-        'transform: translateY(-1px); background: #1f1d1a;',
+      buttonHover: 'transform: translateY(-1px); background: #1f1d1a;',
     },
     spacing: {
       cardGap: '1.25rem',
@@ -89,11 +101,13 @@ export const GALLERY_THEMES: Record<EventTheme, GalleryTheme> = {
   },
   default: {
     id: 'default',
-    name: 'Tema Predeterminado',
+    name: 'Profesional',
+    description: 'Limpio y elegante. Perfecto para cualquier tipo de evento.',
+    category: 'professional',
     colors: {
-      primary: '#7C3AED', // Violet - similar a landing page
-      secondary: '#EC4899', // Pink - acento vibrante
-      accent: '#F59E0B', // Amber - detalles cálidos
+      primary: '#7C3AED',
+      secondary: '#EC4899',
+      accent: '#F59E0B',
       background: 'linear-gradient(135deg, #FAFAFA 0%, #F8FAFC 100%)',
       cardBackground: '#FFFFFF',
       textPrimary: '#1F2937',
@@ -128,13 +142,15 @@ export const GALLERY_THEMES: Record<EventTheme, GalleryTheme> = {
     },
   },
 
-  jardin: {
-    id: 'jardin',
-    name: 'Jardín de Infantes',
+  vibrante: {
+    id: 'vibrante',
+    name: 'Vibrante',
+    description: 'Colores vivos y energeticos. Para fiestas y celebraciones.',
+    category: 'celebration',
     colors: {
-      primary: '#FF6B9D', // Pink
-      secondary: '#4ECDC4', // Turquoise
-      accent: '#FFE66D', // Yellow
+      primary: '#FF6B9D',
+      secondary: '#4ECDC4',
+      accent: '#FFE66D',
       background: 'linear-gradient(135deg, #FFF8E7 0%, #FFE8F0 100%)',
       cardBackground: '#FFFFFF',
       textPrimary: '#2D3748',
@@ -142,14 +158,14 @@ export const GALLERY_THEMES: Record<EventTheme, GalleryTheme> = {
       border: '#E2E8F0',
     },
     fonts: {
-      heading: "'Comic Neue', 'Nunito', sans-serif",
+      heading: "'Nunito', 'system-ui', sans-serif",
       body: "'Nunito', sans-serif",
     },
     icons: {
-      favorite: '🌟',
-      selected: '✨',
-      gallery: '🎨',
-      package: '🎁',
+      favorite: '★',
+      selected: '✓',
+      gallery: '◈',
+      package: '❖',
     },
     patterns: {
       headerPattern:
@@ -159,9 +175,9 @@ export const GALLERY_THEMES: Record<EventTheme, GalleryTheme> = {
     },
     animations: {
       cardHover:
-        'transform: translateY(-4px) scale(1.02); box-shadow: 0 12px 24px rgba(255,107,157,0.2);',
+        'transform: translateY(-4px) scale(1.01); box-shadow: 0 12px 24px rgba(255,107,157,0.2);',
       buttonHover:
-        'transform: scale(1.05); background: linear-gradient(135deg, #FF6B9D, #4ECDC4);',
+        'transform: scale(1.03); background: linear-gradient(135deg, #FF6B9D, #4ECDC4);',
     },
     spacing: {
       cardGap: '1.5rem',
@@ -169,13 +185,16 @@ export const GALLERY_THEMES: Record<EventTheme, GalleryTheme> = {
     },
   },
 
-  secundaria: {
-    id: 'secundaria',
-    name: 'Escuela Secundaria',
+  moderno: {
+    id: 'moderno',
+    name: 'Moderno',
+    description:
+      'Minimalista y sofisticado. Para eventos corporativos y formales.',
+    category: 'professional',
     colors: {
-      primary: '#6366F1', // Indigo
-      secondary: '#8B5CF6', // Purple
-      accent: '#06B6D4', // Cyan
+      primary: '#6366F1',
+      secondary: '#8B5CF6',
+      accent: '#06B6D4',
       background: 'linear-gradient(135deg, #FAFAFA 0%, #F4F4F5 100%)',
       cardBackground: '#FFFFFF',
       textPrimary: '#09090B',
@@ -210,13 +229,16 @@ export const GALLERY_THEMES: Record<EventTheme, GalleryTheme> = {
     },
   },
 
-  bautismo: {
-    id: 'bautismo',
-    name: 'Bautismo',
+  celestial: {
+    id: 'celestial',
+    name: 'Celestial',
+    description:
+      'Suave y elegante. Ideal para ceremonias religiosas y eventos intimos.',
+    category: 'ceremony',
     colors: {
-      primary: '#0EA5E9', // Sky blue
-      secondary: '#F8FAFC', // Light gray
-      accent: '#FBBF24', // Amber
+      primary: '#0EA5E9',
+      secondary: '#F8FAFC',
+      accent: '#FBBF24',
       background: 'linear-gradient(135deg, #F0F9FF 0%, #EFF6FF 100%)',
       cardBackground: '#FFFFFF',
       textPrimary: '#0F172A',
@@ -268,15 +290,38 @@ export class GalleryThemeService {
   }
 
   /**
+   * Get themes filtered by category
+   */
+  static getThemesByCategory(
+    category: GalleryTheme['category']
+  ): GalleryTheme[] {
+    return Object.values(GALLERY_THEMES).filter(
+      (theme) => theme.category === category
+    );
+  }
+
+  /**
    * Get theme options for admin selection
    */
   static getThemeOptions() {
     return [
-      { value: 'default', label: 'Predeterminado' },
-      { value: 'jardin', label: 'Jardín de Infantes' },
-      { value: 'secundaria', label: 'Escuela Secundaria' },
-      { value: 'bautismo', label: 'Bautismo' },
-      { value: 'lumina', label: 'Lumina Premium' },
+      {
+        value: 'default',
+        label: 'Profesional',
+        description: 'Limpio y elegante',
+      },
+      { value: 'vibrante', label: 'Vibrante', description: 'Colores vivos' },
+      { value: 'moderno', label: 'Moderno', description: 'Minimalista' },
+      {
+        value: 'celestial',
+        label: 'Celestial',
+        description: 'Suave y elegante',
+      },
+      {
+        value: 'lumina',
+        label: 'Lumina Premium',
+        description: 'Lujo sofisticado',
+      },
     ];
   }
 
