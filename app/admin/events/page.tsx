@@ -55,9 +55,9 @@ type EventsResult = {
   error: EventsError | null;
 };
 
-const PRIMARY_TIMEOUT_MS = 15000;
-const FALLBACK_TIMEOUT_MS = 10000;
-const ALLOWED_SORT_FIELDS = new Set(['created_at', 'date', 'name', 'status']);
+const _PRIMARY_TIMEOUT_MS = 15000;
+const _FALLBACK_TIMEOUT_MS = 10000;
+const _ALLOWED_SORT_FIELDS = new Set(['created_at', 'date', 'name', 'status']);
 
 // Normaliza la respuesta de los distintos orígenes para la UI
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -154,7 +154,10 @@ const normalizeEvent = (raw: unknown): AdminEvent | null => {
   // Handle cover_urls array
   const rawCoverUrls = (raw as any).cover_urls;
   const coverUrls = Array.isArray(rawCoverUrls)
-    ? rawCoverUrls.filter((url: unknown): url is string => typeof url === 'string' && url.trim() !== '')
+    ? rawCoverUrls.filter(
+        (url: unknown): url is string =>
+          typeof url === 'string' && url.trim() !== ''
+      )
     : [];
 
   return {
@@ -223,9 +226,7 @@ const buildPaginationMeta = (
   const safeLimit = Math.max(1, limit);
   const totalPages = Math.max(1, Math.ceil(total / safeLimit));
   const hasMore =
-    typeof hasMoreOverride === 'boolean'
-      ? hasMoreOverride
-      : page < totalPages;
+    typeof hasMoreOverride === 'boolean' ? hasMoreOverride : page < totalPages;
 
   return {
     page,
@@ -297,7 +298,7 @@ const extractPagination = (payload: unknown): EventsPagination | null => {
   return null;
 };
 
-async function fetchEventsFromApi(
+async function _fetchEventsFromApi(
   path: string,
   timeoutMs: number,
   userAgent: string
@@ -317,7 +318,9 @@ async function fetchEventsFromApi(
     });
 
     if (!response.ok) {
-      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+      throw new Error(
+        `API request failed: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = (await response.json()) as unknown;
@@ -338,7 +341,10 @@ async function fetchEventsDirect(options: {
   paginated: boolean;
 }): Promise<{ events: AdminEvent[]; pagination: EventsPagination | null }> {
   const { page, limit, offset, status, paginated } = options;
-  const supabase = await createServerSupabaseServiceClient();
+  // Use bypassTenant to see all events in admin panel
+  const supabase = await createServerSupabaseServiceClient({
+    bypassTenant: true,
+  });
   const rangeStart = paginated ? offset : 0;
   const rangeEnd = paginated ? offset + limit - 1 : limit - 1;
 
@@ -380,7 +386,9 @@ async function fetchEventsDirect(options: {
 
       // If cover_photo_id is set, move that photo to the front
       if (coverPhotoId) {
-        const coverIndex = orderedPhotos.findIndex(p => p.id === coverPhotoId);
+        const coverIndex = orderedPhotos.findIndex(
+          (p) => p.id === coverPhotoId
+        );
         if (coverIndex > 0) {
           const [coverPhoto] = orderedPhotos.splice(coverIndex, 1);
           orderedPhotos.unshift(coverPhoto);
@@ -389,13 +397,16 @@ async function fetchEventsDirect(options: {
 
       // storage_path is like "originals/filename.jpg"
       // preview is at "previews/filename_preview.webp"
-      return orderedPhotos.slice(0, 4).map(photo => {
-        if (!photo.storage_path) return null;
-        const filename = photo.storage_path.split('/').pop();
-        if (!filename) return null;
-        const baseName = filename.replace(/\.[^.]+$/, ''); // remove extension
-        return `previews/${baseName}_preview.webp`;
-      }).filter((url): url is string => url !== null);
+      return orderedPhotos
+        .slice(0, 4)
+        .map((photo) => {
+          if (!photo.storage_path) return null;
+          const filename = photo.storage_path.split('/').pop();
+          if (!filename) return null;
+          const baseName = filename.replace(/\.[^.]+$/, ''); // remove extension
+          return `previews/${baseName}_preview.webp`;
+        })
+        .filter((url): url is string => url !== null);
     };
 
     const events = (data || []).map((event: Record<string, unknown>) => ({
@@ -407,8 +418,7 @@ async function fetchEventsDirect(options: {
       ),
     }));
 
-    const total =
-      typeof count === 'number' ? count : offset + events.length;
+    const total = typeof count === 'number' ? count : offset + events.length;
     const hasMore =
       typeof count === 'number'
         ? page * limit < count
@@ -443,8 +453,11 @@ async function fetchEventsDirect(options: {
       legacyQuery = legacyQuery.range(rangeStart, rangeEnd);
     }
 
-    const { data: legacyData, error: legacyError, count: legacyCount } =
-      await legacyQuery;
+    const {
+      data: legacyData,
+      error: legacyError,
+      count: legacyCount,
+    } = await legacyQuery;
 
     if (legacyError) {
       throw legacyError;
@@ -453,7 +466,7 @@ async function fetchEventsDirect(options: {
     const events = (legacyData || []).map((event: Record<string, unknown>) => ({
       id: event.id as string,
       name: event.name as string | null,
-      school: ((event.location ?? event.name ?? null) as string | null),
+      school: (event.location ?? event.name ?? null) as string | null,
       location: (event.location as string | null) ?? null,
       date: event.date as string | null,
       status:
@@ -467,9 +480,7 @@ async function fetchEventsDirect(options: {
     }));
 
     const total =
-      typeof legacyCount === 'number'
-        ? legacyCount
-        : offset + events.length;
+      typeof legacyCount === 'number' ? legacyCount : offset + events.length;
     const hasMore =
       typeof legacyCount === 'number'
         ? page * limit < legacyCount
@@ -549,7 +560,11 @@ export default async function EventsPage({
   searchParams?: Promise<SearchParams>;
 }) {
   const resolvedSearchParams = await searchParams;
-  const { events, pagination, error } = await getEvents(resolvedSearchParams ?? {});
+  const {
+    events,
+    pagination: _pagination,
+    error,
+  } = await getEvents(resolvedSearchParams ?? {});
 
   return <CleanEventsPage events={events} error={error} />;
 }
