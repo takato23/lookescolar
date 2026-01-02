@@ -38,6 +38,49 @@ export default function AdminLayout({
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  // Initialize dark mode on mount
+  useEffect(() => {
+    const applyDarkMode = () => {
+      const storedTheme = localStorage.getItem('lookescolar-theme');
+      const systemPrefersDark = window.matchMedia(
+        '(prefers-color-scheme: dark)'
+      ).matches;
+      const shouldBeDark =
+        storedTheme === 'dark' ||
+        storedTheme === 'night' ||
+        (storedTheme === 'system' && systemPrefersDark);
+
+      const html = document.documentElement;
+      if (shouldBeDark) {
+        html.classList.add('dark');
+        html.setAttribute('data-theme', 'dark');
+      } else {
+        html.classList.remove('dark');
+        html.setAttribute('data-theme', 'light');
+      }
+    };
+
+    applyDarkMode();
+
+    // Listen for theme changes
+    const handleStorage = (e: StorageEvent) => {
+      if (e.key === 'lookescolar-theme') applyDarkMode();
+    };
+    const handleMedia = () => applyDarkMode();
+
+    window.addEventListener('storage', handleStorage);
+    window
+      .matchMedia('(prefers-color-scheme: dark)')
+      .addEventListener('change', handleMedia);
+
+    return () => {
+      window.removeEventListener('storage', handleStorage);
+      window
+        .matchMedia('(prefers-color-scheme: dark)')
+        .removeEventListener('change', handleMedia);
+    };
+  }, []);
+
   useEffect(() => {
     const initAuth = async () => {
       // En desarrollo, usar usuario mock (verificamos si estamos en localhost)
@@ -154,9 +197,6 @@ export default function AdminLayout({
     <NotificationProvider>
       <AdminLayoutProvider>
         <KeyboardProvider>
-          {/* Force dark mode application script */}
-          {/* Force dark mode application script - using standard script tag to avoid React hydration issues with ThemeProvider */}
-          <script src="/scripts/force-dark-mode.js" async />
           <AdminLayoutContent user={user}>{children}</AdminLayoutContent>
         </KeyboardProvider>
       </AdminLayoutProvider>
