@@ -94,10 +94,13 @@ export async function middleware(request: NextRequest) {
   // Debug endpoints are ONLY allowed in development
   if (pathname.startsWith('/api/debug/')) {
     if (process.env.NODE_ENV === 'production') {
-      logger.warn('Debug endpoint blocked in production', { pathname, requestId });
+      logger.warn('Debug endpoint blocked in production', {
+        pathname,
+        requestId,
+      });
       return new NextResponse(JSON.stringify({ error: 'Not found' }), {
         status: 404,
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
       });
     }
     // In development, allow but still apply basic security headers
@@ -662,9 +665,10 @@ export const config = {
     // Aplicar a rutas específicas de la app (pero NO a estáticos de Next)
     '/admin/:path*',
     '/f/:path*',
+    '/store-unified/:path*',
+    '/share/:path*',
 
-    // Excluir explícitamente archivos estáticos y assets de Next
-    // Importante: evitar interceptar `/_next/*` para no romper CSS/JS
-    '/((?!_next/|_next/static|_next/image|favicon.ico|.well-known|robots.txt|sitemap.xml).*)',
+    // NOTA: No usar el catch-all pattern ya que interfiere con archivos estáticos de public/
+    // Los archivos en public/ (scripts/, images/, sw.js, etc.) se sirven directamente
   ],
 };
